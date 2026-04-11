@@ -1,0 +1,70 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/notarium
+    username: notarium
+    password: notarium
+
+  jpa:
+    properties:
+      hibernate:
+        show_sql: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  mail:
+    host: localhost
+    port: 1025
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+  security:
+    oauth2:
+      client:
+        registration:
+          discord:
+            client-id: your-discord-client-id
+            client-secret: your-discord-client-secret
+          google:
+            client-id: your-google-client-id
+            client-secret: your-google-client-secret
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: dev-secret-key-change-me-in-production-must-be-at-least-256-bits-long
+    expiration-ms: 604800000
+  minio:
+    endpoint: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket: notarium
+  meilisearch:
+    host: http://localhost:7700
+    api-key: dev-master-key
+  email:
+    hash-salt: dev-salt-change-me
+
+notarium:
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:3000
+
+logging:
+  level:
+    be.notarium: DEBUG
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%clr(%d{HH:mm:ss}){faint} %clr(%-5level) %clr(%-30.30logger{0}){cyan} %clr(:){faint} %msg%n"

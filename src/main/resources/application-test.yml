@@ -1,0 +1,61 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/notarium_test
+    username: notarium
+    password: notarium
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  mail:
+    host: localhost
+    port: 1025
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+  security:
+    oauth2:
+      client:
+        registration:
+          discord:
+            client-id: test-discord-id
+            client-secret: test-discord-secret
+          google:
+            client-id: test-google-id
+            client-secret: test-google-secret
+
+app:
+  jwt:
+    secret: test-secret-key-must-be-at-least-64-bytes-long-for-hs512-algorithm-validation
+    expiration-ms: 3600000
+  minio:
+    endpoint: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket: notarium-test
+  meilisearch:
+    host: http://localhost:7700
+    api-key: test-master-key
+  email:
+    hash-salt: test-salt
+
+notarium:
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+
+logging:
+  level:
+    be.notarium: DEBUG

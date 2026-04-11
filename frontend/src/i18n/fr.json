@@ -1,0 +1,230 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "browse": "Explorer",
+    "upload": "Publier",
+    "leaderboard": "Classement",
+    "news": "Actualités",
+    "tools": "Outils",
+    "admin": "Admin",
+    "profile": "Profil",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "darkMode": "Mode sombre",
+    "lightMode": "Mode clair"
+  },
+  "hero": {
+    "title": "Ne commence pas",
+    "titleHighlight": "de zéro.",
+    "subtitle": "Synthèses, anciens examens, notes de cours — chaque document partagé aide la prochaine promo à réussir.",
+    "cta": "Explorer les cours",
+    "ctaSecondary": "Uploader"
+  },
+  "stats": {
+    "title": "En chiffres",
+    "docs": "Documents",
+    "downloads": "Téléchargements",
+    "contributors": "Contributeurs",
+    "courses": "Cours",
+    "weekUploads": "docs ajoutés cette semaine"
+  },
+  "sections": {
+    "title": "Sections",
+    "viewAll": "Voir tout"
+  },
+  "popular": {
+    "title": "Documents populaires",
+    "viewAll": "Voir tout",
+    "empty": "Aucun document pour le moment"
+  },
+  "leaderboard": {
+    "title": "Top contributeurs",
+    "rank": "Rang",
+    "username": "Utilisateur",
+    "xp": "XP",
+    "docs": "Documents",
+    "badges": "Badges",
+    "empty": "Aucun contributeur pour le moment"
+  },
+  "delegates": {
+    "title": "Délégués",
+    "section": "Section",
+    "members": "Membres",
+    "empty": "Aucun délégué désigné pour le moment"
+  },
+  "news": {
+    "title": "Actualités ISFCE",
+    "readMore": "Lire la suite"
+  },
+  "community": {
+    "title": "Communauté",
+    "carousel": "Communauté",
+    "empty": "Sois le premier à rejoindre la communauté"
+  },
+  "signup": {
+    "title": "Rejoins la communauté",
+    "subtitle": "Connecte-toi et accède à tous les documents en 30 secondes.",
+    "cta": "Créer mon compte",
+    "discordISFCE": "Discord ISFCE"
+  },
+  "ad": {
+    "disclaimer": "Publicité — Soutenez Notarium pour la retirer. Les bloqueurs de publicité réduisent nos revenus."
+  },
+  "links": {
+    "title": "Liens utiles",
+    "moodle": "Moodle",
+    "bulletin": "Bulletin",
+    "mail": "Mail @isfce",
+    "horaires": "Horaires",
+    "tfe": "TFE",
+    "stages": "Stages",
+    "emplois": "Emplois"
+  },
+  "document": {
+    "title": "Titre",
+    "course": "Cours",
+    "section": "Section",
+    "category": "Catégorie",
+    "author": "Auteur",
+    "anonymous": "Anonyme",
+    "verified": "Vérifié",
+    "aiGenerated": "Généré par IA",
+    "language": "Langue",
+    "year": "Année",
+    "professor": "Professeur",
+    "rating": "Note",
+    "downloads": "Téléchargements",
+    "tags": "Tags",
+    "summary": "Résumé IA",
+    "upload": "Publier un document",
+    "delete": "Supprimer",
+    "download": "Télécharger",
+    "report": "Signaler",
+    "noResults": "Aucun document trouvé",
+    "favorite": "Favori",
+    "addFavorite": "Ajouter aux favoris",
+    "reportPlaceholder": "Raison...",
+    "courseDocuments": "Documents du cours",
+    "aiShort": "IA",
+    "supporter": "Supporter"
+  },
+  "admin": {
+    "tabs": {
+      "documents": "Documents",
+      "courses": "Cours",
+      "professors": "Professeurs",
+      "reports": "Signalements"
+    },
+    "placeholder": "Panneau d'administration — à implémenter dans les prochaines phases."
+  },
+  "upload": {
+    "title": "Publier un document",
+    "dragDrop": "Glissez-déposez un PDF ici ou cliquez pour sélectionner",
+    "maxSize": "Taille maximale : 10 Mo",
+    "submit": "Publier",
+    "success": "Document publié avec succès !",
+    "pdfOnly": "Seuls les fichiers PDF sont acceptés"
+  },
+  "profile": {
+    "title": "Mon profil",
+    "bio": "Bio",
+    "website": "Site web",
+    "social": "Réseaux sociaux",
+    "badges": "Badges",
+    "documents": "Mes documents",
+    "favorites": "Mes favoris",
+    "settings": "Paramètres",
+    "theme": "Thème",
+    "deleteAccount": "Supprimer mon compte",
+    "deleteConfirm": "Êtes-vous sûr ? Cette action est irréversible.",
+    "save": "Enregistrer",
+    "public": "Profil public",
+    "carousel": "Apparaître dans le carrousel"
+  },
+  "auth": {
+    "verifyEmail": "Vérifier votre email ISFCE",
+    "enterEmail": "Entrez votre email @isfce.be",
+    "sendCode": "Envoyer le code",
+    "enterCode": "Entrez le code reçu par email",
+    "confirm": "Confirmer",
+    "verified": "Email vérifié !",
+    "codeExpired": "Code expiré ou invalide",
+    "verificationRequired": "Vérification requise",
+    "verifyEmailMessage": "Veuillez vérifier votre email @isfce.be pour accéder à cette fonctionnalité."
+  },
+  "search": {
+    "placeholder": "Rechercher des documents...",
+    "filters": "Filtres",
+    "sort": "Trier par",
+    "recent": "Plus récents",
+    "popular": "Plus populaires",
+    "bestRated": "Mieux notés"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "confirm": "Confirmer",
+    "back": "Retour",
+    "seeAll": "Voir tout"
+  },
+  "footer": {
+    "tagline": "Hub des documents de l'ISFCE",
+    "independent": "Projet indépendant, non affilié à l'ISFCE.",
+    "links": "Liens utiles",
+    "legal": "Mentions légales",
+    "privacy": "Politique de confidentialité",
+    "github": "GitHub",
+    "kofi": "Ko-fi",
+    "madeWith": "Fait avec ❤️ par les étudiants de l'ISFCE"
+  },
+  "tools": {
+    "title": "Outils",
+    "ipv4": {
+      "tab": "Calculateur IPv4",
+      "ip": "Adresse IP",
+      "mask": "Masque CIDR",
+      "maskDecimal": "Masque décimal",
+      "network": "Adresse réseau",
+      "broadcast": "Broadcast",
+      "firstHost": "Première IP utilisable",
+      "lastHost": "Dernière IP utilisable",
+      "hostCount": "Nombre d'hôtes",
+      "class": "Classe",
+      "wildcard": "Masque wildcard",
+      "cidr": "Notation CIDR",
+      "binaryView": "Visualisation binaire",
+      "networkBits": "Bits réseau",
+      "hostBits": "Bits hôte",
+      "invalidIp": "Adresse IP invalide",
+      "maskModeCidr": "CIDR",
+      "maskModeDec": "Déc."
+    },
+    "base": {
+      "tab": "Convertisseur de bases",
+      "input": "Valeur",
+      "sourceBase": "Base source",
+      "binary": "Binaire",
+      "octal": "Octal",
+      "decimal": "Décimal",
+      "hex": "Hexadécimal",
+      "result": "Résultat",
+      "invalidChar": "Caractère invalide pour cette base",
+      "asciiTable": "Table ASCII",
+      "char": "Car.",
+      "dec": "Déc.",
+      "hexCol": "Hex",
+      "binCol": "Bin",
+      "octCol": "Oct"
+    }
+  },
+  "categories": {
+    "SYNTHESE": "Synthèse",
+    "EXAMEN": "Examen",
+    "NOTES": "Notes",
+    "EXERCICES": "Exercices",
+    "DIVERS": "Divers"
+  }
+}

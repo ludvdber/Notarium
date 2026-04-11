@@ -1,0 +1,108 @@
+import type { SxProps, Theme } from '@mui/material';
+import type { CSSProperties } from 'react';
+
+type Sx = SxProps<Theme>;
+
+export const outerGrid: Sx = { py: { xs: 6, md: 9 } };
+
+export const columnTitle: Sx = { mb: 2, fontWeight: 800 };
+
+export const listCard: Sx = { p: 0 };
+
+export const delegatesCard: Sx = { p: 2.5, position: 'relative' };
+
+export const entryRow: Sx = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 2,
+  px: 2.5,
+  py: 2,
+  borderBottom: '1px solid rgba(255,255,255,0.05)',
+  '&:last-child': { borderBottom: 'none' },
+};
+
+export const medalCircle = (rank: number, color: string): Sx => ({
+  width: 36,
+  height: 36,
+  borderRadius: '50%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  bgcolor: rank <= 3 ? `${color}20` : 'transparent',
+  flexShrink: 0,
+});
+
+export const medalIcon = (color: string): Sx => ({ fontSize: 20, color });
+
+export const medalRank: Sx = { fontWeight: 700, color: 'text.secondary' };
+
+export const userInfo: Sx = { flex: 1, minWidth: 0 };
+
+export const userNameRow: Sx = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 1,
+};
+
+export const userName: Sx = { fontWeight: 700 };
+
+export const supporterChip: Sx = { fontSize: 10, height: 20 };
+
+export const supporterIcon: Sx = { fontSize: '12px !important' };
+
+export const badgesRow: Sx = {
+  display: 'flex',
+  gap: 0.5,
+  mt: 0.5,
+  flexWrap: 'wrap',
+};
+
+export const xpCol: Sx = { textAlign: 'right', flexShrink: 0 };
+
+export const xpValue: Sx = {
+  fontWeight: 800,
+  color: 'primary.main',
+  fontSize: '1.1rem',
+};
+
+export const emptyState: Sx = { p: 4, textAlign: 'center' };
+
+export const emptyIcon: Sx = { fontSize: 32, mb: 1 };
+
+export const delegateBlock: Sx = {
+  mb: 2,
+  '&:last-child': { mb: 0 },
+};
+
+export const delegateSectionName: Sx = { mb: 1, fontWeight: 600 };
+
+export const delegateMembers: Sx = {
+  display: 'flex',
+  gap: 1,
+  flexWrap: 'wrap',
+};
+
+export const delegateChip: Sx = { cursor: 'pointer' };
+
+export const discordPopup: CSSProperties = {
+  position: 'absolute',
+  bottom: 12,
+  right: 12,
+  zIndex: 10,
+};
+
+export const discordBox: Sx = {
+  bgcolor: '#5865F2',
+  color: '#fff',
+  px: 2,
+  py: 1,
+  borderRadius: 2,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 1,
+  boxShadow: '0 4px 20px rgba(88, 101, 242, 0.4)',
+};
+
+export const discordName: Sx = { fontWeight: 600 };
+
+export const discordHandle: Sx = { opacity: 0.8 };
