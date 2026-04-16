@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CardContent, Typography, Box, Chip, Rating, Tooltip } from '@mui/material';
-import { Download, Verified, SmartToy, PictureAsPdf } from '@mui/icons-material';
+import { CardContent, Typography, Box, Chip, Rating, Tooltip, IconButton, Snackbar, Alert } from '@mui/material';
+import { Download, Verified, SmartToy, PictureAsPdf, ContentCopy } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import type { DocumentResponse } from '@/types';
 import GlassCard from '@/components/ui/GlassCard';
@@ -15,6 +16,14 @@ interface Props {
 
 export default function DocumentCard({ document: doc, haloStrength = 0 }: Props) {
   const { t, i18n } = useTranslation();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(`${window.location.origin}/documents/${doc.id}`);
+    setCopied(true);
+  };
 
   return (
     <GlassCard component={Link} to={`/documents/${doc.id}`} sx={s.card(haloStrength)}>
@@ -79,10 +88,20 @@ export default function DocumentCard({ document: doc, haloStrength = 0 }: Props)
           </Box>
         )}
 
-        <Typography variant="caption" color="text.secondary" sx={s.createdAt}>
-          {formatDate(doc.createdAt, i18n.language)}
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="caption" color="text.secondary" sx={s.createdAt}>
+            {formatDate(doc.createdAt, i18n.language)}
+          </Typography>
+          <Tooltip title={t('common.copyLink')} enterDelay={300}>
+            <IconButton size="small" onClick={handleCopyLink} sx={{ p: 0.5 }}>
+              <ContentCopy sx={{ fontSize: 14, color: 'text.secondary' }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </CardContent>
+      <Snackbar open={copied} autoHideDuration={2000} onClose={() => setCopied(false)}>
+        <Alert severity="success" onClose={() => setCopied(false)}>{t('common.linkCopied')}</Alert>
+      </Snackbar>
     </GlassCard>
   );
 }

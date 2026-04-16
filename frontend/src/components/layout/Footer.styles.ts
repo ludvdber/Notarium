@@ -5,8 +5,8 @@ type Sx = SxProps<Theme>;
 export const footer: Sx = {
   py: 4,
   mt: 8,
-  borderTop: '1px solid rgba(255,255,255,0.06)',
-  background: 'rgba(10, 14, 26, 0.5)',
+  borderTop: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+  background: (t) => t.palette.mode === 'dark' ? 'rgba(10, 14, 26, 0.5)' : 'rgba(0, 0, 0, 0.02)',
 };
 
 export const topGrid: Sx = { mb: 3 };
@@ -38,7 +38,7 @@ export const iconLink: Sx = {
 export const iconSize: Sx = { fontSize: 16 };
 
 export const bottomBorder: Sx = {
-  borderTop: '1px solid rgba(255,255,255,0.04)',
+  borderTop: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'}`,
   pt: 2,
 };
 

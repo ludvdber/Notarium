@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { IconButton, Drawer, List, ListItemButton, ListItemText, ListItemIcon, Box, Divider } from '@mui/material';
-import { Menu as MenuIcon, Close, DarkMode, LightMode, Language } from '@mui/icons-material';
+import { IconButton, Drawer, List, ListItemButton, ListItemText, ListItemIcon, Box, Divider, Badge as MuiBadge } from '@mui/material';
+import { Menu as MenuIcon, Close, DarkMode, LightMode, Language, Notifications } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useThemeStore } from '@/stores/useThemeStore';
+import { useNotificationStore } from '@/stores/useNotificationStore';
 import DevLoginButton from '@/components/common/DevLoginButton';
 import * as s from './MobileMenu.styles';
 
@@ -22,6 +23,7 @@ export default function MobileMenu() {
   const { t, i18n } = useTranslation();
   const { token, logout } = useAuthStore();
   const { theme, toggle: toggleTheme } = useThemeStore();
+  const { unreadCount, markAllRead } = useNotificationStore();
   const toggleLang = () => i18n.changeLanguage(i18n.language === 'fr' ? 'en' : 'fr');
 
   return (
@@ -42,6 +44,16 @@ export default function MobileMenu() {
                 <ListItemText primary={t(`nav.${key}`)} />
               </ListItemButton>
             ))}
+            {token && (
+              <ListItemButton onClick={() => { markAllRead(); setOpen(false); }}>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <MuiBadge badgeContent={unreadCount()} color="error" max={9}>
+                    <Notifications fontSize="small" />
+                  </MuiBadge>
+                </ListItemIcon>
+                <ListItemText primary={t('notifications.title')} />
+              </ListItemButton>
+            )}
             {token ? (
               <>
                 <ListItemButton component={Link} to="/profile" onClick={() => setOpen(false)}>

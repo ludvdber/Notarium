@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Skeleton } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
@@ -15,6 +16,7 @@ const CommunityCarousel = lazy(() => import('@/components/home/CommunityCarousel
 
 export default function Leaderboard() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data: entries } = useQuery({ queryKey: ['leaderboard'], queryFn: getLeaderboard });
 
   return (
@@ -37,7 +39,7 @@ export default function Leaderboard() {
             </TableHead>
             <TableBody>
               {entries?.map((entry) => (
-                <TableRow key={entry.rank}>
+                <TableRow key={entry.rank} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/users/${entry.userId}`)}>
                   <TableCell>
                     <Typography className="mono" sx={s.rankCell(entry.rank <= 3)}>
                       #{entry.rank}

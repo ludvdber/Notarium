@@ -29,6 +29,15 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     long countByUserId(Long userId);
     long countByCourseId(Long courseId);
 
+    @Query("SELECT COUNT(d) FROM Document d WHERE d.course.section.id = :sectionId")
+    long countBySectionId(@Param("sectionId") Long sectionId);
+
+    /** Batch count: returns a map of userId → documentCount for all given user IDs in one query. */
+    @Query("SELECT d.user.id, COUNT(d) FROM Document d WHERE d.user.id IN :userIds GROUP BY d.user.id")
+    List<Object[]> countByUserIds(@Param("userIds") List<Long> userIds);
+
+    Page<Document> findByUserIdAndVerifiedTrue(Long userId, Pageable pageable);
+
     @Modifying
     @Query("UPDATE Document d SET d.anonymous = true, d.user = null WHERE d.user.id = :userId")
     void anonymizeByUserId(@Param("userId") Long userId);

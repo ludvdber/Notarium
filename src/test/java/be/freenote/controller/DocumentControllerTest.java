@@ -29,6 +29,7 @@ class DocumentControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private DocumentService documentService;
+    @MockitoBean private be.freenote.repository.TagRepository tagRepository;
     @MockitoBean private JwtAuthFilter jwtAuthFilter;
 
     private static final DocumentResponse DOC = new DocumentResponse(

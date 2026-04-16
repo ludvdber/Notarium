@@ -70,7 +70,12 @@ export default function LeaderboardDelegates() {
             {leaderboard?.map((entry) => {
               const rankColor = RANK_COLORS[entry.rank - 1] ?? '#888';
               return (
-                <Box key={entry.rank} sx={s.entryRow}>
+                <Box
+                  key={entry.rank}
+                  component={token ? Link : 'div'}
+                  {...(token ? { to: `/users/${entry.userId}` } : {})}
+                  sx={s.entryRow}
+                >
                   <Box sx={s.medalCircle(entry.rank, rankColor)}>
                     {entry.rank <= 3 ? (
                       <EmojiEvents sx={s.medalIcon(rankColor)} />

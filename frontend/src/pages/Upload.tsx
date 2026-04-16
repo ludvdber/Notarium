@@ -11,13 +11,14 @@ import {
   FormControlLabel,
   Checkbox,
   Alert,
+  Autocomplete,
 } from '@mui/material';
 import { CloudUpload, CheckCircle } from '@mui/icons-material';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
-import { uploadDocument, getSections, getCourses, getProfessors } from '@/api/endpoints';
+import { uploadDocument, getSections, getCourses, getProfessors, getTagSuggestions } from '@/api/endpoints';
 import { CATEGORIES, MAX_FILE_SIZE } from '@/lib/constants';
 import PageWrapper from '@/components/layout/PageWrapper';
 import * as s from './Upload.styles';
@@ -34,7 +35,7 @@ export default function Upload() {
   const [language, setLanguage] = useState('FR');
   const [anonymous, setAnonymous] = useState(false);
   const [aiGenerated, setAiGenerated] = useState(false);
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
@@ -49,6 +50,7 @@ export default function Upload() {
     enabled: sectionId !== '',
   });
   const { data: professors } = useQuery({ queryKey: ['professors'], queryFn: getProfessors });
+  const { data: tagSuggestions } = useQuery({ queryKey: ['tag-suggestions'], queryFn: getTagSuggestions });
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -62,7 +64,7 @@ export default function Upload() {
           language,
           aiGenerated,
           anonymous,
-          tags: tags ? tags.split(',').map((x) => x.trim()) : undefined,
+          tags: tags.length > 0 ? tags : undefined,
         },
         file!
       ),
@@ -209,11 +211,15 @@ export default function Upload() {
         </FormControl>
 
         <TextField label={t('document.language')} value={language} onChange={(e) => setLanguage(e.target.value)} />
-        <TextField
-          label={t('document.tags')}
+        <Autocomplete<string, true, false, true>
+          multiple
+          freeSolo
+          options={tagSuggestions ?? []}
           value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          helperText={t('upload.tagsHelper')}
+          onChange={(_, v) => setTags(v.map((tag) => (typeof tag === 'string' ? tag.trim().toLowerCase() : tag)))}
+          renderInput={(params) => (
+            <TextField {...params} label={t('document.tags')} helperText={t('upload.tagsHelper')} />
+          )}
         />
 
         <FormControlLabel

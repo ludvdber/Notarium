@@ -56,6 +56,7 @@ export interface StatsResponse {
 }
 
 export interface LeaderboardEntry {
+  userId: number;
   rank: number;
   username: string;
   xp: number;

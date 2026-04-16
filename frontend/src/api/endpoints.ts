@@ -45,6 +45,9 @@ export const searchDocuments = (params: {
 export const getPopularDocuments = () =>
   api.get<DocumentResponse[]>('/documents/popular').then((r) => r.data);
 
+export const getTagSuggestions = () =>
+  api.get<string[]>('/documents/tags').then((r) => r.data);
+
 export const uploadDocument = (data: CreateDocumentRequest, file: File) => {
   const formData = new FormData();
   formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));

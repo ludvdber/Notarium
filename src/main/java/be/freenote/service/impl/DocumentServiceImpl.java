@@ -7,17 +7,17 @@ import be.freenote.dto.response.PageResponse;
 import be.freenote.entity.*;
 import be.freenote.enums.Category;
 import be.freenote.exception.ForbiddenException;
-import be.freenote.exception.PayloadTooLargeException;
 import be.freenote.exception.ResourceNotFoundException;
 import be.freenote.mapper.DocumentMapper;
 import be.freenote.repository.*;
+import be.freenote.event.XpEvent;
 import be.freenote.service.DocumentService;
 import be.freenote.service.MeilisearchService;
 import be.freenote.service.MinioService;
-import be.freenote.service.PdfCompressionService;
-import be.freenote.service.UserService;
+import be.freenote.service.PdfValidationService;
 import be.freenote.util.FileUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -29,7 +29,6 @@ import org.springframework.web.multipart.MultipartFile;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.*;
 
 @Slf4j
@@ -38,9 +37,7 @@ import java.util.*;
 @Transactional(readOnly = true)
 public class DocumentServiceImpl implements DocumentService {
 
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
     private static final String PDF_CONTENT_TYPE = "application/pdf";
-    private static final byte[] PDF_MAGIC = {0x25, 0x50, 0x44, 0x46, 0x2D}; // %PDF-
     private static final String DL_BUFFER_PREFIX = "dl-buffer:";
 
     private static String sanitize(String input) {
@@ -59,20 +56,16 @@ public class DocumentServiceImpl implements DocumentService {
     private final ProfessorRepository professorRepository;
     private final DocumentMapper documentMapper;
     private final MinioService minioService;
-    private final PdfCompressionService pdfCompressionService;
+    private final PdfValidationService pdfValidationService;
     private final MeilisearchService meilisearchService;
-    private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
     private final StringRedisTemplate redisTemplate;
 
     @Override
     @Transactional
     public DocumentResponse create(CreateDocumentRequest request, MultipartFile file, Long userId) {
-        if (!PDF_CONTENT_TYPE.equals(file.getContentType())) {
-            throw new IllegalArgumentException("Only PDF files are accepted");
-        }
-        if (file.getSize() > MAX_FILE_SIZE) {
-            throw new PayloadTooLargeException("File size exceeds the 10 MB limit");
-        }
+        // Validate + compress PDF (MIME, size, magic bytes, Ghostscript)
+        byte[] compressed = pdfValidationService.validateAndCompress(file);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -85,17 +78,6 @@ public class DocumentServiceImpl implements DocumentService {
                     .orElseThrow(() -> new ResourceNotFoundException("Professor", "id", request.getProfessorId()));
         }
 
-        byte[] pdfBytes;
-        try {
-            pdfBytes = file.getBytes();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read uploaded file", e);
-        }
-
-        if (pdfBytes.length < 5 || !java.util.Arrays.equals(PDF_MAGIC, 0, 5, pdfBytes, 0, 5)) {
-            throw new IllegalArgumentException("Le fichier n'est pas un PDF valide");
-        }
-
         // Validate category against enum
         Category category;
         try {
@@ -103,8 +85,6 @@ public class DocumentServiceImpl implements DocumentService {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid category: " + request.getCategory());
         }
-
-        byte[] compressed = pdfCompressionService.compress(pdfBytes);
 
         String fileKey = UUID.randomUUID() + "/" + FileUtil.sanitizeFileName(file.getOriginalFilename());
         minioService.upload(fileKey, new ByteArrayInputStream(compressed), compressed.length, PDF_CONTENT_TYPE);
@@ -233,7 +213,7 @@ public class DocumentServiceImpl implements DocumentService {
 
         // Award XP to author on verification (not at upload) — prevents spam farming
         if (document.getUser() != null) {
-            userService.addXp(document.getUser().getId(), 10);
+            eventPublisher.publishEvent(new XpEvent.DocumentVerified(document.getUser().getId(), documentId));
         }
 
         return documentMapper.toResponse(saved);
@@ -303,7 +283,7 @@ public class DocumentServiceImpl implements DocumentService {
 
         // Award 1 XP to author — skip if downloader is the author (anti-farming)
         if (document.getUser() != null && !document.getUser().getId().equals(userId)) {
-            userService.addXp(document.getUser().getId(), 1);
+            eventPublisher.publishEvent(new XpEvent.DocumentDownloaded(document.getUser().getId(), documentId));
         }
 
         return minioService.download(document.getFileKey());
@@ -311,9 +291,8 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     public PageResponse<DocumentResponse> getByUser(Long userId, Pageable pageable) {
-        Page<Document> page = documentRepository.findByUserId(userId, pageable);
+        Page<Document> page = documentRepository.findByUserIdAndVerifiedTrue(userId, pageable);
         List<DocumentResponse> content = page.getContent().stream()
-                .filter(Document::isVerified)
                 .map(documentMapper::toResponse)
                 .toList();
         return new PageResponse<>(content, page.getNumber(), page.getSize(),

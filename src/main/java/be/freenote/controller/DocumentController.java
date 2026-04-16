@@ -30,6 +30,7 @@ import java.util.List;
 public class DocumentController {
 
     private final DocumentService documentService;
+    private final be.freenote.repository.TagRepository tagRepository;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @RateLimit(max = 5, window = 86400)
@@ -97,5 +98,13 @@ public class DocumentController {
         Long userId = (Long) authentication.getPrincipal();
         documentService.delete(id, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/tags")
+    @Operation(summary = "Get all distinct tag labels for autocomplete")
+    public ResponseEntity<List<String>> getTags() {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
+                .body(tagRepository.findDistinctLabels());
     }
 }

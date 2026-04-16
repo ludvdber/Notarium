@@ -133,11 +133,15 @@ class UserServiceImplTest {
         User u2 = User.builder().id(2L).username("second").xp(300).build();
 
         when(userRepository.findAllByOrderByXpDesc(any(Pageable.class))).thenReturn(List.of(u1, u2));
+        List<Object[]> counts = new java.util.ArrayList<>();
+        counts.add(new Object[]{1L, 10L});
+        counts.add(new Object[]{2L, 5L});
+        when(documentRepository.countByUserIds(List.of(1L, 2L))).thenReturn(counts);
 
-        LeaderboardEntry e1 = new LeaderboardEntry(1, "top", 500, 10, List.of(), false);
-        LeaderboardEntry e2 = new LeaderboardEntry(2, "second", 300, 5, List.of(), false);
-        when(userMapper.toLeaderboardEntry(u1, 1)).thenReturn(e1);
-        when(userMapper.toLeaderboardEntry(u2, 2)).thenReturn(e2);
+        LeaderboardEntry e1 = new LeaderboardEntry(1L, 1, "top", 500, 10, List.of(), false);
+        LeaderboardEntry e2 = new LeaderboardEntry(2L, 2, "second", 300, 5, List.of(), false);
+        when(userMapper.toLeaderboardEntry(u1, 1, 10L)).thenReturn(e1);
+        when(userMapper.toLeaderboardEntry(u2, 2, 5L)).thenReturn(e2);
 
         List<LeaderboardEntry> result = userService.getLeaderboard(10);
 
@@ -154,9 +158,10 @@ class UserServiceImplTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
+        when(documentRepository.countByUserId(1L)).thenReturn(0L);
         UserResponse resp = new UserResponse(1L, "test", 50, "new bio", null, null, null, null,
                 List.of(), 0, true, false, false);
-        when(userMapper.toResponse(user)).thenReturn(resp);
+        when(userMapper.toResponse(user, 0L)).thenReturn(resp);
 
         UpdateProfileRequest req = new UpdateProfileRequest();
         req.setBio("new bio");
@@ -177,9 +182,10 @@ class UserServiceImplTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
+        when(documentRepository.countByUserId(1L)).thenReturn(0L);
         UserResponse resp = new UserResponse(1L, "test", 0, null, null, null, null, null,
                 List.of(), 0, false, false, false);
-        when(userMapper.toResponse(user)).thenReturn(resp);
+        when(userMapper.toResponse(user, 0L)).thenReturn(resp);
 
         UpdateProfileRequest req = new UpdateProfileRequest();
         req.setBio("bio");

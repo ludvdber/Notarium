@@ -20,7 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -37,13 +39,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getProfile(Long userId) {
         User user = findUserOrThrow(userId);
-        return userMapper.toResponse(user);
+        long docCount = documentRepository.countByUserId(userId);
+        return userMapper.toResponse(user, docCount);
     }
 
     @Override
     public UserResponse getPublicProfile(Long userId) {
         User user = findUserOrThrow(userId);
-        return userMapper.toPublicResponse(user);
+        long docCount = documentRepository.countByUserId(userId);
+        return userMapper.toPublicResponse(user, docCount);
     }
 
     @Override
@@ -71,14 +75,23 @@ public class UserServiceImpl implements UserService {
             profile.setThemePref(request.getThemePref());
         }
 
-        return userMapper.toResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        long docCount = documentRepository.countByUserId(userId);
+        return userMapper.toResponse(saved, docCount);
     }
 
     @Override
     public List<LeaderboardEntry> getLeaderboard(int size) {
+        List<User> users = userRepository.findAllByOrderByXpDesc(PageRequest.of(0, size));
+
+        // Batch fetch document counts — 1 query instead of N
+        Map<Long, Long> docCounts = batchDocCounts(users);
+
         AtomicInteger rank = new AtomicInteger(1);
-        return userRepository.findAllByOrderByXpDesc(PageRequest.of(0, size)).stream()
-                .map(user -> userMapper.toLeaderboardEntry(user, rank.getAndIncrement()))
+        return users.stream()
+                .map(user -> userMapper.toLeaderboardEntry(
+                        user, rank.getAndIncrement(),
+                        docCounts.getOrDefault(user.getId(), 0L)))
                 .toList();
     }
 
@@ -132,6 +145,17 @@ public class UserServiceImpl implements UserService {
             return; // already accepted — idempotent
         }
         profile.setTermsAcceptedAt(java.time.LocalDateTime.now());
+    }
+
+    /** Fetches document counts for a list of users in a single query. */
+    private Map<Long, Long> batchDocCounts(List<User> users) {
+        List<Long> ids = users.stream().map(User::getId).toList();
+        if (ids.isEmpty()) return Map.of();
+        return documentRepository.countByUserIds(ids).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]
+                ));
     }
 
     private User findUserOrThrow(Long id) {

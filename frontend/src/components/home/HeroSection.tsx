@@ -1,7 +1,7 @@
-import { useState, lazy, Suspense } from 'react';
-import { Box, Typography, Button, Container, TextField, InputAdornment } from '@mui/material';
-import { Search, Explore, CloudUpload, KeyboardArrowDown } from '@mui/icons-material';
-import { Link, useNavigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { Box, Typography, Button, Container } from '@mui/material';
+import { Explore, CloudUpload, KeyboardArrowDown } from '@mui/icons-material';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useThemeStore } from '@/stores/useThemeStore';
@@ -12,14 +12,6 @@ import * as s from './HeroSection.styles';
 export default function HeroSection() {
   const { t } = useTranslation();
   const theme = useThemeStore((st) => st.theme);
-  const navigate = useNavigate();
-  const [query, setQuery] = useState('');
-
-  const handleSearch = () => {
-    if (query.trim()) {
-      navigate(`/browse?q=${encodeURIComponent(query.trim())}`);
-    }
-  };
 
   const handleScrollDown = () => {
     const hero = document.getElementById('hero-section');
@@ -54,44 +46,12 @@ export default function HeroSection() {
             <Typography variant="h6" color="text.secondary" sx={s.subtitle}>
               {t('hero.subtitle')}
             </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                mt: 1.5,
-                display: 'inline-block',
-                letterSpacing: 0.5,
-                fontWeight: 600,
-                fontSize: 13,
-                px: 2,
-                py: 0.5,
-                borderRadius: 2,
-                bgcolor: (th) => th.palette.mode === 'dark' ? 'rgba(0,210,255,0.08)' : 'rgba(0,210,255,0.12)',
-                border: (th) => `1px solid ${th.palette.mode === 'dark' ? 'rgba(0,210,255,0.2)' : 'rgba(0,210,255,0.3)'}`,
-                color: 'primary.main',
-              }}
-            >
-              {t('hero.restricted')}
-            </Typography>
           </motion.div>
 
           <motion.div variants={s.fadeUpVariants}>
-            <TextField
-              fullWidth
-              placeholder={t('search.placeholder')}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search sx={s.searchIcon} />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={s.searchField(theme)}
-            />
+            <Typography variant="body2" sx={s.restrictedBadge}>
+              {t('hero.restricted')}
+            </Typography>
           </motion.div>
 
           <motion.div variants={s.fadeUpVariants}>

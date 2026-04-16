@@ -45,6 +45,7 @@ class SectionServiceImplTest {
         Section section = Section.builder().id(1L).name("Compta").approved(false).courses(List.of()).build();
         when(sectionRepository.findById(1L)).thenReturn(Optional.of(section));
         when(sectionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(documentRepository.countBySectionId(1L)).thenReturn(0L);
 
         SectionResponse response = sectionService.approve(1L);
 
@@ -61,13 +62,10 @@ class SectionServiceImplTest {
     }
 
     @Test
-    void getById_shouldComputeDocCountFromCourses() {
-        Course c1 = Course.builder().id(10L).build();
-        Course c2 = Course.builder().id(20L).build();
-        Section section = Section.builder().id(1L).name("Info").courses(List.of(c1, c2)).build();
+    void getById_shouldComputeDocCountFromSingleQuery() {
+        Section section = Section.builder().id(1L).name("Info").build();
         when(sectionRepository.findById(1L)).thenReturn(Optional.of(section));
-        when(documentRepository.countByCourseId(10L)).thenReturn(5L);
-        when(documentRepository.countByCourseId(20L)).thenReturn(3L);
+        when(documentRepository.countBySectionId(1L)).thenReturn(8L);
 
         SectionResponse response = sectionService.getById(1L);
 

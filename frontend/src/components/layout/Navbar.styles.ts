@@ -9,6 +9,7 @@ export const appBar: Sx = {
   backdropFilter: 'blur(12px)',
   borderBottom: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'}`,
   boxShadow: 'none',
+  color: 'text.primary',
 };
 
 export const toolbar: Sx = { justifyContent: 'space-between', gap: 1 };

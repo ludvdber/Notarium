@@ -4,12 +4,13 @@ import be.freenote.entity.Document;
 import be.freenote.entity.Rating;
 import be.freenote.entity.User;
 import be.freenote.exception.ResourceNotFoundException;
+import be.freenote.event.XpEvent;
 import be.freenote.repository.DocumentRepository;
 import be.freenote.repository.RatingRepository;
 import be.freenote.repository.UserRepository;
 import be.freenote.service.RatingService;
-import be.freenote.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +25,7 @@ public class RatingServiceImpl implements RatingService {
     private final RatingRepository ratingRepository;
     private final DocumentRepository documentRepository;
     private final UserRepository userRepository;
-    private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -54,9 +55,9 @@ public class RatingServiceImpl implements RatingService {
             // Update denormalized counters
             updateAverageOnNew(document, score);
 
-            // Award XP to document author: 2 XP per star
+            // Award XP to document author: proportional to rating score
             if (document.getUser() != null) {
-                userService.addXp(document.getUser().getId(), 2 * score);
+                eventPublisher.publishEvent(new XpEvent.DocumentRated(document.getUser().getId(), documentId, score));
             }
         }
     }

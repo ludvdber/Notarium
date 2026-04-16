@@ -4,6 +4,7 @@ import be.freenote.entity.Document;
 import be.freenote.entity.Rating;
 import be.freenote.entity.User;
 import be.freenote.enums.Category;
+import be.freenote.event.XpEvent;
 import be.freenote.exception.ResourceNotFoundException;
 import be.freenote.repository.DocumentRepository;
 import be.freenote.repository.RatingRepository;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -28,7 +30,7 @@ class RatingServiceImplTest {
     @Mock private RatingRepository ratingRepository;
     @Mock private DocumentRepository documentRepository;
     @Mock private UserRepository userRepository;
-    @Mock private UserService userService;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks private RatingServiceImpl ratingService;
 
@@ -76,8 +78,7 @@ class RatingServiceImplTest {
 
         ratingService.rate(2L, 100L, 4);
 
-        // XP = 2 * score = 8
-        verify(userService).addXp(1L, 8);
+        verify(eventPublisher).publishEvent(any(XpEvent.DocumentRated.class));
     }
 
     @Test
@@ -91,7 +92,7 @@ class RatingServiceImplTest {
 
         ratingService.rate(2L, 100L, 3);
 
-        verify(userService, never()).addXp(anyLong(), anyInt());
+        verify(eventPublisher, never()).publishEvent(any(XpEvent.class));
     }
 
     // ---- Update existing rating ----
@@ -132,7 +133,7 @@ class RatingServiceImplTest {
 
         ratingService.rate(2L, 100L, 5);
 
-        verify(userService, never()).addXp(anyLong(), anyInt());
+        verify(eventPublisher, never()).publishEvent(any(XpEvent.class));
     }
 
     // ---- Average calculation precision ----

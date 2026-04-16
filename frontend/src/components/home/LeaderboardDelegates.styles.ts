@@ -31,11 +31,10 @@ export const scrollableList: Sx = {
   '&::-webkit-scrollbar': { width: 6 },
   '&::-webkit-scrollbar-track': { background: 'transparent' },
   '&::-webkit-scrollbar-thumb': {
-    background: 'rgba(255,255,255,0.15)',
+    background: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)',
     borderRadius: 3,
   },
   scrollbarWidth: 'thin',
-  scrollbarColor: 'rgba(255,255,255,0.15) transparent',
 };
 
 export const delegatesCard: Sx = { p: 2.5, position: 'relative' };
@@ -46,8 +45,12 @@ export const entryRow: Sx = {
   gap: 2,
   px: 2.5,
   py: 2,
-  borderBottom: '1px solid rgba(255,255,255,0.05)',
+  borderBottom: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)'}`,
   '&:last-child': { borderBottom: 'none' },
+  textDecoration: 'none',
+  color: 'inherit',
+  transition: 'background-color 0.15s',
+  '&:hover': { bgcolor: 'action.hover' },
 };
 
 export const medalCircle = (rank: number, color: string): Sx => ({

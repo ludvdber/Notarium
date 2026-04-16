@@ -31,11 +31,12 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public List<CourseResponse> getBySectionId(Long sectionId) {
-        Section section = sectionRepository.findById(sectionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Section", "id", sectionId));
-        return section.getCourses().stream()
-                .filter(Course::isApproved)
-                .map(c -> courseMapper.toResponse(c, documentRepository.countByCourseId(c.getId())))
+        if (!sectionRepository.existsById(sectionId)) {
+            throw new ResourceNotFoundException("Section", "id", sectionId);
+        }
+        // Single query: fetch approved courses + doc count in one JOIN
+        return courseRepository.findApprovedBySectionIdWithDocCount(sectionId).stream()
+                .map(row -> courseMapper.toResponse((Course) row[0], (Long) row[1]))
                 .toList();
     }
 
@@ -74,8 +75,9 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public List<CourseResponse> getPending() {
+        // Pending courses have 0 docs (not yet approved → no uploads possible)
         return courseRepository.findByApprovedFalse().stream()
-                .map(c -> courseMapper.toResponse(c, documentRepository.countByCourseId(c.getId())))
+                .map(c -> courseMapper.toResponse(c, 0L))
                 .toList();
     }
 }

@@ -36,9 +36,7 @@ public class SectionServiceImpl implements SectionService {
     public SectionResponse getById(Long id) {
         Section section = sectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Section", "id", id));
-        long docCount = section.getCourses().stream()
-                .mapToLong(c -> documentRepository.countByCourseId(c.getId()))
-                .sum();
+        long docCount = documentRepository.countBySectionId(id);
         return new SectionResponse(section.getId(), section.getName(), section.getIcon(), docCount);
     }
 
@@ -60,9 +58,7 @@ public class SectionServiceImpl implements SectionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Section", "id", id));
         section.setApproved(true);
         Section saved = sectionRepository.save(section);
-        long docCount = saved.getCourses().stream()
-                .mapToLong(c -> documentRepository.countByCourseId(c.getId()))
-                .sum();
+        long docCount = documentRepository.countBySectionId(id);
         return new SectionResponse(saved.getId(), saved.getName(), saved.getIcon(), docCount);
     }
 }

@@ -3,6 +3,9 @@ package be.freenote.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 @Entity
 @Table(name = "ratings", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"document_id", "user_id"})
@@ -29,4 +32,25 @@ public class Rating {
 
     @Column(nullable = false)
     private int score;
+
+    /**
+     * Keeps Document.averageRating and ratingCount consistent when a rating is
+     * deleted by cascade (e.g. document deletion or orphan removal).
+     */
+    @PreRemove
+    void adjustDocumentAverageOnRemove() {
+        if (document == null) return;
+        int count = document.getRatingCount();
+        if (count <= 1) {
+            document.setRatingCount(0);
+            document.setAverageRating(BigDecimal.ZERO);
+        } else {
+            BigDecimal newAvg = document.getAverageRating()
+                    .multiply(BigDecimal.valueOf(count))
+                    .subtract(BigDecimal.valueOf(score))
+                    .divide(BigDecimal.valueOf(count - 1), 2, RoundingMode.HALF_UP);
+            document.setRatingCount(count - 1);
+            document.setAverageRating(newAvg);
+        }
+    }
 }

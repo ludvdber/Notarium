@@ -70,7 +70,7 @@ export const titleGradient: Sx = {
 };
 
 export const subtitle: Sx = {
-  mb: 4,
+  mb: 0,
   fontWeight: 400,
   fontSize: { xs: '1rem', md: '1.15rem' },
   maxWidth: 560,
@@ -78,20 +78,20 @@ export const subtitle: Sx = {
   lineHeight: 1.7,
 };
 
-export const searchField = (theme: 'dark' | 'light'): Sx => ({
-  maxWidth: 560,
-  mx: 'auto',
+export const restrictedBadge: Sx = {
+  display: 'inline-block',
+  mt: 3,
   mb: 4,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: 4,
-    backdropFilter: 'blur(12px)',
-    background: theme === 'dark' ? 'rgba(15, 20, 40, 0.6)' : 'rgba(255, 255, 255, 0.7)',
-    fontSize: '1.1rem',
-    py: 0.5,
-  },
-});
-
-export const searchIcon: Sx = { color: 'text.secondary' };
+  letterSpacing: 0.5,
+  fontWeight: 600,
+  fontSize: 13,
+  px: 2,
+  py: 0.5,
+  borderRadius: 2,
+  bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(0,210,255,0.08)' : 'rgba(0,210,255,0.12)',
+  border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(0,210,255,0.2)' : 'rgba(0,210,255,0.3)'}`,
+  color: 'primary.main',
+};
 
 export const ctaRow: Sx = {
   display: 'flex',

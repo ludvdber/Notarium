@@ -5,6 +5,7 @@ import be.freenote.dto.request.UpdateDocumentRequest;
 import be.freenote.dto.response.DocumentResponse;
 import be.freenote.entity.*;
 import be.freenote.enums.Category;
+import be.freenote.event.XpEvent;
 import be.freenote.exception.ForbiddenException;
 import be.freenote.exception.PayloadTooLargeException;
 import be.freenote.exception.ResourceNotFoundException;
@@ -17,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,9 +42,9 @@ class DocumentServiceImplTest {
     @Mock private ProfessorRepository professorRepository;
     @Mock private DocumentMapper documentMapper;
     @Mock private MinioService minioService;
-    @Mock private PdfCompressionService pdfCompressionService;
+    @Mock private PdfValidationService pdfValidationService;
     @Mock private MeilisearchService meilisearchService;
-    @Mock private UserService userService;
+    @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private StringRedisTemplate redisTemplate;
     @Mock private ValueOperations<String, String> valueOps;
 
@@ -93,15 +95,16 @@ class DocumentServiceImplTest {
     // ---- create ----
 
     @Test
-    void shouldCreateDocumentWhenValidPdf() throws IOException {
-        MultipartFile file = validPdfFile();
+    void shouldCreateDocumentWhenValidPdf() {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.getOriginalFilename()).thenReturn("test.pdf");
         CreateDocumentRequest req = validRequest();
         User user = testUser();
         Course course = testCourse();
 
+        when(pdfValidationService.validateAndCompress(file)).thenReturn(VALID_PDF_BYTES);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(course));
-        when(pdfCompressionService.compress(VALID_PDF_BYTES)).thenReturn(VALID_PDF_BYTES);
         when(documentRepository.save(any(Document.class))).thenAnswer(inv -> {
             Document d = inv.getArgument(0);
             d.setId(100L);
@@ -115,13 +118,14 @@ class DocumentServiceImplTest {
         verify(minioService).upload(anyString(), any(), anyLong(), eq("application/pdf"));
         verify(meilisearchService).indexDocument(any(Document.class));
         // XP is awarded on verify(), not create() — prevents spam farming
-        verify(userService, never()).addXp(anyLong(), anyInt());
+        verify(eventPublisher, never()).publishEvent(any(XpEvent.class));
     }
 
     @Test
-    void shouldThrowWhenFileIsNotPdf() {
+    void shouldThrowWhenPdfValidationFails() {
         MultipartFile file = mock(MultipartFile.class);
-        when(file.getContentType()).thenReturn("application/msword");
+        when(pdfValidationService.validateAndCompress(file))
+                .thenThrow(new IllegalArgumentException("Only PDF files are accepted"));
 
         assertThatThrownBy(() -> documentService.create(validRequest(), file, 1L))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -131,8 +135,8 @@ class DocumentServiceImplTest {
     @Test
     void shouldThrowWhenFileTooLarge() {
         MultipartFile file = mock(MultipartFile.class);
-        when(file.getContentType()).thenReturn("application/pdf");
-        when(file.getSize()).thenReturn(15L * 1024 * 1024);
+        when(pdfValidationService.validateAndCompress(file))
+                .thenThrow(new PayloadTooLargeException("File size exceeds the 10 MB limit"));
 
         assertThatThrownBy(() -> documentService.create(validRequest(), file, 1L))
                 .isInstanceOf(PayloadTooLargeException.class)
@@ -140,44 +144,12 @@ class DocumentServiceImplTest {
     }
 
     @Test
-    void shouldThrowWhenMagicBytesInvalid() throws IOException {
+    void shouldThrowWhenCategoryInvalid() {
         MultipartFile file = mock(MultipartFile.class);
-        when(file.getContentType()).thenReturn("application/pdf");
-        when(file.getSize()).thenReturn(100L);
-        when(file.getBytes()).thenReturn(new byte[]{0x00, 0x01, 0x02, 0x03, 0x04});
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser()));
-        when(courseRepository.findById(10L)).thenReturn(Optional.of(testCourse()));
-
-        assertThatThrownBy(() -> documentService.create(validRequest(), file, 1L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("PDF valide");
-    }
-
-    @Test
-    void shouldThrowWhenFileTooShortForMagicBytes() throws IOException {
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.getContentType()).thenReturn("application/pdf");
-        when(file.getSize()).thenReturn(3L);
-        when(file.getBytes()).thenReturn(new byte[]{0x25, 0x50, 0x44});
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser()));
-        when(courseRepository.findById(10L)).thenReturn(Optional.of(testCourse()));
-
-        assertThatThrownBy(() -> documentService.create(validRequest(), file, 1L))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void shouldThrowWhenCategoryInvalid() throws IOException {
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.getContentType()).thenReturn("application/pdf");
-        when(file.getSize()).thenReturn(5000L);
-        when(file.getBytes()).thenReturn(VALID_PDF_BYTES);
-
         CreateDocumentRequest req = validRequest();
         req.setCategory("INVALID_CAT");
 
+        when(pdfValidationService.validateAndCompress(file)).thenReturn(VALID_PDF_BYTES);
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser()));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(testCourse()));
 
@@ -187,14 +159,15 @@ class DocumentServiceImplTest {
     }
 
     @Test
-    void shouldNormalizeTagsToLowercase() throws IOException {
-        MultipartFile file = validPdfFile();
+    void shouldNormalizeTagsToLowercase() {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.getOriginalFilename()).thenReturn("test.pdf");
         CreateDocumentRequest req = validRequest();
         req.setTags(List.of("Java", " SPRING ", "sql"));
 
+        when(pdfValidationService.validateAndCompress(file)).thenReturn(VALID_PDF_BYTES);
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser()));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(testCourse()));
-        when(pdfCompressionService.compress(any())).thenReturn(VALID_PDF_BYTES);
         when(documentRepository.save(any(Document.class))).thenAnswer(inv -> {
             Document d = inv.getArgument(0);
             d.setId(100L);
@@ -211,14 +184,15 @@ class DocumentServiceImplTest {
     }
 
     @Test
-    void shouldSanitizeTitleOnCreate() throws IOException {
-        MultipartFile file = validPdfFile();
+    void shouldSanitizeTitleOnCreate() {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.getOriginalFilename()).thenReturn("test.pdf");
         CreateDocumentRequest req = validRequest();
         req.setTitle("<script>alert(1)</script>");
 
+        when(pdfValidationService.validateAndCompress(file)).thenReturn(VALID_PDF_BYTES);
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser()));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(testCourse()));
-        when(pdfCompressionService.compress(any())).thenReturn(VALID_PDF_BYTES);
         when(documentRepository.save(any(Document.class))).thenAnswer(inv -> {
             Document d = inv.getArgument(0);
             d.setId(100L);
@@ -236,14 +210,15 @@ class DocumentServiceImplTest {
     }
 
     @Test
-    void shouldSanitizeTagLabelsOnCreate() throws IOException {
-        MultipartFile file = validPdfFile();
+    void shouldSanitizeTagLabelsOnCreate() {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.getOriginalFilename()).thenReturn("test.pdf");
         CreateDocumentRequest req = validRequest();
         req.setTags(List.of("<b>bold</b>"));
 
+        when(pdfValidationService.validateAndCompress(file)).thenReturn(VALID_PDF_BYTES);
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser()));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(testCourse()));
-        when(pdfCompressionService.compress(any())).thenReturn(VALID_PDF_BYTES);
         when(documentRepository.save(any(Document.class))).thenAnswer(inv -> {
             Document d = inv.getArgument(0);
             d.setId(100L);
@@ -326,7 +301,7 @@ class DocumentServiceImplTest {
     }
 
     @Test
-    void shouldAddXpWhenOtherUserDownloads() {
+    void shouldPublishXpEventWhenOtherUserDownloads() {
         User author = testUser();
         Document doc = testDocument(author);
 
@@ -336,11 +311,11 @@ class DocumentServiceImplTest {
 
         documentService.download(100L, 50L);
 
-        verify(userService).addXp(1L, 1);
+        verify(eventPublisher).publishEvent(any(XpEvent.DocumentDownloaded.class));
     }
 
     @Test
-    void shouldNotAddXpWhenSelfDownload() {
+    void shouldNotPublishXpEventWhenSelfDownload() {
         User author = testUser();
         Document doc = testDocument(author);
 
@@ -350,11 +325,11 @@ class DocumentServiceImplTest {
 
         documentService.download(100L, 1L);
 
-        verify(userService, never()).addXp(anyLong(), anyInt());
+        verify(eventPublisher, never()).publishEvent(any(XpEvent.class));
     }
 
     @Test
-    void shouldNotAddXpWhenDocumentHasNoAuthor() {
+    void shouldNotPublishXpEventWhenDocumentHasNoAuthor() {
         Document doc = testDocument(null);
 
         when(documentRepository.findById(100L)).thenReturn(Optional.of(doc));
@@ -363,7 +338,7 @@ class DocumentServiceImplTest {
 
         documentService.download(100L, 50L);
 
-        verify(userService, never()).addXp(anyLong(), anyInt());
+        verify(eventPublisher, never()).publishEvent(any(XpEvent.class));
     }
 
     @Test
@@ -437,7 +412,7 @@ class DocumentServiceImplTest {
 
         assertThat(doc.isVerified()).isTrue();
         verify(documentRepository).save(doc);
-        verify(userService).addXp(1L, 10);
+        verify(eventPublisher).publishEvent(any(XpEvent.DocumentVerified.class));
     }
 
     // ---- adminUpdate ----

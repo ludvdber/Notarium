@@ -6,19 +6,18 @@ import be.freenote.dto.response.UserResponse;
 import be.freenote.entity.Badge;
 import be.freenote.entity.User;
 import be.freenote.entity.UserProfile;
-import be.freenote.repository.DocumentRepository;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
+/**
+ * Pure mapper — no repository injection, no queries.
+ * The calling service is responsible for providing computed values like documentCount.
+ */
 @Mapper(componentModel = "spring")
 public abstract class UserMapper {
 
-    @Autowired
-    protected DocumentRepository documentRepository;
-
-    public UserResponse toResponse(User user) {
+    public UserResponse toResponse(User user, long documentCount) {
         UserProfile p = user.getProfile();
         return new UserResponse(
                 user.getId(),
@@ -30,21 +29,17 @@ public abstract class UserMapper {
                 p != null ? p.getLinkedin() : null,
                 p != null ? p.getDiscord() : null,
                 mapBadges(user.getBadges()),
-                documentRepository.countByUserId(user.getId()),
+                documentCount,
                 p != null && p.isProfilePublic(),
                 p != null && p.isAdFree(),
                 p != null && p.getTermsAcceptedAt() != null
         );
     }
 
-    /**
-     * Returns a filtered response when the profile is not public.
-     * Hides bio and social links; keeps username, XP, badges, doc count.
-     */
-    public UserResponse toPublicResponse(User user) {
+    public UserResponse toPublicResponse(User user, long documentCount) {
         UserProfile p = user.getProfile();
         if (p != null && p.isProfilePublic()) {
-            return toResponse(user);
+            return toResponse(user, documentCount);
         }
         return new UserResponse(
                 user.getId(),
@@ -52,20 +47,21 @@ public abstract class UserMapper {
                 user.getXp(),
                 null, null, null, null, null,
                 mapBadges(user.getBadges()),
-                documentRepository.countByUserId(user.getId()),
+                documentCount,
                 false,
                 p != null && p.isAdFree(),
                 p != null && p.getTermsAcceptedAt() != null
         );
     }
 
-    public LeaderboardEntry toLeaderboardEntry(User user, int rank) {
+    public LeaderboardEntry toLeaderboardEntry(User user, int rank, long documentCount) {
         UserProfile p = user.getProfile();
         return new LeaderboardEntry(
+                user.getId(),
                 rank,
                 user.getUsername(),
                 user.getXp(),
-                documentRepository.countByUserId(user.getId()),
+                documentCount,
                 mapBadges(user.getBadges()),
                 p != null && p.isAdFree()
         );

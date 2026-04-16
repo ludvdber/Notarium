@@ -81,13 +81,13 @@ class CourseServiceImplTest {
 
     @Test
     void shouldReturnOnlyApprovedCoursesForSection() {
-        Section sec = Section.builder().id(10L).name("IT").build();
-        Course approved = Course.builder().id(1L).name("Java").approved(true).section(sec).build();
-        Course pending = Course.builder().id(2L).name("C#").approved(false).section(sec).build();
-        sec.setCourses(List.of(approved, pending));
+        Course approved = Course.builder().id(1L).name("Java").approved(true)
+                .section(Section.builder().id(10L).name("IT").build()).build();
 
-        when(sectionRepository.findById(10L)).thenReturn(Optional.of(sec));
-        when(documentRepository.countByCourseId(1L)).thenReturn(3L);
+        when(sectionRepository.existsById(10L)).thenReturn(true);
+        List<Object[]> rows = new java.util.ArrayList<>();
+        rows.add(new Object[]{approved, 3L});
+        when(courseRepository.findApprovedBySectionIdWithDocCount(10L)).thenReturn(rows);
 
         CourseResponse resp = new CourseResponse(1L, "Java", "IT", 3);
         when(courseMapper.toResponse(approved, 3L)).thenReturn(resp);
@@ -104,7 +104,6 @@ class CourseServiceImplTest {
                 .section(Section.builder().id(10L).name("IT").build()).build();
 
         when(courseRepository.findByApprovedFalse()).thenReturn(List.of(pending));
-        when(documentRepository.countByCourseId(2L)).thenReturn(0L);
 
         CourseResponse resp = new CourseResponse(2L, "C#", "IT", 0);
         when(courseMapper.toResponse(pending, 0L)).thenReturn(resp);
