@@ -6,6 +6,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import GlassCard from '@/components/ui/GlassCard';
+import { TOKENS } from '@/theme/tokens';
 import { calculateIPv4, isValidIp, cidrToMaskOctets, parseMaskDecimal } from '@/lib/ipv4';
 
 function BinaryView({ ipBinary, maskBinary, cidr }: { ipBinary: string; maskBinary: string; cidr: number }) {
@@ -22,7 +23,7 @@ function BinaryView({ ipBinary, maskBinary, cidr }: { ipBinary: string; maskBina
             <Box
               component="span"
               sx={{
-                color: i < cidr ? '#00d2ff' : '#7b2ff7',
+                color: i < cidr ? TOKENS.sections.informatique : TOKENS.sections.comptabilite,
                 fontWeight: 600,
                 px: 0.15,
                 borderRight: (i + 1) % 8 === 0 && i < 31 ? '1px solid' : 'none',
@@ -47,13 +48,13 @@ function BinaryView({ ipBinary, maskBinary, cidr }: { ipBinary: string; maskBina
       {renderBits(maskBinary, t('tools.ipv4.maskDecimal'))}
       <Box sx={{ display: 'flex', gap: 3, mt: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#00d2ff' }} />
+          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: TOKENS.sections.informatique }} />
           <Typography variant="caption" color="text.secondary">
             {t('tools.ipv4.networkBits')} ({cidr})
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#7b2ff7' }} />
+          <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: TOKENS.sections.comptabilite }} />
           <Typography variant="caption" color="text.secondary">
             {t('tools.ipv4.hostBits')} ({32 - cidr})
           </Typography>

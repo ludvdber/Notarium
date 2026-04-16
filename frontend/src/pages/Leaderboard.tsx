@@ -1,11 +1,17 @@
-import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box } from '@mui/material';
+import { lazy, Suspense } from 'react';
+import { Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Box, Skeleton } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { Helmet } from 'react-helmet-async';
 import { getLeaderboard } from '@/api/endpoints';
 import PageWrapper from '@/components/layout/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import Badge from '@/components/ui/Badge';
+import AdBanner from '@/components/ui/AdBanner';
+import Divider from '@/components/ui/Divider';
 import * as s from './Leaderboard.styles';
+
+const CommunityCarousel = lazy(() => import('@/components/home/CommunityCarousel'));
 
 export default function Leaderboard() {
   const { t } = useTranslation();
@@ -13,6 +19,7 @@ export default function Leaderboard() {
 
   return (
     <PageWrapper>
+      <Helmet><title>{t('nav.leaderboard')} — Freenote</title></Helmet>
       <Typography variant="h4" sx={s.title}>
         {t('leaderboard.title')}
       </Typography>
@@ -56,6 +63,13 @@ export default function Leaderboard() {
           </Table>
         </TableContainer>
       </GlassCard>
+      <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+        <AdBanner width={728} height={90} />
+      </Box>
+      <Divider />
+      <Suspense fallback={<Skeleton variant="rounded" height={200} sx={{ borderRadius: 3, mt: 2 }} />}>
+        <CommunityCarousel />
+      </Suspense>
     </PageWrapper>
   );
 }

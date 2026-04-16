@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { IconButton, Drawer, List, ListItemButton, ListItemText, Box } from '@mui/material';
-import { Menu as MenuIcon, Close } from '@mui/icons-material';
+import { IconButton, Drawer, List, ListItemButton, ListItemText, ListItemIcon, Box, Divider } from '@mui/material';
+import { Menu as MenuIcon, Close, DarkMode, LightMode, Language } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useThemeStore } from '@/stores/useThemeStore';
+import DevLoginButton from '@/components/common/DevLoginButton';
 import * as s from './MobileMenu.styles';
 
 const LINK_KEYS = ['home', 'browse', 'leaderboard', 'news', 'tools'] as const;
@@ -17,8 +19,10 @@ const LINK_PATHS: Record<(typeof LINK_KEYS)[number], string> = {
 
 export default function MobileMenu() {
   const [open, setOpen] = useState(false);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token, logout } = useAuthStore();
+  const { theme, toggle: toggleTheme } = useThemeStore();
+  const toggleLang = () => i18n.changeLanguage(i18n.language === 'fr' ? 'en' : 'fr');
 
   return (
     <>
@@ -55,11 +59,28 @@ export default function MobileMenu() {
                   <ListItemText primary={t('nav.logout')} />
                 </ListItemButton>
               </>
+            ) : import.meta.env.DEV ? (
+              <Box sx={{ px: 2, py: 1 }}>
+                <DevLoginButton />
+              </Box>
             ) : (
               <ListItemButton component="a" href="/oauth2/authorization/discord">
                 <ListItemText primary={t('nav.login')} />
               </ListItemButton>
             )}
+            <Divider sx={{ my: 1 }} />
+            <ListItemButton onClick={toggleTheme}>
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                {theme === 'dark' ? <LightMode fontSize="small" /> : <DarkMode fontSize="small" />}
+              </ListItemIcon>
+              <ListItemText primary={t(theme === 'dark' ? 'nav.lightMode' : 'nav.darkMode')} />
+            </ListItemButton>
+            <ListItemButton onClick={toggleLang}>
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <Language fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary={t('nav.toggleLanguage')} />
+            </ListItemButton>
           </List>
         </Box>
       </Drawer>

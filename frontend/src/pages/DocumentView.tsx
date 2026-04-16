@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Typography, Box, Button, Chip, TextField, Grid } from '@mui/material';
-import { Download, Favorite, FavoriteBorder, Flag } from '@mui/icons-material';
+import { Typography, Box, Button, Chip, TextField, Grid, Snackbar, Alert } from '@mui/material';
+import { Download, Favorite, FavoriteBorder, Flag, ContentCopy } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,22 +12,26 @@ import {
   reportDocument,
   getAverageRating,
 } from '@/api/endpoints';
+import { Helmet } from 'react-helmet-async';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { categoryColor, formatDate } from '@/lib/utils';
 import PageWrapper from '@/components/layout/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StarRating from '@/components/ui/StarRating';
 import Shimmer from '@/components/ui/Shimmer';
+import AdBanner from '@/components/ui/AdBanner';
 import * as s from './DocumentView.styles';
 
 export default function DocumentView() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token, isVerified } = useAuthStore();
   const queryClient = useQueryClient();
   const [reportReason, setReportReason] = useState('');
   const [showReport, setShowReport] = useState(false);
   const [isFav, setIsFav] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const pdfUrlRef = useRef<string | null>(null);
 
   const { data: doc, isLoading } = useQuery({
     queryKey: ['document', id],
@@ -40,6 +44,25 @@ export default function DocumentView() {
     queryFn: () => getAverageRating(Number(id)),
     enabled: !!id,
   });
+
+  // Auto-load PDF for verified users via useQuery
+  const { data: pdfUrl, isLoading: pdfLoading } = useQuery({
+    queryKey: ['pdf-blob', id],
+    queryFn: async () => {
+      const blob = await downloadDocument(Number(id));
+      return URL.createObjectURL(blob);
+    },
+    enabled: isVerified && !!doc,
+    staleTime: Infinity,
+  });
+
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    if (pdfUrl) pdfUrlRef.current = pdfUrl;
+    return () => {
+      if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
+    };
+  }, [pdfUrl]);
 
   const rateMutation = useMutation({
     mutationFn: (score: number) => rateDocument(Number(id), { score }),
@@ -59,14 +82,13 @@ export default function DocumentView() {
     },
   });
 
-  const handleDownload = async () => {
-    const blob = await downloadDocument(Number(id));
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${doc?.title ?? 'document'}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleDownload = () => {
+    if (pdfUrl) {
+      const a = document.createElement('a');
+      a.href = pdfUrl;
+      a.download = `${doc?.title ?? 'document'}.pdf`;
+      a.click();
+    }
   };
 
   if (isLoading) {
@@ -85,7 +107,8 @@ export default function DocumentView() {
   }
 
   return (
-    <PageWrapper maxWidth="md">
+    <PageWrapper maxWidth="lg">
+      <Helmet><title>{doc ? `${doc.title} — Freenote` : 'Freenote'}</title></Helmet>
       <Box sx={s.header}>
         <Box sx={s.chipsRow}>
           <Chip label={t(`categories.${doc.category}`)} sx={s.categoryChip(categoryColor(doc.category))} />
@@ -100,6 +123,33 @@ export default function DocumentView() {
           {doc.courseName} — {doc.sectionName} — {doc.authorName}
         </Typography>
       </Box>
+
+      {/* PDF Viewer */}
+      {isVerified && (
+        <Box sx={s.pdfViewerWrapper}>
+          {pdfLoading && (
+            <Box sx={s.pdfLoading}>
+              <Typography color="text.secondary">{t('common.loading')}</Typography>
+            </Box>
+          )}
+          {pdfUrl && (
+            <Box
+              component="iframe"
+              src={pdfUrl}
+              sx={s.pdfIframe}
+              title={doc.title}
+            />
+          )}
+        </Box>
+      )}
+
+      {!isVerified && token && (
+        <GlassCard sx={{ p: 3, mb: 3, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            {t('auth.verifyEmailMessage')}
+          </Typography>
+        </GlassCard>
+      )}
 
       <GlassCard sx={s.metaCard}>
         <Grid container spacing={3}>
@@ -163,11 +213,21 @@ export default function DocumentView() {
       </Box>
 
       <Box sx={s.actionsRow}>
-        {isVerified && (
+        {isVerified && pdfUrl && (
           <Button variant="contained" startIcon={<Download />} onClick={handleDownload}>
             {t('document.download')}
           </Button>
         )}
+        <Button
+          variant="outlined"
+          startIcon={<ContentCopy />}
+          onClick={() => {
+            navigator.clipboard.writeText(window.location.href);
+            setLinkCopied(true);
+          }}
+        >
+          {t('common.copyLink')}
+        </Button>
         {token && (
           <Button
             variant="outlined"
@@ -183,6 +243,12 @@ export default function DocumentView() {
           </Button>
         )}
       </Box>
+
+      <Snackbar open={linkCopied} autoHideDuration={2000} onClose={() => setLinkCopied(false)}>
+        <Alert severity="success" onClose={() => setLinkCopied(false)}>
+          {t('common.linkCopied')}
+        </Alert>
+      </Snackbar>
 
       {showReport && (
         <Box sx={s.reportRow}>
@@ -205,8 +271,12 @@ export default function DocumentView() {
       )}
 
       <Typography variant="caption" color="text.secondary" sx={s.createdAt}>
-        {formatDate(doc.createdAt)}
+        {formatDate(doc.createdAt, i18n.language)}
       </Typography>
+
+      <Box sx={{ mt: 4 }}>
+        <AdBanner width={728} height={90} />
+      </Box>
     </PageWrapper>
   );
 }

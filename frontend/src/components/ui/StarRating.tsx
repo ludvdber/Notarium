@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import { Star, StarBorder, StarHalf } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { TOKENS } from '@/theme/tokens';
 
 interface StarRatingProps {
   value: number | null;
@@ -26,7 +27,7 @@ export default function StarRating({ value, onChange, readOnly = false }: StarRa
             aria-label={`${star}/5`}
             sx={{
               fontSize: 20,
-              color: '#ffd93d',
+              color: TOKENS.rating.main,
               cursor: readOnly ? 'default' : 'pointer',
             }}
             onClick={() => !readOnly && onChange?.(star)}

@@ -11,6 +11,7 @@ export interface User {
   documentCount: number;
   profilePublic: boolean;
   supporter: boolean;
+  termsAccepted: boolean;
 }
 
 export interface DocumentResponse {
@@ -64,14 +65,37 @@ export interface LeaderboardEntry {
 }
 
 export interface DelegateMember {
+  id: number;
+  userId: number | null;
+  displayName: string | null;
   username: string;
   discord: string | null;
+  startDate: string;
+  endDate: string | null;
 }
 
 export interface DelegateResponse {
   sectionName: string;
   sectionColor: string | null;
   members: DelegateMember[];
+}
+
+export interface DelegateHistoryResponse {
+  id: number;
+  sectionName: string;
+  startDate: string;
+  endDate: string | null;
+  active: boolean;
+}
+
+export interface AssignDelegateRequest {
+  userId: number;
+  sectionId: number;
+  startDate: string;
+}
+
+export interface EndDelegateRequest {
+  endDate: string;
 }
 
 export interface NewsItem {
@@ -103,6 +127,16 @@ export interface PageResponse<T> {
   size: number;
   totalElements: number;
   totalPages: number;
+}
+
+export interface UpdateDocumentRequest {
+  title?: string;
+  category?: string;
+  language?: string;
+  year?: string;
+  professorId?: number;
+  verified?: boolean;
+  tags?: string[];
 }
 
 export interface CreateDocumentRequest {
@@ -146,4 +180,15 @@ export interface Professor {
   name: string;
 }
 
+export interface ReportResponse {
+  id: number;
+  documentId: number;
+  documentTitle: string;
+  reporterUsername: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+}
+
 export type Category = 'SYNTHESE' | 'EXAMEN' | 'NOTES' | 'EXERCICES' | 'DIVERS';
+

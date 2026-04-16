@@ -1,1 +1,7 @@
-export const RANK_COLORS = ['#ffd93d', '#c0c0c0', '#cd7f32'] as const;
+import { TOKENS } from '@/theme/tokens';
+
+export const RANK_COLORS = [
+  TOKENS.medal.gold,
+  TOKENS.medal.silver,
+  TOKENS.medal.bronze,
+] as const;

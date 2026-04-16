@@ -1,5 +1,5 @@
 @echo off
-title Notarium Frontend
+title Freenote Frontend
 cd /d "%~dp0frontend"
 echo Installing dependencies...
 call npm install

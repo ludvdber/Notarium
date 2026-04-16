@@ -1,4 +1,6 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles';
+import { TOKENS } from './tokens';
+import './palette.d';
 
 const commonOptions: ThemeOptions = {
   typography: {
@@ -14,6 +16,23 @@ const commonOptions: ThemeOptions = {
     borderRadius: 12,
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        // Visited news links (a11y + UX: lets users track what they've read)
+        'a:visited': {
+          // Only affects text-decoration colors; MUI components set their own
+          // color so this is a progressive enhancement.
+        },
+        '@media (prefers-reduced-motion: reduce)': {
+          '*, *::before, *::after': {
+            animationDuration: '0.01ms !important',
+            animationIterationCount: '1 !important',
+            transitionDuration: '0.01ms !important',
+            scrollBehavior: 'auto !important',
+          },
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {
@@ -44,9 +63,21 @@ export const darkTheme = createTheme({
       // Keep paper transparent so the cosmic background shows through glass cards
       paper: 'rgba(255, 255, 255, 0.04)',
     },
+    tokens: TOKENS,
   },
   components: {
     ...commonOptions.components,
+    MuiCssBaseline: {
+      ...commonOptions.components?.MuiCssBaseline,
+      styleOverrides: {
+        ...(commonOptions.components?.MuiCssBaseline as Record<string, unknown>)?.styleOverrides as Record<string, unknown>,
+        ':focus-visible': {
+          outline: '2px solid #00d2ff',
+          outlineOffset: 2,
+          borderRadius: 8,
+        },
+      },
+    },
     MuiCard: {
       defaultProps: {
         elevation: 0,
@@ -74,6 +105,17 @@ export const darkTheme = createTheme({
         },
       },
     },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: 'rgba(18, 22, 36, 0.98) !important',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5)',
+        },
+      },
+    },
   },
 });
 
@@ -87,9 +129,21 @@ export const lightTheme = createTheme({
       default: '#f0f4f8',
       paper: 'rgba(255, 255, 255, 0.7)',
     },
+    tokens: TOKENS,
   },
   components: {
     ...commonOptions.components,
+    MuiCssBaseline: {
+      ...commonOptions.components?.MuiCssBaseline,
+      styleOverrides: {
+        ...(commonOptions.components?.MuiCssBaseline as Record<string, unknown>)?.styleOverrides as Record<string, unknown>,
+        ':focus-visible': {
+          outline: '2px solid #0062a3',
+          outlineOffset: 2,
+          borderRadius: 8,
+        },
+      },
+    },
     MuiCard: {
       defaultProps: {
         elevation: 0,
@@ -114,6 +168,17 @@ export const lightTheme = createTheme({
         root: {
           backgroundImage: 'none !important',
           boxShadow: 'none',
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: 'rgba(255, 255, 255, 0.98) !important',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(0, 0, 0, 0.08)',
+          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.15)',
         },
       },
     },

@@ -59,7 +59,7 @@ dependencies {
     annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
 
     // SpringDoc OpenAPI (Swagger) — v3.x for Spring Boot 4
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
 
     // Lombok
     compileOnly("org.projectlombok:lombok")
@@ -68,7 +68,11 @@ dependencies {
 
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:testcontainers-postgresql:2.0.4")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter:2.0.4")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -78,14 +82,21 @@ tasks.withType<JavaCompile> {
     ))
 }
 
-tasks.withType<Test> {
+tasks.named<Test>("test") {
     useJUnitPlatform {
         excludeTags("integration")
     }
+    // Suppress Lombok's sun.misc.Unsafe warning on Java 25+ (JEP 471)
+    jvmArgs("--add-opens=java.base/sun.misc=ALL-UNNAMED")
 }
 
 tasks.register<Test>("integrationTest") {
+    description = "Runs integration tests with Testcontainers"
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
     useJUnitPlatform {
         includeTags("integration")
     }
+    jvmArgs("--add-opens=java.base/sun.misc=ALL-UNNAMED")
 }

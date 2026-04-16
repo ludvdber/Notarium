@@ -1,0 +1,16 @@
+{
+  "properties": [
+    { "name": "app.jwt.secret", "type": "java.lang.String", "description": "HMAC-SHA512 secret for JWT signing (min 64 bytes)" },
+    { "name": "app.jwt.expiration-ms", "type": "java.lang.Long", "description": "JWT expiration in milliseconds" },
+    { "name": "app.minio.endpoint", "type": "java.lang.String", "description": "MinIO server endpoint URL" },
+    { "name": "app.minio.access-key", "type": "java.lang.String", "description": "MinIO access key" },
+    { "name": "app.minio.secret-key", "type": "java.lang.String", "description": "MinIO secret key" },
+    { "name": "app.minio.bucket", "type": "java.lang.String", "description": "MinIO bucket name", "defaultValue": "freenote-docs" },
+    { "name": "app.meilisearch.host", "type": "java.lang.String", "description": "Meilisearch server URL" },
+    { "name": "app.meilisearch.api-key", "type": "java.lang.String", "description": "Meilisearch API key" },
+    { "name": "app.email.hash-salt", "type": "java.lang.String", "description": "Salt for SHA-256 email hashing" },
+    { "name": "app.kofi.verification-token", "type": "java.lang.String", "description": "Ko-fi webhook verification token" },
+    { "name": "app.frontend.url", "type": "java.lang.String", "description": "Frontend base URL for OAuth redirects", "defaultValue": "http://localhost:3000" },
+    { "name": "freenote.cors.allowed-origins", "type": "java.lang.String", "description": "Comma-separated CORS allowed origins", "defaultValue": "http://localhost:3000" }
+  ]
+}

@@ -1,10 +1,10 @@
 @echo off
-title Notarium - Backend Spring Boot
+title Freenote - Backend Spring Boot
 cd /d "%~dp0"
 
 echo.
 echo  ========================================
-echo   Notarium - Backend Spring Boot
+echo   Freenote - Backend Spring Boot
 echo  ========================================
 echo.
 echo  Demarrage sur http://localhost:8080

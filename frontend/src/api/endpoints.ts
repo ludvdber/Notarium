@@ -7,6 +7,11 @@ import type {
   Course,
   LeaderboardEntry,
   DelegateResponse,
+  DelegateHistoryResponse,
+  DelegateMember,
+  UpdateDocumentRequest,
+  AssignDelegateRequest,
+  EndDelegateRequest,
   NewsItem,
   User,
   ProfileCardResponse,
@@ -16,6 +21,7 @@ import type {
   UpdateProfileRequest,
   RateRequest,
   ReportRequest,
+  ReportResponse,
 } from '@/types';
 
 // --- Stats ---
@@ -47,6 +53,9 @@ export const uploadDocument = (data: CreateDocumentRequest, file: File) => {
     headers: { 'Content-Type': 'multipart/form-data' },
   }).then((r) => r.data);
 };
+
+export const getDocumentsByUser = (userId: number, page = 0, size = 6) =>
+  api.get<PageResponse<DocumentResponse>>(`/documents/user/${userId}`, { params: { page, size } }).then((r) => r.data);
 
 export const deleteDocument = (id: number) =>
   api.delete(`/documents/${id}`);
@@ -99,6 +108,9 @@ export const getUserById = (id: number) =>
 export const getFeaturedProfiles = () =>
   api.get<ProfileCardResponse[]>('/users/featured').then((r) => r.data);
 
+export const acceptTerms = () =>
+  api.post('/users/me/accept-terms');
+
 export const deleteAccount = () =>
   api.delete('/users/me');
 
@@ -109,6 +121,58 @@ export const getLeaderboard = () =>
 // --- Delegates ---
 export const getDelegates = () =>
   api.get<DelegateResponse[]>('/delegates').then((r) => r.data);
+
+export const getDelegateHistory = (userId: number) =>
+  api.get<DelegateHistoryResponse[]>(`/delegates/user/${userId}`).then((r) => r.data);
+
+export const getAllMandates = () =>
+  api.get<DelegateMember[]>('/admin/delegates').then((r) => r.data);
+
+export const assignDelegate = (data: AssignDelegateRequest) =>
+  api.post<DelegateMember>('/admin/delegates', data).then((r) => r.data);
+
+export const endDelegate = (id: number, data: EndDelegateRequest) =>
+  api.patch<DelegateMember>(`/admin/delegates/${id}`, data).then((r) => r.data);
+
+export const deleteMandate = (id: number) =>
+  api.delete(`/admin/delegates/${id}`);
+
+// --- Admin: Documents ---
+export const getPendingDocuments = () =>
+  api.get<DocumentResponse[]>('/admin/documents/pending').then((r) => r.data);
+
+export const verifyDocument = (id: number) =>
+  api.put<DocumentResponse>(`/admin/documents/${id}/verify`).then((r) => r.data);
+
+export const adminUpdateDocument = (id: number, data: UpdateDocumentRequest) =>
+  api.put<DocumentResponse>(`/admin/documents/${id}`, data).then((r) => r.data);
+
+export const adminDeleteDocument = (id: number) =>
+  api.delete(`/admin/documents/${id}`);
+
+// --- Admin: Courses ---
+export const getPendingCourses = () =>
+  api.get<Course[]>('/admin/courses/pending').then((r) => r.data);
+
+export const approveCourse = (id: number) =>
+  api.put<Course>(`/admin/courses/${id}/approve`).then((r) => r.data);
+
+// --- Admin: Professors ---
+export const getPendingProfessors = () =>
+  api.get<Professor[]>('/admin/professors/pending').then((r) => r.data);
+
+export const approveProfessor = (id: number) =>
+  api.put<Professor>(`/admin/professors/${id}/approve`).then((r) => r.data);
+
+// --- Admin: Reports ---
+export const getPendingReports = (page = 0, size = 20) =>
+  api.get<PageResponse<ReportResponse>>('/admin/reports/pending', { params: { page, size } }).then((r) => r.data);
+
+export const resolveReport = (id: number) =>
+  api.put(`/admin/reports/${id}/resolve`);
+
+export const dismissReport = (id: number) =>
+  api.put(`/admin/reports/${id}/dismiss`);
 
 // --- News ---
 export const getNews = () =>
@@ -123,4 +187,11 @@ export const requestVerification = (email: string) =>
   api.post('/auth/request-verification', { email });
 
 export const confirmVerification = (code: string) =>
-  api.post<{ token: string }>('/auth/confirm-verification', { code }).then((r) => r.data);
+  api.post<void>('/auth/confirm-verification', { code });
+
+export const logoutApi = () =>
+  api.post('/auth/logout');
+
+// --- Dev-only ---
+export const devLogin = (username: string) =>
+  api.post<{ username: string; role: string; verified: string }>(`/dev/login/${username}`).then((r) => r.data);

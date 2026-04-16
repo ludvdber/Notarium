@@ -21,18 +21,45 @@ export const viewAllLink: Sx = {
   '&:hover': { textDecoration: 'underline' },
 };
 
+export const grid: Sx = {
+  display: 'grid',
+  gridTemplateColumns: {
+    xs: 'repeat(2, 1fr)',
+    sm: 'repeat(3, 1fr)',
+    md: 'repeat(auto-fit, minmax(170px, 1fr))',
+  },
+  gap: 2,
+};
+
 export const card = (color: string): Sx => ({
-  p: 3,
+  p: 2.5,
   textAlign: 'center',
-  display: 'block',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
   textDecoration: 'none',
   height: '100%',
   cursor: 'pointer',
-  transition: 'border-color 0.25s',
-  '&:hover': { borderColor: `${color}40` },
+  position: 'relative',
+  overflow: 'hidden',
+  transition: 'border-color 0.25s, transform 0.25s',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+    background: `radial-gradient(circle at 50% 0%, ${color}14 0%, transparent 60%)`,
+    opacity: 0,
+    transition: 'opacity 0.3s',
+    pointerEvents: 'none',
+  },
+  '&:hover': {
+    borderColor: `${color}55`,
+  },
+  '&:hover::before': { opacity: 1 },
 });
 
-export const icon: Sx = { fontSize: 30, mb: 1 };
+export const icon: Sx = { fontSize: 26, mb: 0.75, lineHeight: 1 };
 
 export const name: Sx = { fontWeight: 800, mb: 0.5, lineHeight: 1.2 };
 

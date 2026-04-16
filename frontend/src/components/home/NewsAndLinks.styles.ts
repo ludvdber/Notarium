@@ -41,7 +41,25 @@ export const newsList: Sx = {
   py: 1,
 };
 
-export const newsItem: Sx = { py: 1 };
+export const newsItem: Sx = {
+  py: 1,
+  borderRadius: 1.5,
+  transition: 'background-color 0.2s',
+  '&:visited .MuiTypography-root': { color: 'text.secondary' },
+};
+
+export const newsEmptyWrapper: Sx = {
+  py: 4,
+  textAlign: 'center',
+  color: 'text.secondary',
+};
+
+export const externalHint: Sx = {
+  fontSize: 11,
+  opacity: 0.5,
+  display: 'flex',
+  alignItems: 'center',
+};
 
 export const newsTitle: Sx = { fontWeight: 600, lineHeight: 1.3 };
 

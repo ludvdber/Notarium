@@ -1,11 +1,11 @@
-# Notarium
+# Freenote
 
-Hub des documents des élèves de l'ISFCE.
+Hub des documents des élèves de l'ISFCE. Éclaire ta promo.
 
 ## Architecture
 
 ```text
-be.notarium
+be.freenote
 ├── config          # SecurityConfig, CorsConfig, RedisConfig, MinioConfig, MeilisearchConfig, SwaggerConfig
 ├── controller      # REST controllers (Auth, User, Document, Report)
 ├── dto
@@ -26,8 +26,8 @@ be.notarium
 
 - Java 25 LTS, Spring Boot 4, Gradle Kotlin DSL
 - PostgreSQL 17 + pgvector, Redis 7, MinIO, Meilisearch
-- OAuth2 (Discord, Google), JWT (JJWT 0.12.x)
-- MapStruct 1.6.x, Lombok, Flyway, SpringDoc OpenAPI 2.x
+- OAuth2 (Discord, Google), JWT (JJWT 0.13.x)
+- MapStruct 1.6.x, Lombok, Flyway, SpringDoc OpenAPI 3.x
 - Virtual Threads activés
 
 ## Setup local

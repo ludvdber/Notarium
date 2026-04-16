@@ -14,10 +14,38 @@ export const fadeUpVariants = {
 
 export const heroContainer: Sx = {
   position: 'relative',
-  minHeight: '85vh',
+  minHeight: '100vh',
   display: 'flex',
   alignItems: 'center',
   overflow: 'hidden',
+};
+
+export const scrollIndicator: Sx = {
+  position: 'absolute',
+  bottom: { xs: 60, md: 80 },
+  left: '50%',
+  transform: 'translateX(-50%)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: 0.5,
+  color: 'text.secondary',
+  cursor: 'pointer',
+  zIndex: 2,
+  userSelect: 'none',
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  fontFamily: 'inherit',
+  '&:hover': { color: 'primary.main' },
+};
+
+export const scrollIndicatorLabel: Sx = {
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: 1,
+  textTransform: 'uppercase',
+  opacity: 0.8,
 };
 
 export const inner: Sx = {

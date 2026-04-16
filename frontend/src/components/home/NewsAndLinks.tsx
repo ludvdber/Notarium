@@ -1,15 +1,18 @@
 import { Box, Typography, List, ListItemButton, ListItemText, Chip } from '@mui/material';
+import { OpenInNew } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { getNews } from '@/api/endpoints';
+import { formatRelativeDate } from '@/lib/utils';
 import GlassCard from '@/components/ui/GlassCard';
 import { MAIN_LINKS, SECONDARY_LINKS } from './NewsAndLinks.data';
 import * as s from './NewsAndLinks.styles';
 
 export default function NewsAndLinks() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: news } = useQuery({ queryKey: ['news'], queryFn: getNews });
+  const hasNews = (news?.length ?? 0) > 0;
 
   return (
     <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
@@ -18,42 +21,52 @@ export default function NewsAndLinks() {
           {/* News column */}
           <Box sx={s.newsCol}>
             <Typography variant="h5" sx={s.columnTitle}>
-              📰 {t('news.title')}
+              <span role="img" aria-label="">📰</span> {t('news.title')}
             </Typography>
             <GlassCard sx={s.newsCard}>
-              <List dense sx={s.newsList}>
-                {(news ?? []).slice(0, 6).map((item, i) => (
-                  <ListItemButton
-                    key={i}
-                    component="a"
-                    href={item.url ?? '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={s.newsItem}
-                  >
-                    <ListItemText
-                      primary={
-                        <Typography variant="body2" sx={s.newsTitle} noWrap>
-                          {item.title}
-                        </Typography>
-                      }
-                      secondary={item.date?.split('T')[0]}
-                    />
-                    <Box sx={s.newsLabelsRow}>
-                      {item.labels.slice(0, 2).map((label) => (
-                        <Chip key={label} label={label} size="small" variant="outlined" sx={s.newsLabelChip} />
-                      ))}
-                    </Box>
-                  </ListItemButton>
-                ))}
-              </List>
+              {!hasNews && (
+                <Box sx={s.newsEmptyWrapper}>
+                  <Typography variant="body2">{t('news.empty')}</Typography>
+                </Box>
+              )}
+              {hasNews && (
+                <List dense sx={s.newsList}>
+                  {news!.slice(0, 6).map((item, i) => (
+                    <ListItemButton
+                      key={i}
+                      component="a"
+                      href={item.url ?? '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={s.newsItem}
+                    >
+                      <ListItemText
+                        primary={
+                          <Typography variant="body2" sx={s.newsTitle} noWrap>
+                            {item.title}
+                          </Typography>
+                        }
+                        secondary={item.date ? formatRelativeDate(item.date, i18n.language) : ''}
+                      />
+                      <Box sx={s.newsLabelsRow}>
+                        {item.labels.slice(0, 2).map((label) => (
+                          <Chip key={label} label={label} size="small" variant="outlined" sx={s.newsLabelChip} />
+                        ))}
+                        <Box sx={s.externalHint} aria-hidden="true">
+                          <OpenInNew sx={{ fontSize: 12 }} />
+                        </Box>
+                      </Box>
+                    </ListItemButton>
+                  ))}
+                </List>
+              )}
             </GlassCard>
           </Box>
 
           {/* Links column */}
           <Box sx={s.linksCol}>
             <Typography variant="h5" sx={s.columnTitle}>
-              🔗 {t('links.title')}
+              <span role="img" aria-label="">🔗</span> {t('links.title')}
             </Typography>
             <GlassCard sx={s.linksCard}>
               <Box sx={s.mainLinksCol}>
@@ -64,9 +77,12 @@ export default function NewsAndLinks() {
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label={t(`links.${link.key}`)}
                     sx={s.mainLinkRow(link.color)}
                   >
-                    <Box sx={s.mainLinkIcon(link.color)}>{link.icon}</Box>
+                    <Box sx={s.mainLinkIcon(link.color)} aria-hidden="true">
+                      {link.icon}
+                    </Box>
                     <Typography variant="body2" sx={s.mainLinkLabel}>
                       {t(`links.${link.key}`)}
                     </Typography>
@@ -82,9 +98,12 @@ export default function NewsAndLinks() {
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label={t(`links.${link.key}`)}
                     sx={s.secondaryLinkRow}
                   >
-                    {link.icon}
+                    <Box aria-hidden="true" sx={{ display: 'flex' }}>
+                      {link.icon}
+                    </Box>
                     <Typography variant="caption" sx={s.secondaryLinkLabel}>
                       {t(`links.${link.key}`)}
                     </Typography>

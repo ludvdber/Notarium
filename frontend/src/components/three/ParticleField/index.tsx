@@ -25,7 +25,7 @@ export default function HeroBackground({ theme }: HeroBackgroundProps) {
           camera={{ position: [0, 0, 8], fov: 60 }}
           gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
           dpr={[1, 1.75]}
-          style={{ pointerEvents: 'auto' }}
+          style={{ pointerEvents: 'none' }}
         >
           <CosmicDust theme={theme} />
         </Canvas>

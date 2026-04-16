@@ -1,6 +1,6 @@
 spring:
   application:
-    name: notarium
+    name: freenote
 
   threads:
     virtual:
@@ -18,8 +18,7 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        "[format_sql]": false
 
   flyway:
     enabled: true
@@ -65,24 +64,29 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  forward-headers-strategy: NATIVE
 
 # Application custom properties
 app:
   jwt:
     secret: ${JWT_SECRET}
-    expiration-ms: 604800000
+    expiration-ms: 86400000
   minio:
     endpoint: ${MINIO_ENDPOINT}
     access-key: ${MINIO_ACCESS_KEY}
     secret-key: ${MINIO_SECRET_KEY}
-    bucket: ${MINIO_BUCKET:notarium}
+    bucket: ${MINIO_BUCKET:freenote-docs}
   meilisearch:
     host: ${MEILISEARCH_HOST}
     api-key: ${MEILISEARCH_API_KEY}
   email:
     hash-salt: ${EMAIL_HASH_SALT}
+  kofi:
+    verification-token: ${KOFI_VERIFICATION_TOKEN:}
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
 
-notarium:
+freenote:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 

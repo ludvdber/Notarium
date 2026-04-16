@@ -1,26 +1,30 @@
 import { Chip } from '@mui/material';
 import { EmojiEvents } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import { TOKENS } from '@/theme/tokens';
 
 interface BadgeProps {
   label: string;
 }
 
 const BADGE_COLORS: Record<string, string> = {
-  FIRST_UPLOAD: '#ffd93d',
-  CONTRIBUTOR_10: '#6bcb77',
-  CONTRIBUTOR_50: '#00d2ff',
-  CONTRIBUTOR_100: '#7b2ff7',
-  XP_100: '#ff9a3c',
-  XP_500: '#ff6b6b',
-  XP_1000: '#ff2e63',
+  FIRST_UPLOAD: TOKENS.rating.main,
+  CONTRIBUTOR_10: TOKENS.sections.assistant,
+  CONTRIBUTOR_50: TOKENS.sections.informatique,
+  CONTRIBUTOR_100: TOKENS.sections.comptabilite,
+  XP_100: TOKENS.sections.fiscalite,
+  XP_500: TOKENS.categories.EXAMEN,
+  XP_1000: TOKENS.sections.marketing,
 };
 
 export default function Badge({ label }: BadgeProps) {
+  const { t } = useTranslation();
   const color = BADGE_COLORS[label] ?? '#888';
+  const displayName = t(`badges.${label}`, { defaultValue: label.replace('_', ' ') });
   return (
     <Chip
       icon={<EmojiEvents sx={{ fontSize: 16, color: `${color} !important` }} />}
-      label={label.replace('_', ' ')}
+      label={displayName}
       size="small"
       sx={{
         borderColor: color,

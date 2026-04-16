@@ -1,5 +1,5 @@
 import { useRef, useMemo, useEffect } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
   PARTICLE_COUNT,
@@ -16,27 +16,27 @@ interface CosmicDustProps {
 export default function CosmicDust({ theme }: CosmicDustProps) {
   const pointsRef = useRef<THREE.Points>(null);
   const glowRef = useRef<THREE.Points>(null);
-  const { gl } = useThree();
 
   const mouseNdc = useRef({ x: 0, y: 0 });
   const parallaxTarget = useRef({ x: 0, y: 0 });
   const parallaxCurrent = useRef({ x: 0, y: 0 });
 
   const circleTex = useMemo(() => makeCircleTexture(), []);
-  const { positions, velocities, sizes, colors, glowMask } = useMemo(
-    () => buildParticleBuffers(theme),
-    [theme]
-  );
+  const buffers = useMemo(() => buildParticleBuffers(theme), [theme]);
+  const buffersRef = useRef(buffers);
+  useEffect(() => { buffersRef.current = buffers; }, [buffers]);
+  const { sizes, colors, glowMask } = buffers;
 
   const glowPositions = useMemo(() => {
+    const pos = buffers.positions;
     const arr: number[] = [];
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       if (glowMask[i] === 1) {
-        arr.push(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
+        arr.push(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
       }
     }
     return new Float32Array(arr);
-  }, [positions, glowMask]);
+  }, [buffers.positions, glowMask]);
 
   const glowColors = useMemo(() => {
     const arr: number[] = [];
@@ -49,19 +49,19 @@ export default function CosmicDust({ theme }: CosmicDustProps) {
   }, [colors, glowMask]);
 
   useEffect(() => {
-    const canvas = gl.domElement;
     const onMove = (e: PointerEvent) => {
       mouseNdc.current.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouseNdc.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
       parallaxTarget.current.x = mouseNdc.current.x * 0.4;
       parallaxTarget.current.y = mouseNdc.current.y * 0.4;
     };
-    canvas.addEventListener('pointermove', onMove);
-    return () => canvas.removeEventListener('pointermove', onMove);
-  }, [gl]);
+    window.addEventListener('pointermove', onMove);
+    return () => window.removeEventListener('pointermove', onMove);
+  }, []);
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
+    const { positions, velocities } = buffersRef.current;
 
     parallaxCurrent.current.x += (parallaxTarget.current.x - parallaxCurrent.current.x) * 0.05;
     parallaxCurrent.current.y += (parallaxTarget.current.y - parallaxCurrent.current.y) * 0.05;
@@ -101,7 +101,7 @@ export default function CosmicDust({ theme }: CosmicDustProps) {
     <>
       <points ref={pointsRef}>
         <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+          <bufferAttribute attach="attributes-position" args={[buffers.positions, 3]} />
           <bufferAttribute attach="attributes-color" args={[colors, 3]} />
           <bufferAttribute attach="attributes-size" args={[sizes, 1]} />
         </bufferGeometry>

@@ -1,35 +1,77 @@
-import { Container } from '@mui/material';
+import { lazy, Suspense, useState, useEffect } from 'react';
+import { Container, Skeleton, Box, Snackbar, Alert } from '@mui/material';
+import { Helmet } from 'react-helmet-async';
+import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import HeroSection from '@/components/home/HeroSection';
-import StatsSection from '@/components/home/StatsSection';
-import SectionsGrid from '@/components/home/SectionsGrid';
-import AdBannerSection from '@/components/home/AdBannerSection';
-import NewsAndLinks from '@/components/home/NewsAndLinks';
-import PopularDocs from '@/components/home/PopularDocs';
-import LeaderboardDelegates from '@/components/home/LeaderboardDelegates';
-import CommunityCarousel from '@/components/home/CommunityCarousel';
-import SignupBanner from '@/components/home/SignupBanner';
 import Divider from '@/components/ui/Divider';
 
+const StatsSection = lazy(() => import('@/components/home/StatsSection'));
+const SectionsGrid = lazy(() => import('@/components/home/SectionsGrid'));
+const NewsAndLinks = lazy(() => import('@/components/home/NewsAndLinks'));
+const PopularDocs = lazy(() => import('@/components/home/PopularDocs'));
+const LeaderboardDelegates = lazy(() => import('@/components/home/LeaderboardDelegates'));
+const SignupBanner = lazy(() => import('@/components/home/SignupBanner'));
+
+function SectionFallback() {
+  return (
+    <Box sx={{ py: 4 }}>
+      <Skeleton variant="rounded" height={140} sx={{ borderRadius: 3, bgcolor: 'rgba(255,255,255,0.04)' }} />
+    </Box>
+  );
+}
+
 export default function Home() {
+  const { t } = useTranslation();
+  const location = useLocation();
+  const [showLoginAlert, setShowLoginAlert] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.loginRequired) {
+      setShowLoginAlert(true);
+      // Clear state so refresh doesn't re-show
+      window.history.replaceState({}, '');
+    }
+  }, [location.state]);
+
   return (
     <>
+      <Helmet><title>Freenote — Éclaire ta promo</title></Helmet>
+      <Snackbar
+        open={showLoginAlert}
+        autoHideDuration={5000}
+        onClose={() => setShowLoginAlert(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setShowLoginAlert(false)} severity="info" variant="filled">
+          {t('auth.loginRequired')}
+        </Alert>
+      </Snackbar>
       <HeroSection />
       <Container maxWidth="lg">
-        <StatsSection />
+        <Suspense fallback={<SectionFallback />}>
+          <StatsSection />
+        </Suspense>
         <Divider />
-        <SectionsGrid />
+        <Suspense fallback={<SectionFallback />}>
+          <SectionsGrid />
+        </Suspense>
         <Divider />
-        <AdBannerSection />
+        <Suspense fallback={<SectionFallback />}>
+          <NewsAndLinks />
+        </Suspense>
         <Divider />
-        <NewsAndLinks />
+        <Suspense fallback={<SectionFallback />}>
+          <PopularDocs />
+        </Suspense>
         <Divider />
-        <PopularDocs />
+        <Suspense fallback={<SectionFallback />}>
+          <LeaderboardDelegates />
+        </Suspense>
         <Divider />
-        <LeaderboardDelegates />
-        <Divider />
-        <CommunityCarousel />
-        <Divider />
-        <SignupBanner />
+        <Suspense fallback={<SectionFallback />}>
+          <SignupBanner />
+        </Suspense>
       </Container>
     </>
   );

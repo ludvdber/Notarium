@@ -1,10 +1,10 @@
 @echo off
-title Notarium - Docker Infrastructure
+title Freenote - Docker Infrastructure
 cd /d "%~dp0"
 
 echo.
 echo  ========================================
-echo   Notarium - Infrastructure Docker
+echo   Freenote - Infrastructure Docker
 echo  ========================================
 echo.
 echo  Services:
@@ -15,7 +15,7 @@ echo    MinIO Console             localhost:9001
 echo    Meilisearch               localhost:7700
 echo.
 echo  Credentials:
-echo    PostgreSQL  notarium / notarium / notarium
+echo    PostgreSQL  freenote / freenote / freenote
 echo    MinIO       minioadmin / minioadmin
 echo    Meilisearch dev-master-key
 echo.

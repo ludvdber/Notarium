@@ -1,12 +1,19 @@
 import type { SxProps, Theme } from '@mui/material';
+import { TOKENS } from '@/theme/tokens';
 
 type Sx = SxProps<Theme>;
 
-export const card: Sx = {
+export const card = (haloStrength: number): Sx => ({
   display: 'block',
   textDecoration: 'none',
   height: '100%',
-};
+  // Halo proportional to popularity — caps at 1.0
+  // At strength 0: no extra shadow. At strength 1: strong cyan glow.
+  boxShadow:
+    haloStrength > 0
+      ? `0 0 ${16 + haloStrength * 24}px rgba(0,210,255,${0.1 + haloStrength * 0.25})`
+      : undefined,
+});
 
 export const content: Sx = { p: 2, '&:last-child': { pb: 2 } };
 
@@ -14,7 +21,7 @@ export const headerRow: Sx = { display: 'flex', gap: 1.5, mb: 1.5 };
 
 export const pdfIcon: Sx = {
   fontSize: 32,
-  color: '#ef4444',
+  color: TOKENS.fileTypes.pdf,
   flexShrink: 0,
   mt: 0.25,
 };
@@ -49,7 +56,7 @@ export const footerRow: Sx = {
 };
 
 export const ratingStyle: Sx = {
-  '& .MuiRating-iconFilled': { color: '#ffd93d' },
+  '& .MuiRating-iconFilled': { color: TOKENS.rating.main },
 };
 
 export const downloadsRow: Sx = {

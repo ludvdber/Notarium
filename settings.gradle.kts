@@ -1,1 +1,1 @@
-rootProject.name = "notarium"
+rootProject.name = "freenote"

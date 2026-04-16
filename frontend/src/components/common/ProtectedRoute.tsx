@@ -15,7 +15,7 @@ export default function ProtectedRoute({ requireVerified, requireAdmin, children
   const { token, isVerified, isAdmin } = useAuthStore();
 
   if (!token) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/" replace state={{ loginRequired: true }} />;
   }
 
   if (requireAdmin && !isAdmin) {

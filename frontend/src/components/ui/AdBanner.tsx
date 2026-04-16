@@ -1,5 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 interface AdBannerProps {
   width?: number;
@@ -8,6 +9,10 @@ interface AdBannerProps {
 
 export default function AdBanner({ width = 728, height = 90 }: AdBannerProps) {
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
+
+  // Ko-fi supporters don't see ads
+  if (user?.supporter) return null;
 
   return (
     <Box sx={{ textAlign: 'center' }}>

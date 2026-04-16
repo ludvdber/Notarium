@@ -1,13 +1,16 @@
 spring:
+  main:
+    banner-mode: off
   datasource:
-    url: jdbc:postgresql://localhost:5432/notarium
-    username: notarium
-    password: notarium
+    url: jdbc:postgresql://localhost:5432/freenote
+    username: freenote
+    password: freenote
 
   jpa:
     properties:
       hibernate:
-        show_sql: false
+        "[show_sql]": false
+        "[format_sql]": true
 
   data:
     redis:
@@ -43,19 +46,21 @@ server:
 app:
   jwt:
     secret: dev-secret-key-change-me-in-production-must-be-at-least-256-bits-long
-    expiration-ms: 604800000
+    expiration-ms: 86400000
   minio:
     endpoint: http://localhost:9000
     access-key: minioadmin
     secret-key: minioadmin
-    bucket: notarium
+    bucket: freenote-docs
   meilisearch:
     host: http://localhost:7700
     api-key: dev-master-key
   email:
     hash-salt: dev-salt-change-me
+  kofi:
+    verification-token: ""
 
-notarium:
+freenote:
   cors:
     allowed-origins:
       - http://localhost:5173
@@ -63,8 +68,8 @@ notarium:
 
 logging:
   level:
-    be.notarium: DEBUG
-    org.springframework.security: WARN
-    org.hibernate.SQL: WARN
+    "[be.freenote]": DEBUG
+    "[org.springframework.security]": WARN
+    "[org.hibernate.SQL]": WARN
   pattern:
     console: "%clr(%d{HH:mm:ss}){faint} %clr(%-5level) %clr(%-30.30logger{0}){cyan} %clr(:){faint} %msg%n"

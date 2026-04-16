@@ -1,19 +1,23 @@
 import { Box, Typography, Link as MuiLink, Container, Grid } from '@mui/material';
 import { GitHub } from '@mui/icons-material';
 import { Coffee } from 'lucide-react';
+import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import * as s from './Footer.styles';
+
+const GITHUB_URL = import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/AST_Ludo/Freenote';
+const KOFI_URL = import.meta.env.VITE_KOFI_URL ?? 'https://ko-fi.com/ludovic01';
 
 export default function Footer() {
   const { t } = useTranslation();
 
   return (
-    <Box component="footer" sx={s.footer}>
+    <Box component="footer" role="contentinfo" sx={s.footer}>
       <Container maxWidth="lg">
         <Grid container spacing={4} sx={s.topGrid}>
           <Grid size={{ xs: 12, md: 4 }}>
             <Typography variant="h6" sx={s.logo}>
-              Notarium
+              Freenote
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={s.tagline}>
               {t('footer.tagline')}
@@ -28,11 +32,32 @@ export default function Footer() {
               {t('footer.links')}
             </Typography>
             <Box sx={s.linksCol}>
-              <MuiLink href="#" color="text.secondary" underline="hover" variant="body2">
+              <MuiLink
+                component={RouterLink}
+                to="/legal"
+                color="text.secondary"
+                underline="hover"
+                variant="body2"
+              >
                 {t('footer.legal')}
               </MuiLink>
-              <MuiLink href="#" color="text.secondary" underline="hover" variant="body2">
+              <MuiLink
+                component={RouterLink}
+                to="/privacy"
+                color="text.secondary"
+                underline="hover"
+                variant="body2"
+              >
                 {t('footer.privacy')}
+              </MuiLink>
+              <MuiLink
+                component={RouterLink}
+                to="/terms"
+                color="text.secondary"
+                underline="hover"
+                variant="body2"
+              >
+                {t('footer.terms')}
               </MuiLink>
             </Box>
           </Grid>
@@ -43,27 +68,29 @@ export default function Footer() {
             </Typography>
             <Box sx={s.linksCol}>
               <MuiLink
-                href="https://github.com"
+                href={GITHUB_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 color="text.secondary"
                 underline="hover"
                 variant="body2"
+                aria-label={t('footer.github')}
                 sx={s.iconLink}
               >
                 <GitHub sx={s.iconSize} />
                 {t('footer.github')}
               </MuiLink>
               <MuiLink
-                href="https://ko-fi.com"
+                href={KOFI_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 color="text.secondary"
                 underline="hover"
                 variant="body2"
+                aria-label={t('footer.kofi')}
                 sx={s.iconLink}
               >
-                <Coffee size={16} />
+                <Coffee size={16} aria-hidden="true" />
                 {t('footer.kofi')}
               </MuiLink>
             </Box>

@@ -63,3 +63,31 @@ export const createdAt: Sx = {
   mt: 3,
   display: 'block',
 };
+
+export const pdfViewerWrapper: Sx = {
+  mb: 3,
+  borderRadius: 3,
+  overflow: 'hidden',
+  border: (t) =>
+    t.palette.mode === 'dark'
+      ? '1px solid rgba(255,255,255,0.08)'
+      : '1px solid rgba(0,0,0,0.1)',
+  bgcolor: (t) =>
+    t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+  minHeight: 600,
+  position: 'relative',
+};
+
+export const pdfIframe: Sx = {
+  width: '100%',
+  height: { xs: '60vh', md: '80vh' },
+  border: 'none',
+  display: 'block',
+};
+
+export const pdfLoading: Sx = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: 300,
+};

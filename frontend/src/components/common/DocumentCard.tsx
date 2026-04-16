@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { CardContent, Typography, Box, Chip, Rating } from '@mui/material';
+import { CardContent, Typography, Box, Chip, Rating, Tooltip } from '@mui/material';
 import { Download, Verified, SmartToy, PictureAsPdf } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import type { DocumentResponse } from '@/types';
@@ -9,20 +9,24 @@ import * as s from './DocumentCard.styles';
 
 interface Props {
   document: DocumentResponse;
+  // 0 → no glow. 1 → maximum cyan halo. Use for popular/featured lists.
+  haloStrength?: number;
 }
 
-export default function DocumentCard({ document: doc }: Props) {
-  const { t } = useTranslation();
+export default function DocumentCard({ document: doc, haloStrength = 0 }: Props) {
+  const { t, i18n } = useTranslation();
 
   return (
-    <GlassCard component={Link} to={`/documents/${doc.id}`} sx={s.card}>
+    <GlassCard component={Link} to={`/documents/${doc.id}`} sx={s.card(haloStrength)}>
       <CardContent sx={s.content}>
         <Box sx={s.headerRow}>
           <PictureAsPdf sx={s.pdfIcon} />
           <Box sx={s.headerText}>
-            <Typography variant="subtitle2" sx={s.title} noWrap>
-              {doc.title}
-            </Typography>
+            <Tooltip title={doc.title} enterDelay={400}>
+              <Typography variant="subtitle2" sx={s.title} noWrap>
+                {doc.title}
+              </Typography>
+            </Tooltip>
             <Typography variant="caption" color="text.secondary" noWrap>
               {doc.courseName} — {doc.authorName}
             </Typography>
@@ -76,7 +80,7 @@ export default function DocumentCard({ document: doc }: Props) {
         )}
 
         <Typography variant="caption" color="text.secondary" sx={s.createdAt}>
-          {formatDate(doc.createdAt)}
+          {formatDate(doc.createdAt, i18n.language)}
         </Typography>
       </CardContent>
     </GlassCard>

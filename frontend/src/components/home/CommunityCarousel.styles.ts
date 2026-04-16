@@ -1,5 +1,6 @@
 import type { SxProps, Theme } from '@mui/material';
 import type { CSSProperties } from 'react';
+import { TOKENS } from '@/theme/tokens';
 
 type Sx = SxProps<Theme>;
 
@@ -31,7 +32,8 @@ export const fadeEdgeLeft: Sx = {
   bottom: 0,
   width: 60,
   zIndex: 2,
-  background: 'linear-gradient(90deg, var(--bg, rgba(10,14,26,1)), transparent)',
+  background: (t) =>
+    `linear-gradient(90deg, ${t.palette.background.default}, transparent)`,
   pointerEvents: 'none',
 };
 
@@ -42,19 +44,36 @@ export const fadeEdgeRight: Sx = {
   bottom: 0,
   width: 60,
   zIndex: 2,
-  background: 'linear-gradient(270deg, var(--bg, rgba(10,14,26,1)), transparent)',
+  background: (t) =>
+    `linear-gradient(270deg, ${t.palette.background.default}, transparent)`,
   pointerEvents: 'none',
 };
 
-export const marqueeTrack: Sx = {
+export const marqueeTrack = (paused: boolean): Sx => ({
   display: 'flex',
   gap: 2,
   animation: 'marquee 40s linear infinite',
+  animationPlayState: paused ? 'paused' : 'running',
   width: 'max-content',
   '&:hover': { animationPlayState: 'paused' },
   '@keyframes marquee': {
     '0%': { transform: 'translateX(0)' },
     '100%': { transform: 'translateX(-50%)' },
+  },
+  '@media (prefers-reduced-motion: reduce)': {
+    animation: 'none',
+  },
+});
+
+export const pauseButton: Sx = {
+  position: 'absolute',
+  top: 8,
+  right: 8,
+  zIndex: 3,
+  bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.6)'),
+  backdropFilter: 'blur(8px)',
+  '&:hover': {
+    bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)'),
   },
 };
 
@@ -62,6 +81,11 @@ export const profileWrapper: Sx = {
   minWidth: 200,
   cursor: 'pointer',
   flexShrink: 0,
+  borderRadius: 4,
+  '&:focus-visible': {
+    outline: (t) => `2px solid ${t.palette.primary.main}`,
+    outlineOffset: 2,
+  },
 };
 
 export const profileCard: Sx = {
@@ -90,8 +114,8 @@ export const profileMeta: Sx = {
 };
 
 export const discordPill: Sx = {
-  bgcolor: '#5865F2',
-  color: '#fff',
+  bgcolor: TOKENS.brands.discord,
+  color: 'common.white',
   fontSize: 10,
   px: 0.8,
   py: 0.2,
@@ -107,13 +131,22 @@ export const profileBadges: Sx = {
   flexWrap: 'wrap',
 };
 
+export const popupBackdrop: CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  backgroundColor: 'rgba(10, 14, 26, 0.55)',
+  backdropFilter: 'blur(4px)',
+  WebkitBackdropFilter: 'blur(4px)',
+  zIndex: 1299,
+};
+
 export const popupWrapper: CSSProperties = {
   position: 'fixed',
-  bottom: 24,
+  top: '50%',
   left: '50%',
-  transform: 'translateX(-50%)',
+  transform: 'translate(-50%, -50%)',
   zIndex: 1300,
-  width: 320,
+  width: 'min(360px, calc(100vw - 32px))',
 };
 
 export const popupCard: Sx = {
@@ -148,8 +181,8 @@ export const popupActions: Sx = {
 };
 
 export const popupDiscordPill: Sx = {
-  bgcolor: '#5865F2',
-  color: '#fff',
+  bgcolor: TOKENS.brands.discord,
+  color: 'common.white',
   px: 2,
   py: 0.5,
   borderRadius: 2,

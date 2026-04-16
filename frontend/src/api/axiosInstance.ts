@@ -1,17 +1,21 @@
 import axios from 'axios';
 import { useAuthStore } from '@/stores/useAuthStore';
 
+function getCsrfToken(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const csrf = getCsrfToken();
+  if (csrf) {
+    config.headers['X-XSRF-TOKEN'] = csrf;
   }
   return config;
 });

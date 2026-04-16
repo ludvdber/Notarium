@@ -1,4 +1,4 @@
-import { Box, Typography, Grid } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -31,43 +31,45 @@ export default function SectionsGrid() {
       <Box sx={s.section}>
         <Box sx={s.header}>
           <Typography variant="h5" sx={s.title}>
-            🎓 {t('sections.title')}
+            <span role="img" aria-label="">🎓</span> {t('sections.title')}
           </Typography>
           <Box component={Link} to="/browse" sx={s.viewAllLink}>
             {t('sections.viewAll')} →
           </Box>
         </Box>
 
-        <Grid container spacing={2}>
+        <Box sx={s.grid}>
           {items.map((section, i) => (
-            <Grid key={section.id} size={{ xs: 6, sm: 4, md: 2 }}>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.02, y: -3 }}
-                transition={{ delay: i * 0.05, duration: 0.3 }}
-                viewport={{ once: true }}
+            <motion.div
+              key={section.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.03, y: -4 }}
+              transition={{ delay: i * 0.05, duration: 0.3 }}
+              viewport={{ once: true }}
+              style={{ height: '100%' }}
+            >
+              <GlassCard
+                component={Link}
+                to={`/browse?section=${section.id}`}
+                sx={s.card(section.color)}
               >
-                <GlassCard
-                  component={Link}
-                  to={`/browse?section=${section.id}`}
-                  sx={s.card(section.color)}
-                >
-                  <Typography sx={s.icon}>{section.icon}</Typography>
-                  <Typography variant="subtitle2" sx={s.name}>
-                    {section.name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    <Box component="span" className="mono" sx={s.count(section.color)}>
-                      {section.count}
-                    </Box>{' '}
-                    docs
-                  </Typography>
-                </GlassCard>
-              </motion.div>
-            </Grid>
+                <Typography sx={s.icon} role="img" aria-label="">
+                  {section.icon}
+                </Typography>
+                <Typography variant="subtitle2" sx={s.name}>
+                  {section.name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  <Box component="span" className="mono" sx={s.count(section.color)}>
+                    {section.count}
+                  </Box>{' '}
+                  {t('sections.docsCount')}
+                </Typography>
+              </GlassCard>
+            </motion.div>
           ))}
-        </Grid>
+        </Box>
       </Box>
     </motion.section>
   );

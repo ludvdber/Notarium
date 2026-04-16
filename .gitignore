@@ -88,3 +88,7 @@ coverage/
 test-results/
 playwright-report/
 TEST-*.xml
+
+# --- Playwright ---
+frontend/screenshots/
+frontend/tests/e2e/test-results/

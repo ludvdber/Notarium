@@ -1,11 +1,11 @@
 services:
   postgres:
     image: pgvector/pgvector:pg17
-    container_name: notarium-postgres
+    container_name: freenote-postgres
     environment:
-      POSTGRES_DB: notarium
-      POSTGRES_USER: notarium
-      POSTGRES_PASSWORD: notarium
+      POSTGRES_DB: freenote
+      POSTGRES_USER: freenote
+      POSTGRES_PASSWORD: freenote
     ports:
       - "5432:5432"
     volumes:
@@ -13,7 +13,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: notarium-redis
+    container_name: freenote-redis
     ports:
       - "6379:6379"
     volumes:
@@ -21,7 +21,7 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: notarium-minio
+    container_name: freenote-minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
@@ -34,7 +34,7 @@ services:
 
   meilisearch:
     image: getmeili/meilisearch:latest
-    container_name: notarium-meilisearch
+    container_name: freenote-meilisearch
     environment:
       MEILI_MASTER_KEY: dev-master-key
       MEILI_ENV: development

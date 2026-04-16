@@ -2,7 +2,7 @@
   "nav": {
     "home": "Accueil",
     "browse": "Explorer",
-    "upload": "Publier",
+    "upload": "Partager",
     "leaderboard": "Classement",
     "news": "Actualités",
     "tools": "Outils",
@@ -10,15 +10,20 @@
     "profile": "Profil",
     "login": "Connexion",
     "logout": "Déconnexion",
-    "darkMode": "Mode sombre",
-    "lightMode": "Mode clair"
+    "darkMode": "Cosmos",
+    "lightMode": "Éclipse",
+    "toggleTheme": "Changer de thème",
+    "toggleLanguage": "Changer de langue",
+    "goHome": "Retour à l'accueil"
   },
   "hero": {
-    "title": "Ne commence pas",
-    "titleHighlight": "de zéro.",
+    "title": "Réussis plus vite",
+    "titleHighlight": "à plusieurs.",
     "subtitle": "Synthèses, anciens examens, notes de cours — chaque document partagé aide la prochaine promo à réussir.",
     "cta": "Explorer les cours",
-    "ctaSecondary": "Uploader"
+    "ctaSecondary": "Partager un doc",
+    "scrollDown": "Faire défiler",
+    "restricted": "Réservé aux étudiants de l'ISFCE"
   },
   "stats": {
     "title": "En chiffres",
@@ -30,12 +35,13 @@
   },
   "sections": {
     "title": "Sections",
-    "viewAll": "Voir tout"
+    "viewAll": "Voir tout",
+    "docsCount": "docs"
   },
   "popular": {
     "title": "Documents populaires",
     "viewAll": "Voir tout",
-    "empty": "Aucun document pour le moment"
+    "empty": "Sois le premier à partager un doc — ta promo te dira merci."
   },
   "leaderboard": {
     "title": "Top contributeurs",
@@ -44,31 +50,40 @@
     "xp": "XP",
     "docs": "Documents",
     "badges": "Badges",
-    "empty": "Aucun contributeur pour le moment"
+    "viewAll": "Voir tout",
+    "empty": "Le podium est libre. À toi de jouer."
   },
   "delegates": {
     "title": "Délégués",
     "section": "Section",
     "members": "Membres",
-    "empty": "Aucun délégué désigné pour le moment"
+    "since": "Depuis le",
+    "empty": "Pas encore de délégué dans ta section ? Dis-le nous."
   },
   "news": {
-    "title": "Actualités ISFCE",
-    "readMore": "Lire la suite"
+    "title": "Quoi de neuf à l'ISFCE",
+    "readMore": "Lire la suite",
+    "empty": "Rien de neuf pour l'instant — reviens bientôt."
   },
   "community": {
     "title": "Communauté",
     "carousel": "Communauté",
-    "empty": "Sois le premier à rejoindre la communauté"
+    "empty": "La communauté n'attend que toi.",
+    "pauseCarousel": "Mettre en pause le carrousel",
+    "playCarousel": "Reprendre le carrousel",
+    "discordRoles": "Crée un compte sur le site pour obtenir le rôle Vérifié sur Discord et accéder aux discussions des cours. Les autres rôles sont attribués selon ton XP.",
+    "discordRolesShort": "Rôles Discord liés à ton XP"
   },
   "signup": {
-    "title": "Rejoins la communauté",
-    "subtitle": "Connecte-toi et accède à tous les documents en 30 secondes.",
+    "title": "Rejoins ta promo en 30 secondes.",
+    "subtitle": "Login Discord ou Google, vérification @isfce.be, c'est bon.",
     "cta": "Créer mon compte",
-    "discordISFCE": "Discord ISFCE"
+    "stickyLabel": "Prêt à rejoindre ta promo ?",
+    "discordISFCE": "Discord ISFCE",
+    "discordLink": "💬 Discord ISFCE →"
   },
   "ad": {
-    "disclaimer": "Publicité — Soutenez Notarium pour la retirer. Les bloqueurs de publicité réduisent nos revenus."
+    "disclaimer": "Pub — soutiens Freenote sur Ko-fi pour la cacher."
   },
   "links": {
     "title": "Liens utiles",
@@ -78,7 +93,9 @@
     "horaires": "Horaires",
     "tfe": "TFE",
     "stages": "Stages",
-    "emplois": "Emplois"
+    "emplois": "Emplois",
+    "bibliotheque": "Bibliothèque",
+    "aideReussite": "Aide à la réussite"
   },
   "document": {
     "title": "Titre",
@@ -96,11 +113,11 @@
     "downloads": "Téléchargements",
     "tags": "Tags",
     "summary": "Résumé IA",
-    "upload": "Publier un document",
+    "upload": "Partager un document",
     "delete": "Supprimer",
     "download": "Télécharger",
     "report": "Signaler",
-    "noResults": "Aucun document trouvé",
+    "noResults": "Aucun document trouvé — essaie avec d'autres mots-clés.",
     "favorite": "Favori",
     "addFavorite": "Ajouter aux favoris",
     "reportPlaceholder": "Raison...",
@@ -113,44 +130,92 @@
       "documents": "Documents",
       "courses": "Cours",
       "professors": "Professeurs",
-      "reports": "Signalements"
+      "reports": "Signalements",
+      "delegates": "Délégués"
     },
-    "placeholder": "Panneau d'administration — à implémenter dans les prochaines phases."
+    "placeholder": "Panneau d'administration — à implémenter dans les prochaines phases.",
+    "docs": {
+      "pending": "Documents en attente",
+      "noPending": "Aucun document en attente de vérification.",
+      "verify": "Vérifier",
+      "all": "Tous les documents",
+      "edit": "Modifier",
+      "deleteConfirm": "Supprimer définitivement ce document et son fichier ? Cette action est irréversible."
+    },
+    "courses": {
+      "pending": "Cours en attente",
+      "noPending": "Aucun cours en attente d'approbation.",
+      "approve": "Approuver"
+    },
+    "profs": {
+      "pending": "Professeurs en attente",
+      "noPending": "Aucun professeur en attente d'approbation.",
+      "approve": "Approuver"
+    },
+    "reports": {
+      "pending": "Signalements en attente",
+      "noPending": "Aucun signalement en attente.",
+      "resolve": "Résoudre",
+      "dismiss": "Rejeter"
+    },
+    "delegates": {
+      "title": "Gestion des délégués",
+      "assign": "Assigner",
+      "assignTitle": "Nouveau mandat",
+      "userId": "ID utilisateur",
+      "section": "Section",
+      "startDate": "Date de début",
+      "confirm": "Confirmer",
+      "active": "Mandats actifs",
+      "history": "Mandats terminés",
+      "noActive": "Aucun délégué actif.",
+      "end": "Clôturer le mandat",
+      "delete": "Supprimer",
+      "activeChip": "Actif",
+      "endedChip": "Terminé"
+    }
   },
   "upload": {
-    "title": "Publier un document",
-    "dragDrop": "Glissez-déposez un PDF ici ou cliquez pour sélectionner",
+    "title": "Partager un document",
+    "dragDrop": "Glisse-dépose un PDF ici ou clique pour choisir",
     "maxSize": "Taille maximale : 10 Mo",
-    "submit": "Publier",
-    "success": "Document publié avec succès !",
-    "pdfOnly": "Seuls les fichiers PDF sont acceptés"
+    "submit": "Partager",
+    "success": "Doc partagé — merci pour ta promo !",
+    "successMessage": "Ton document est en ligne ! Il sera vérifié par un modérateur sous 24-48h. Tu recevras tes XP et badges après validation.",
+    "pdfOnly": "PDF uniquement pour l'instant — convertis ton fichier et réessaie.",
+    "tagsHelper": "Sépare les tags par des virgules (ex: java, algo, s3)",
+    "titleCounter": "{{count}}/{{max}}"
   },
   "profile": {
     "title": "Mon profil",
     "bio": "Bio",
     "website": "Site web",
-    "social": "Réseaux sociaux",
+    "social": "Réseaux",
+    "socialGithub": "GitHub",
+    "socialLinkedin": "LinkedIn",
+    "socialDiscord": "Discord",
     "badges": "Badges",
     "documents": "Mes documents",
     "favorites": "Mes favoris",
     "settings": "Paramètres",
     "theme": "Thème",
     "deleteAccount": "Supprimer mon compte",
-    "deleteConfirm": "Êtes-vous sûr ? Cette action est irréversible.",
+    "deleteConfirm": "C'est définitif. Tes docs restent en ligne, mais ton compte disparaît. Tu confirmes ?",
     "save": "Enregistrer",
     "public": "Profil public",
     "carousel": "Apparaître dans le carrousel"
   },
   "auth": {
-    "verifyEmail": "Vérifier votre email ISFCE",
-    "enterEmail": "Entrez votre email @isfce.be",
+    "verifyEmail": "Vérifier ton email ISFCE",
+    "enterEmail": "Entre ton email @isfce.be",
     "sendCode": "Envoyer le code",
-    "enterCode": "Entrez le code reçu par email",
+    "enterCode": "Entre le code reçu par email",
     "confirm": "Confirmer",
     "verified": "Email vérifié !",
-    "codeExpired": "Code expiré ou invalide",
+    "codeExpired": "Code incorrect ou expiré — redemandes-en un nouveau.",
     "verificationRequired": "Vérification requise",
-    "verifyEmailMessage": "Veuillez vérifier votre email @isfce.be pour accéder à cette fonctionnalité."
+    "verifyEmailMessage": "Vérifie ton email @isfce.be pour débloquer cette fonctionnalité.",
+    "loginRequired": "Connecte-toi pour accéder à ce contenu"
   },
   "search": {
     "placeholder": "Rechercher des documents...",
@@ -162,23 +227,35 @@
   },
   "common": {
     "loading": "Chargement...",
-    "error": "Une erreur est survenue",
+    "error": "Une erreur est survenue — réessaie dans un instant.",
+    "errorTitle": "Oups",
+    "errorRetry": "Retour à l'accueil",
     "retry": "Réessayer",
     "cancel": "Annuler",
     "save": "Enregistrer",
     "confirm": "Confirmer",
     "back": "Retour",
-    "seeAll": "Voir tout"
+    "seeAll": "Voir tout",
+    "copyLink": "Copier le lien",
+    "linkCopied": "Lien copié !"
   },
   "footer": {
     "tagline": "Hub des documents de l'ISFCE",
     "independent": "Projet indépendant, non affilié à l'ISFCE.",
     "links": "Liens utiles",
     "legal": "Mentions légales",
-    "privacy": "Politique de confidentialité",
+    "privacy": "Confidentialité",
+    "terms": "Conditions",
     "github": "GitHub",
     "kofi": "Ko-fi",
-    "madeWith": "Fait avec ❤️ par les étudiants de l'ISFCE"
+    "madeWith": "Fait avec ❤️ par un étudiant ISFCE."
+  },
+  "terms": {
+    "gateTitle": "Avant de continuer",
+    "gateSubtitle": "Pour utiliser Freenote, tu dois accepter nos conditions d'utilisation et notre politique de confidentialité. Prends un moment pour les lire.",
+    "copyrightWarning": "Les documents partagés sur Freenote sont strictement réservés aux étudiants ISFCE. Toute redistribution sur d'autres plateformes, réseaux sociaux ou sites publics est formellement interdite. Le non-respect de cette règle entraîne la suspension immédiate du compte.",
+    "gateCheckbox": "J'ai lu et j'accepte les conditions d'utilisation et la politique de confidentialité.",
+    "gateAccept": "Accepter et continuer"
   },
   "tools": {
     "title": "Outils",
@@ -218,7 +295,40 @@
       "hexCol": "Hex",
       "binCol": "Bin",
       "octCol": "Oct"
+    },
+    "base64": {
+      "tab": "Base64",
+      "input": "Texte à encoder",
+      "decode": "Décoder",
+      "encode": "Encoder",
+      "output": "Résultat",
+      "invalid": "Base64 invalide",
+      "placeholder": "Entre du texte à encoder/décoder…"
     }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Aucune notification pour le moment.",
+    "docVerified": "Ton document « {{title}} » a été vérifié !",
+    "badgeEarned": "Nouveau badge : {{badge}} !",
+    "xpEarned": "+{{xp}} XP gagnés"
+  },
+  "userPublic": {
+    "notFound": "Utilisateur introuvable."
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "subtitle": "Cette page n'existe pas ou a été déplacée.",
+    "cta": "Retour à l'accueil"
+  },
+  "badges": {
+    "FIRST_UPLOAD": "Premier partage",
+    "CONTRIBUTOR_10": "10 contributions",
+    "CONTRIBUTOR_50": "50 contributions",
+    "CONTRIBUTOR_100": "100 contributions",
+    "XP_100": "100 XP",
+    "XP_500": "500 XP",
+    "XP_1000": "1000 XP"
   },
   "categories": {
     "SYNTHESE": "Synthèse",

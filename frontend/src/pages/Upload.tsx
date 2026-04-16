@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react';
+import { useState, useRef, type ChangeEvent, type DragEvent } from 'react';
 import {
   Typography,
   TextField,
@@ -12,10 +12,11 @@ import {
   Checkbox,
   Alert,
 } from '@mui/material';
-import { CloudUpload } from '@mui/icons-material';
+import { CloudUpload, CheckCircle } from '@mui/icons-material';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Helmet } from 'react-helmet-async';
 import { uploadDocument, getSections, getCourses, getProfessors } from '@/api/endpoints';
 import { CATEGORIES, MAX_FILE_SIZE } from '@/lib/constants';
 import PageWrapper from '@/components/layout/PageWrapper';
@@ -36,6 +37,10 @@ export default function Upload() {
   const [tags, setTags] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const TITLE_MAX = 200;
 
   const { data: sections } = useQuery({ queryKey: ['sections'], queryFn: getSections });
   const { data: courses } = useQuery({
@@ -61,13 +66,14 @@ export default function Upload() {
         },
         file!
       ),
-    onSuccess: (doc) => navigate(`/documents/${doc.id}`),
+    onSuccess: (doc) => {
+      setShowSuccess(true);
+      setTimeout(() => navigate(`/documents/${doc.id}`), 3000);
+    },
     onError: () => setError(t('common.error')),
   });
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  const validateAndSet = (f: File) => {
     if (f.type !== 'application/pdf') {
       setError(t('upload.pdfOnly'));
       return;
@@ -80,13 +86,47 @@ export default function Upload() {
     setError('');
   };
 
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) validateAndSet(f);
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!dragActive) setDragActive(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) validateAndSet(f);
+  };
+
+  const openPicker = () => fileInputRef.current?.click();
+
   const canSubmit = title && courseId && category && file;
 
   return (
     <PageWrapper maxWidth="sm">
+      <Helmet><title>{t('upload.title')} — Freenote</title></Helmet>
       <Typography variant="h4" sx={s.title}>
         {t('upload.title')}
       </Typography>
+
+      {showSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {t('upload.successMessage')}
+        </Alert>
+      )}
 
       {error && (
         <Alert severity="error" sx={s.errorAlert}>
@@ -95,7 +135,14 @@ export default function Upload() {
       )}
 
       <Box sx={s.form}>
-        <TextField label={t('document.title')} value={title} onChange={(e) => setTitle(e.target.value)} required />
+        <TextField
+          label={t('document.title')}
+          value={title}
+          onChange={(e) => setTitle(e.target.value.slice(0, TITLE_MAX))}
+          required
+          slotProps={{ htmlInput: { maxLength: TITLE_MAX } }}
+          helperText={t('upload.titleCounter', { count: title.length, max: TITLE_MAX })}
+        />
 
         <FormControl required>
           <InputLabel>{t('document.section')}</InputLabel>
@@ -166,7 +213,7 @@ export default function Upload() {
           label={t('document.tags')}
           value={tags}
           onChange={(e) => setTags(e.target.value)}
-          helperText="tag1, tag2, tag3"
+          helperText={t('upload.tagsHelper')}
         />
 
         <FormControlLabel
@@ -178,10 +225,40 @@ export default function Upload() {
           label={t('document.aiGenerated')}
         />
 
-        <Button variant="outlined" component="label" startIcon={<CloudUpload />}>
-          {file ? file.name : t('upload.dragDrop')}
-          <input type="file" accept="application/pdf" hidden onChange={handleFileChange} />
-        </Button>
+        <Box
+          role="button"
+          tabIndex={0}
+          onClick={openPicker}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openPicker();
+            }
+          }}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          aria-label={t('upload.dragDrop')}
+          sx={s.dropzone(dragActive, Boolean(file))}
+        >
+          {file ? (
+            <CheckCircle sx={s.dropzoneIcon} />
+          ) : (
+            <CloudUpload sx={s.dropzoneIcon} />
+          )}
+          <Typography sx={s.dropzoneText}>
+            {file ? file.name : t('upload.dragDrop')}
+          </Typography>
+          <Typography sx={s.dropzoneHint}>{t('upload.maxSize')}</Typography>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            hidden
+            onChange={handleFileChange}
+          />
+        </Box>
 
         <Button
           variant="contained"

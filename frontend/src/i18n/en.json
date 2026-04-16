@@ -2,7 +2,7 @@
   "nav": {
     "home": "Home",
     "browse": "Browse",
-    "upload": "Upload",
+    "upload": "Share",
     "leaderboard": "Leaderboard",
     "news": "News",
     "tools": "Tools",
@@ -10,15 +10,20 @@
     "profile": "Profile",
     "login": "Login",
     "logout": "Logout",
-    "darkMode": "Dark mode",
-    "lightMode": "Light mode"
+    "darkMode": "Cosmos",
+    "lightMode": "Eclipse",
+    "toggleTheme": "Toggle theme",
+    "toggleLanguage": "Toggle language",
+    "goHome": "Back to home"
   },
   "hero": {
-    "title": "Don't start",
-    "titleHighlight": "from scratch.",
+    "title": "Learn faster",
+    "titleHighlight": "together.",
     "subtitle": "Summaries, past exams, course notes — every shared document helps the next class succeed.",
     "cta": "Browse courses",
-    "ctaSecondary": "Upload"
+    "ctaSecondary": "Share a doc",
+    "scrollDown": "Scroll down",
+    "restricted": "Reserved for ISFCE students"
   },
   "stats": {
     "title": "By the numbers",
@@ -30,12 +35,13 @@
   },
   "sections": {
     "title": "Sections",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "docsCount": "docs"
   },
   "popular": {
     "title": "Popular documents",
     "viewAll": "View all",
-    "empty": "No documents yet"
+    "empty": "Be the first to drop a doc — your class will thank you."
   },
   "leaderboard": {
     "title": "Top contributors",
@@ -44,31 +50,40 @@
     "xp": "XP",
     "docs": "Documents",
     "badges": "Badges",
-    "empty": "No contributors yet"
+    "viewAll": "View all",
+    "empty": "The podium is wide open. Claim it."
   },
   "delegates": {
     "title": "Delegates",
     "section": "Section",
     "members": "Members",
-    "empty": "No delegates yet"
+    "since": "Since",
+    "empty": "No delegate in your section yet? Let us know."
   },
   "news": {
-    "title": "ISFCE News",
-    "readMore": "Read more"
+    "title": "What's new at ISFCE",
+    "readMore": "Read more",
+    "empty": "Nothing new right now — check back soon."
   },
   "community": {
     "title": "Community",
     "carousel": "Community",
-    "empty": "Be the first to join the community"
+    "empty": "The community's waiting for you.",
+    "pauseCarousel": "Pause carousel",
+    "playCarousel": "Resume carousel",
+    "discordRoles": "Create an account on the site to get the Verified role on Discord and access course discussions. Other roles are granted based on your XP.",
+    "discordRolesShort": "Discord roles linked to your XP"
   },
   "signup": {
-    "title": "Join the community",
-    "subtitle": "Sign in and get access to all documents in 30 seconds.",
-    "cta": "Create my account",
-    "discordISFCE": "ISFCE Discord"
+    "title": "Join your class in 30 seconds.",
+    "subtitle": "Discord or Google login, verify your @isfce.be, done.",
+    "cta": "Sign in with Discord or Google",
+    "stickyLabel": "Ready to join your class?",
+    "discordISFCE": "ISFCE Discord",
+    "discordLink": "💬 ISFCE Discord →"
   },
   "ad": {
-    "disclaimer": "Advertisement — Support Notarium to remove it. Ad blockers reduce our revenue."
+    "disclaimer": "Ad — support Freenote on Ko-fi to hide these."
   },
   "links": {
     "title": "Useful links",
@@ -76,9 +91,11 @@
     "bulletin": "Report card",
     "mail": "Mail @isfce",
     "horaires": "Schedules",
-    "tfe": "TFE",
+    "tfe": "Thesis",
     "stages": "Internships",
-    "emplois": "Jobs"
+    "emplois": "Jobs",
+    "bibliotheque": "Library",
+    "aideReussite": "Study help"
   },
   "document": {
     "title": "Title",
@@ -96,11 +113,11 @@
     "downloads": "Downloads",
     "tags": "Tags",
     "summary": "AI Summary",
-    "upload": "Upload document",
+    "upload": "Share a document",
     "delete": "Delete",
     "download": "Download",
     "report": "Report",
-    "noResults": "No documents found",
+    "noResults": "No documents found — try different keywords.",
     "favorite": "Favorite",
     "addFavorite": "Add to favorites",
     "reportPlaceholder": "Reason...",
@@ -113,30 +130,77 @@
       "documents": "Documents",
       "courses": "Courses",
       "professors": "Professors",
-      "reports": "Reports"
+      "reports": "Reports",
+      "delegates": "Delegates"
     },
-    "placeholder": "Admin panel — to be implemented in next phases."
+    "placeholder": "Admin panel — to be implemented in next phases.",
+    "docs": {
+      "pending": "Pending documents",
+      "noPending": "No documents pending verification.",
+      "verify": "Verify",
+      "all": "All documents",
+      "edit": "Edit",
+      "deleteConfirm": "Permanently delete this document and its file? This cannot be undone."
+    },
+    "courses": {
+      "pending": "Pending courses",
+      "noPending": "No courses pending approval.",
+      "approve": "Approve"
+    },
+    "profs": {
+      "pending": "Pending professors",
+      "noPending": "No professors pending approval.",
+      "approve": "Approve"
+    },
+    "reports": {
+      "pending": "Pending reports",
+      "noPending": "No pending reports.",
+      "resolve": "Resolve",
+      "dismiss": "Dismiss"
+    },
+    "delegates": {
+      "title": "Delegate Management",
+      "assign": "Assign",
+      "assignTitle": "New mandate",
+      "userId": "User ID",
+      "section": "Section",
+      "startDate": "Start date",
+      "confirm": "Confirm",
+      "active": "Active mandates",
+      "history": "Past mandates",
+      "noActive": "No active delegates.",
+      "end": "End mandate",
+      "delete": "Delete",
+      "activeChip": "Active",
+      "endedChip": "Ended"
+    }
   },
   "upload": {
-    "title": "Upload a document",
-    "dragDrop": "Drag & drop a PDF here or click to select",
+    "title": "Share a document",
+    "dragDrop": "Drag & drop a PDF here or click to pick one",
     "maxSize": "Max size: 10 MB",
-    "submit": "Upload",
-    "success": "Document uploaded successfully!",
-    "pdfOnly": "Only PDF files are accepted"
+    "submit": "Share",
+    "success": "Doc shared — thanks for your class!",
+    "successMessage": "Your document is live! It will be reviewed by a moderator within 24-48h. You'll earn XP and badges after approval.",
+    "pdfOnly": "PDFs only for now — convert and try again.",
+    "tagsHelper": "Separate tags with commas (e.g. java, algo, s3)",
+    "titleCounter": "{{count}}/{{max}}"
   },
   "profile": {
     "title": "My profile",
     "bio": "Bio",
     "website": "Website",
-    "social": "Social links",
+    "social": "Socials",
+    "socialGithub": "GitHub",
+    "socialLinkedin": "LinkedIn",
+    "socialDiscord": "Discord",
     "badges": "Badges",
     "documents": "My documents",
     "favorites": "My favorites",
     "settings": "Settings",
     "theme": "Theme",
     "deleteAccount": "Delete my account",
-    "deleteConfirm": "Are you sure? This action is irreversible.",
+    "deleteConfirm": "This is permanent. Your docs stay online, your account doesn't. Confirm?",
     "save": "Save",
     "public": "Public profile",
     "carousel": "Show in carousel"
@@ -145,12 +209,13 @@
     "verifyEmail": "Verify your ISFCE email",
     "enterEmail": "Enter your @isfce.be email",
     "sendCode": "Send code",
-    "enterCode": "Enter the code received by email",
+    "enterCode": "Enter the code you received",
     "confirm": "Confirm",
     "verified": "Email verified!",
-    "codeExpired": "Code expired or invalid",
+    "codeExpired": "Wrong or expired code — grab a fresh one.",
     "verificationRequired": "Verification required",
-    "verifyEmailMessage": "Please verify your @isfce.be email to access this feature."
+    "verifyEmailMessage": "Verify your @isfce.be email to unlock this feature.",
+    "loginRequired": "Log in to access this content"
   },
   "search": {
     "placeholder": "Search documents...",
@@ -162,23 +227,35 @@
   },
   "common": {
     "loading": "Loading...",
-    "error": "An error occurred",
+    "error": "Something went wrong — try again in a moment.",
+    "errorTitle": "Oops",
+    "errorRetry": "Back to home",
     "retry": "Retry",
     "cancel": "Cancel",
     "save": "Save",
     "confirm": "Confirm",
     "back": "Back",
-    "seeAll": "See all"
+    "seeAll": "See all",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied!"
   },
   "footer": {
     "tagline": "ISFCE Document Hub",
     "independent": "Independent project, not affiliated with ISFCE.",
     "links": "Useful links",
     "legal": "Legal notice",
-    "privacy": "Privacy policy",
+    "privacy": "Privacy",
+    "terms": "Terms",
     "github": "GitHub",
     "kofi": "Ko-fi",
-    "madeWith": "Made with ❤️ by ISFCE students"
+    "madeWith": "Made with ❤️ by an ISFCE student."
+  },
+  "terms": {
+    "gateTitle": "Before you continue",
+    "gateSubtitle": "To use Freenote, you must accept our Terms of Service and Privacy Policy. Take a moment to read them.",
+    "copyrightWarning": "Documents shared on Freenote are strictly reserved for ISFCE students. Any redistribution on other platforms, social media or public websites is strictly forbidden. Violating this rule will result in immediate account suspension.",
+    "gateCheckbox": "I have read and accept the Terms of Service and Privacy Policy.",
+    "gateAccept": "Accept and continue"
   },
   "tools": {
     "title": "Tools",
@@ -218,7 +295,40 @@
       "hexCol": "Hex",
       "binCol": "Bin",
       "octCol": "Oct"
+    },
+    "base64": {
+      "tab": "Base64",
+      "input": "Text to encode",
+      "decode": "Decode",
+      "encode": "Encode",
+      "output": "Result",
+      "invalid": "Invalid Base64",
+      "placeholder": "Enter text to encode/decode…"
     }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet.",
+    "docVerified": "Your document \"{{title}}\" has been verified!",
+    "badgeEarned": "New badge: {{badge}}!",
+    "xpEarned": "+{{xp}} XP earned"
+  },
+  "userPublic": {
+    "notFound": "User not found."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "subtitle": "This page doesn't exist or has been moved.",
+    "cta": "Back to home"
+  },
+  "badges": {
+    "FIRST_UPLOAD": "First share",
+    "CONTRIBUTOR_10": "10 contributions",
+    "CONTRIBUTOR_50": "50 contributions",
+    "CONTRIBUTOR_100": "100 contributions",
+    "XP_100": "100 XP",
+    "XP_500": "500 XP",
+    "XP_1000": "1000 XP"
   },
   "categories": {
     "SYNTHESE": "Summary",

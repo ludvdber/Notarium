@@ -1,5 +1,6 @@
 import type { SxProps, Theme } from '@mui/material';
 import type { CSSProperties } from 'react';
+import { TOKENS } from '@/theme/tokens';
 
 type Sx = SxProps<Theme>;
 
@@ -7,7 +8,35 @@ export const outerGrid: Sx = { py: { xs: 6, md: 9 } };
 
 export const columnTitle: Sx = { mb: 2, fontWeight: 800 };
 
+export const columnHeader: Sx = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  mb: 2,
+};
+
+export const viewAllLink: Sx = {
+  color: 'primary.main',
+  textDecoration: 'none',
+  fontSize: 13,
+  fontWeight: 700,
+  '&:hover': { textDecoration: 'underline' },
+};
+
 export const listCard: Sx = { p: 0 };
+
+export const scrollableList: Sx = {
+  maxHeight: 360,
+  overflowY: 'auto',
+  '&::-webkit-scrollbar': { width: 6 },
+  '&::-webkit-scrollbar-track': { background: 'transparent' },
+  '&::-webkit-scrollbar-thumb': {
+    background: 'rgba(255,255,255,0.15)',
+    borderRadius: 3,
+  },
+  scrollbarWidth: 'thin',
+  scrollbarColor: 'rgba(255,255,255,0.15) transparent',
+};
 
 export const delegatesCard: Sx = { p: 2.5, position: 'relative' };
 
@@ -82,7 +111,13 @@ export const delegateMembers: Sx = {
   flexWrap: 'wrap',
 };
 
-export const delegateChip: Sx = { cursor: 'pointer' };
+export const delegateChip: Sx = {
+  cursor: 'pointer',
+  '&:focus-visible': {
+    outline: (t) => `2px solid ${t.palette.primary.main}`,
+    outlineOffset: 2,
+  },
+};
 
 export const discordPopup: CSSProperties = {
   position: 'absolute',
@@ -92,7 +127,7 @@ export const discordPopup: CSSProperties = {
 };
 
 export const discordBox: Sx = {
-  bgcolor: '#5865F2',
+  bgcolor: TOKENS.brands.discord,
   color: '#fff',
   px: 2,
   py: 1,
@@ -100,7 +135,7 @@ export const discordBox: Sx = {
   display: 'flex',
   alignItems: 'center',
   gap: 1,
-  boxShadow: '0 4px 20px rgba(88, 101, 242, 0.4)',
+  boxShadow: `0 4px 20px ${TOKENS.brands.discordShadow}`,
 };
 
 export const discordName: Sx = { fontWeight: 600 };

@@ -1,4 +1,5 @@
 import type { SxProps, Theme } from '@mui/material';
+import { TOKENS } from '@/theme/tokens';
 
 type Sx = SxProps<Theme>;
 
@@ -18,7 +19,7 @@ export const gradientBar: Sx = {
   left: 0,
   right: 0,
   height: 2,
-  background: 'linear-gradient(90deg, #00d2ff, #7b2ff7)',
+  background: TOKENS.gradients.primaryBar,
 };
 
 export const row: Sx = {
@@ -60,10 +61,10 @@ export const primaryCta: Sx = {
   py: 1,
   fontSize: 13,
   fontWeight: 800,
-  background: 'linear-gradient(135deg, #00d2ff, #7b2ff7)',
-  boxShadow: '0 4px 20px rgba(0,210,255,0.18)',
+  background: TOKENS.gradients.primary,
+  boxShadow: TOKENS.glow.primaryShadowStrong,
   '&:hover': {
-    background: 'linear-gradient(135deg, #00b8d9, #6a1be0)',
+    background: TOKENS.gradients.primaryHover,
   },
 };
 
@@ -71,9 +72,44 @@ export const discordLink: Sx = {
   display: 'flex',
   alignItems: 'center',
   gap: 0.75,
-  color: '#5865F2',
+  color: TOKENS.brands.discord,
   fontWeight: 700,
   fontSize: 12,
   textDecoration: 'none',
   '&:hover': { textDecoration: 'underline' },
+};
+
+export const stickyBar: Sx = {
+  display: { xs: 'flex', md: 'none' },
+  position: 'fixed',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  zIndex: 1200,
+  p: 1.5,
+  gap: 1,
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  bgcolor: 'rgba(10, 14, 26, 0.92)',
+  backdropFilter: 'blur(16px)',
+  WebkitBackdropFilter: 'blur(16px)',
+  borderTop: '1px solid rgba(0,210,255,0.25)',
+  boxShadow: '0 -8px 24px rgba(0,0,0,0.4)',
+};
+
+export const stickyLabel: Sx = {
+  fontSize: 13,
+  fontWeight: 700,
+  flex: 1,
+  minWidth: 0,
+};
+
+export const stickyCta: Sx = {
+  px: 2.5,
+  py: 0.75,
+  fontSize: 12,
+  fontWeight: 800,
+  background: TOKENS.gradients.primary,
+  flexShrink: 0,
+  '&:hover': { background: TOKENS.gradients.primaryHover },
 };

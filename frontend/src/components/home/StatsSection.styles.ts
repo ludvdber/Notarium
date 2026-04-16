@@ -29,10 +29,17 @@ export const weekBadge: Sx = {
   alignItems: 'center',
   gap: 0.75,
   px: 2,
-  py: 0.5,
+  py: 0.6,
   borderRadius: 3,
   bgcolor: 'rgba(16, 185, 129, 0.08)',
   border: '1px solid rgba(16, 185, 129, 0.2)',
+  textDecoration: 'none',
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    bgcolor: 'rgba(16, 185, 129, 0.14)',
+    borderColor: 'rgba(16, 185, 129, 0.35)',
+    transform: 'translateY(-1px)',
+  },
 };
 
 export const weekBadgeIcon: Sx = { fontSize: 16, color: '#10b981' };
