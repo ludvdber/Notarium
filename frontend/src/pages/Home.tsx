@@ -7,7 +7,6 @@ import HeroSection from '@/components/home/HeroSection';
 import Divider from '@/components/ui/Divider';
 
 const StatsSection = lazy(() => import('@/components/home/StatsSection'));
-const SectionsGrid = lazy(() => import('@/components/home/SectionsGrid'));
 const NewsAndLinks = lazy(() => import('@/components/home/NewsAndLinks'));
 const PopularDocs = lazy(() => import('@/components/home/PopularDocs'));
 const LeaderboardDelegates = lazy(() => import('@/components/home/LeaderboardDelegates'));
@@ -51,10 +50,6 @@ export default function Home() {
       <Container maxWidth="lg">
         <Suspense fallback={<SectionFallback />}>
           <StatsSection />
-        </Suspense>
-        <Divider />
-        <Suspense fallback={<SectionFallback />}>
-          <SectionsGrid />
         </Suspense>
         <Divider />
         <Suspense fallback={<SectionFallback />}>
