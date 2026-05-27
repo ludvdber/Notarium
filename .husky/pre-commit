@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+# Pre-commit hook: lint staged files only (fast feedback) + block pushes that obviously break the build.
+# Set up once with: `cd frontend && npx husky init` (writes core.hooksPath=.husky).
+# See package.json's "lint-staged" section for what actually runs.
+
+# Frontend: ESLint + prettier-like formatting on staged JS/TS/TSX only (via lint-staged).
+cd frontend && npx lint-staged --concurrent false || exit 1

@@ -12,7 +12,7 @@ be.freenote
 │   ├── request     # Objets de requête (DocumentUploadRequest, ReportRequest, UpdateProfileRequest)
 │   └── response    # Objets de réponse (AuthResponse, UserResponse, DocumentResponse, ReportResponse)
 ├── entity          # Entités JPA : User, Document, Report
-├── enums           # Category, ReportStatus, OAuthProvider
+├── enums           # Category, ReportStatus, AvatarSource
 ├── exception       # Exceptions custom + GlobalExceptionHandler (@RestControllerAdvice)
 ├── mapper          # Interfaces MapStruct (UserMapper, DocumentMapper, ReportMapper)
 ├── repository      # Interfaces Spring Data JPA
@@ -25,8 +25,8 @@ be.freenote
 **Stack technique :**
 
 - Java 25 LTS, Spring Boot 4, Gradle Kotlin DSL
-- PostgreSQL 17 + pgvector, Redis 7, MinIO, Meilisearch
-- OAuth2 (Discord, Google), JWT (JJWT 0.13.x)
+- PostgreSQL 17, Redis 7, MinIO, Meilisearch
+- OAuth2 Discord, JWT (JJWT 0.13.x)
 - MapStruct 1.6.x, Lombok, Flyway, SpringDoc OpenAPI 3.x
 - Virtual Threads activés
 
@@ -45,7 +45,7 @@ docker compose up -d
 
 Cela démarre :
 
-- **PostgreSQL 17** (pgvector) sur le port `5432`
+- **PostgreSQL 17** sur le port `5432`
 - **Redis 7** sur le port `6379`
 - **MinIO** sur le port `9000` (API) et `9001` (console)
 - **Meilisearch** sur le port `7700`

@@ -8,7 +8,7 @@ echo   Freenote - Infrastructure Docker
 echo  ========================================
 echo.
 echo  Services:
-echo    PostgreSQL 17 + pgvector  localhost:5432
+echo    PostgreSQL 17             localhost:5432
 echo    Redis 7                   localhost:6379
 echo    MinIO (S3)                localhost:9000
 echo    MinIO Console             localhost:9001

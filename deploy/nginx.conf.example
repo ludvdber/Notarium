@@ -1,0 +1,67 @@
+# Nginx reverse proxy sitting in front of the Freenote LXC.
+# Place in /etc/nginx/sites-available/notarium.be on the Proxmox host (or a dedicated
+# reverse-proxy LXC), symlink into sites-enabled, `nginx -t && systemctl reload nginx`.
+#
+# TLS: obtain via `certbot --nginx -d notarium.be -d www.notarium.be`.
+
+upstream freenote_backend {
+    # Adjust the IP to match the Freenote LXC on your Proxmox bridge.
+    server 10.0.0.10:8080;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name notarium.be www.notarium.be;
+    # Redirect all HTTP traffic to HTTPS (certbot inserts its ACME block above in practice).
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name notarium.be www.notarium.be;
+
+    # TLS — certbot populates these paths.
+    ssl_certificate     /etc/letsencrypt/live/notarium.be/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/notarium.be/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    # Upload cap matches Spring's spring.servlet.multipart.max-request-size = 11MB.
+    client_max_body_size 12M;
+
+    # Security headers complementing the CSP Spring already emits.
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options    "nosniff" always;
+    add_header Referrer-Policy           "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy        "camera=(), microphone=(), geolocation=()" always;
+
+    # Compression — Spring Boot already enables gzip but nginx does it better for static assets.
+    gzip on;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+
+    location / {
+        proxy_pass http://freenote_backend;
+        proxy_http_version 1.1;
+
+        # The Spring backend reads X-Forwarded-* via server.forward-headers-strategy=NATIVE.
+        # TRUSTED_PROXIES must include this nginx's IP for the headers to be honored.
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket / SSE support for /api/notifications (future endpoint, see improvement #18).
+        proxy_set_header Upgrade    $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 1h;
+    }
+
+    # Static Vite assets are cached aggressively — they're hashed.
+    location /assets/ {
+        proxy_pass http://freenote_backend;
+        proxy_set_header Host $host;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+}

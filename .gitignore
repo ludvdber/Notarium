@@ -49,11 +49,38 @@ logs/
 *.log
 /data/
 uploads/
+nohup.out
+*.tmp
+tmp/
+.tmp/
+
+# --- Java / Maven legacy (in case someone wires up Maven later) ---
+target/
+.flattened-pom.xml
+HELP.md
 
 # --- Claude Code ---
 .claude/
 .claudeignore
 CLAUDE.md
+
+# --- Scratch / design exploration ---
+design-mockups/
+AUDIT_*.md
+notes/
+scratch/
+TODO.local.md
+
+# --- Root-level junk (some tool installed deps at repo root in the past) ---
+/node_modules/
+/package.json
+/package-lock.json
+
+# --- Misc local state ---
+*.bak
+*.backup
+*.orig
+*.rej
 
 # --- Frontend ---
 frontend/node_modules/

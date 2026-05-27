@@ -2,7 +2,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     java
-    id("org.springframework.boot") version "4.0.5"
+    id("org.springframework.boot") version "4.0.6"
 }
 
 group = "be"
@@ -99,4 +99,58 @@ tasks.register<Test>("integrationTest") {
         includeTags("integration")
     }
     jvmArgs("--add-opens=java.base/sun.misc=ALL-UNNAMED")
+}
+
+// --- Frontend packaging ---
+// Build the Vite frontend and embed dist/ into the Spring Boot fat jar under /static.
+// Result: a single `build/libs/freenote-0.0.1-SNAPSHOT.jar` servable with `java -jar`
+// that contains both the API and the SPA — deploy target is a Proxmox LXC.
+
+val frontendDir = layout.projectDirectory.dir("frontend")
+val frontendDist = frontendDir.dir("dist")
+val isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows
+val npmCmd = if (isWindows) "npm.cmd" else "npm"
+
+val npmInstall = tasks.register<Exec>("npmInstall") {
+    description = "Installs frontend dependencies (uses `npm install` so Windows doesn't trip over locked cache dirs)."
+    group = "frontend"
+    workingDir = frontendDir.asFile
+    inputs.files(
+        frontendDir.file("package.json"),
+        frontendDir.file("package-lock.json")
+    )
+    outputs.file(frontendDir.dir("node_modules").file(".package-lock.json"))
+    // `npm install` is tolerant to a pre-existing node_modules (unlike `npm ci` which wipes it first
+    // and fails on Windows when Vite/tsc hold open handles on node_modules/.vite).
+    commandLine(npmCmd, "install", "--no-audit", "--no-fund")
+}
+
+val buildFrontend = tasks.register<Exec>("buildFrontend") {
+    description = "Builds the Vite production bundle into frontend/dist/"
+    group = "frontend"
+    dependsOn(npmInstall)
+    workingDir = frontendDir.asFile
+    // Re-run when any source file in frontend/src or vite config changes.
+    inputs.files(
+        frontendDir.file("package.json"),
+        frontendDir.file("package-lock.json"),
+        frontendDir.file("vite.config.ts"),
+        frontendDir.file("tsconfig.app.json"),
+        frontendDir.file("tsconfig.node.json"),
+        frontendDir.file("tsconfig.json"),
+        frontendDir.file("index.html")
+    )
+    inputs.dir(frontendDir.dir("src"))
+    outputs.dir(frontendDist)
+    commandLine(npmCmd, "run", "build")
+}
+
+// Copy the built SPA into the final jar's /static folder so Spring Boot serves it.
+// Attached to `bootJar` rather than `processResources` so unit/integration tests
+// don't trigger a frontend rebuild on every run.
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    dependsOn(buildFrontend)
+    from(frontendDist) {
+        into("BOOT-INF/classes/static")
+    }
 }

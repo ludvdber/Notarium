@@ -1,0 +1,41 @@
+[Unit]
+Description=Freenote backend (Spring Boot + embedded SPA)
+Documentation=https://github.com/AST_Ludo/Notarium
+# Wait for network + the data LXCs (postgres, redis, minio, meilisearch) before starting.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=freenote
+Group=freenote
+WorkingDirectory=/opt/freenote
+# All secrets and service URLs come from /etc/freenote/freenote.env (chmod 600, owner freenote).
+# Example variables: DB_URL, JWT_SECRET, MINIO_ACCESS_KEY, MEILISEARCH_API_KEY, etc.
+# See deploy/freenote.env.example for the full list.
+EnvironmentFile=/etc/freenote/freenote.env
+ExecStart=/usr/bin/java \
+    -XX:+UseZGC \
+    -XX:MaxRAMPercentage=75 \
+    -Dspring.profiles.active=prod \
+    -jar /opt/freenote/freenote.jar
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=143
+
+# Graceful shutdown: Spring Boot default is 30s — match it so systemd doesn't SIGKILL first.
+TimeoutStopSec=35
+
+# Hardening — reasonable defaults for an LXC where the service is the only tenant.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/freenote/logs /var/log/freenote
+
+# Log to journald (view with: journalctl -u freenote -f)
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
