@@ -1,5 +1,6 @@
 package be.freenote.controller;
 
+import be.freenote.security.SecurityUtils;
 import be.freenote.dto.request.UpdateProfileRequest;
 import be.freenote.dto.response.DocumentResponse;
 import be.freenote.dto.response.ProfileCardResponse;
@@ -40,7 +41,7 @@ public class UserController {
     @Operation(summary = "Get current user profile",
                description = "Returns the full profile of the authenticated user.")
     public ResponseEntity<UserResponse> getCurrentUser(Authentication authentication) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         return ResponseEntity.ok(userService.getProfile(userId));
     }
 
@@ -49,7 +50,7 @@ public class UserController {
                description = "Updates the authenticated user's profile fields (bio, social links, theme, etc.).")
     public ResponseEntity<UserResponse> updateProfile(Authentication authentication,
                                                        @Valid @RequestBody UpdateProfileRequest request) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         return ResponseEntity.ok(userService.updateProfile(userId, request));
     }
 
@@ -72,7 +73,7 @@ public class UserController {
                description = "Returns the last opened verified documents for the current user, most recent first.")
     public ResponseEntity<List<DocumentResponse>> getRecentDocs(Authentication authentication,
                                                                  @RequestParam(defaultValue = "6") int limit) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         return ResponseEntity.ok(recentDocsService.getRecent(userId, limit));
     }
 
@@ -80,7 +81,7 @@ public class UserController {
     @Operation(summary = "Record a document visit",
                description = "Bumps the document to the top of the user's \"recently opened\" trail. Idempotent.")
     public ResponseEntity<Void> recordVisit(Authentication authentication, @PathVariable Long docId) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         recentDocsService.recordVisit(userId, docId);
         return ResponseEntity.noContent().build();
     }
@@ -89,7 +90,7 @@ public class UserController {
     @Operation(summary = "Accept Terms of Service",
                description = "Records the user's explicit acceptance of the Terms of Service and Privacy Policy. Idempotent.")
     public ResponseEntity<Void> acceptTerms(Authentication authentication) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         userService.acceptTerms(userId);
         return ResponseEntity.noContent().build();
     }
@@ -100,7 +101,7 @@ public class UserController {
     public ResponseEntity<Void> deleteAccount(Authentication authentication,
                                                HttpServletRequest request,
                                                HttpServletResponse response) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         userService.deleteAccount(userId);
 
         // Revoke the JWT tied to this session so it cannot be reused while still within its TTL.

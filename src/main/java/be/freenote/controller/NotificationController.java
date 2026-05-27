@@ -1,5 +1,6 @@
 package be.freenote.controller;
 
+import be.freenote.security.SecurityUtils;
 import be.freenote.dto.response.NotificationResponse;
 import be.freenote.dto.response.PageResponse;
 import be.freenote.service.NotificationService;
@@ -27,21 +28,21 @@ public class NotificationController {
             Authentication authentication,
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         return ResponseEntity.ok(notificationService.list(userId, PageRequest.of(page, size)));
     }
 
     @GetMapping("/unread-count")
     @Operation(summary = "Unread notification count")
     public ResponseEntity<Long> unreadCount(Authentication authentication) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         return ResponseEntity.ok(notificationService.unreadCount(userId));
     }
 
     @PostMapping("/read-all")
     @Operation(summary = "Mark all my notifications as read")
     public ResponseEntity<Void> markAllRead(Authentication authentication) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         notificationService.markAllRead(userId);
         return ResponseEntity.noContent().build();
     }
@@ -51,7 +52,7 @@ public class NotificationController {
     @GetMapping(path = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "Live notification stream (SSE)")
     public SseEmitter stream(Authentication authentication) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         return notificationService.subscribe(userId);
     }
 }

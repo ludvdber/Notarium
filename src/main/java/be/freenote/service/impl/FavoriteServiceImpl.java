@@ -58,7 +58,6 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .map(fav -> documentMapper.toResponse(fav.getDocument()))
                 .toList();
 
-        return new PageResponse<>(content, page.getNumber(), page.getSize(),
-                page.getTotalElements(), page.getTotalPages());
+        return PageResponse.from(page, content);
     }
 }

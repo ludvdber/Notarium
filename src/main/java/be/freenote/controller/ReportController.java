@@ -1,5 +1,6 @@
 package be.freenote.controller;
 
+import be.freenote.security.SecurityUtils;
 import be.freenote.dto.request.ReportRequest;
 import be.freenote.security.ratelimit.RateLimit;
 import be.freenote.service.ReportService;
@@ -27,7 +28,7 @@ public class ReportController {
     public ResponseEntity<Void> create(Authentication authentication,
                                         @PathVariable Long documentId,
                                         @Valid @RequestBody ReportRequest request) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         reportService.create(userId, documentId, request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

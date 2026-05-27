@@ -1,5 +1,6 @@
 package be.freenote.controller;
 
+import be.freenote.security.SecurityUtils;
 import be.freenote.dto.request.CreateCourseRequest;
 import be.freenote.dto.response.CourseResponse;
 import be.freenote.service.CourseService;
@@ -36,7 +37,7 @@ public class CourseController {
                description = "Creates a new course pending admin approval. Requires authentication.")
     public ResponseEntity<CourseResponse> create(Authentication authentication,
                                                   @Valid @RequestBody CreateCourseRequest request) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(courseService.create(request, userId));
     }

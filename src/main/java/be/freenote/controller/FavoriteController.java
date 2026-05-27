@@ -1,5 +1,6 @@
 package be.freenote.controller;
 
+import be.freenote.security.SecurityUtils;
 import be.freenote.dto.response.DocumentResponse;
 import be.freenote.dto.response.PageResponse;
 import be.freenote.service.FavoriteService;
@@ -27,7 +28,7 @@ public class FavoriteController {
     @Operation(summary = "Toggle favorite", description = "Adds or removes a document from the user's favorites. Returns whether the document is now favorited.")
     public ResponseEntity<Map<String, Boolean>> toggle(Authentication authentication,
                                                         @PathVariable Long docId) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         boolean isFavorite = favoriteService.toggle(userId, docId);
         return ResponseEntity.ok(Map.of("isFavorite", isFavorite));
     }
@@ -38,7 +39,7 @@ public class FavoriteController {
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         return ResponseEntity.ok(favoriteService.getFavorites(userId, PageRequest.of(page, size)));
     }
 
@@ -46,7 +47,7 @@ public class FavoriteController {
     @Operation(summary = "Check favorite status", description = "Returns whether the given document is in the current user's favorites.")
     public ResponseEntity<Map<String, Boolean>> status(Authentication authentication,
                                                         @PathVariable Long docId) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         return ResponseEntity.ok(Map.of("isFavorite", favoriteService.isFavorite(userId, docId)));
     }
 }

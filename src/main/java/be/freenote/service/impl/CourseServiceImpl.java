@@ -18,6 +18,7 @@ import be.freenote.service.CourseService;
 import be.freenote.service.MeilisearchService;
 import be.freenote.service.MinioService;
 import be.freenote.service.StatsService;
+import be.freenote.util.HtmlSanitizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -144,7 +145,7 @@ public class CourseServiceImpl implements CourseService {
     }
 
     private static String requireName(String input) {
-        String sanitized = sanitize(input);
+        String sanitized = HtmlSanitizer.escape(input);
         if (sanitized == null || sanitized.isEmpty()) {
             throw new IllegalArgumentException("Name is required");
         }
@@ -154,15 +155,4 @@ public class CourseServiceImpl implements CourseService {
         return sanitized;
     }
 
-    private static String sanitize(String input) {
-        if (input == null) return null;
-        String trimmed = input.trim();
-        if (trimmed.isEmpty()) return null;
-        return trimmed
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&#x27;");
-    }
 }

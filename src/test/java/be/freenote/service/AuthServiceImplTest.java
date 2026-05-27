@@ -62,7 +62,7 @@ class AuthServiceImplTest {
                 .thenReturn(Optional.of(link));
         when(jwtTokenProvider.generateToken(existingUser)).thenReturn("jwt-token");
 
-        String jwt = authService.processOAuth2Login(oAuth2User, "google");
+        String jwt = authService.processOAuth2Login(oAuth2User, "discord");
 
         assertThat(jwt).isEqualTo("jwt-token");
         verify(userRepository, never()).save(any());
@@ -114,7 +114,6 @@ class AuthServiceImplTest {
         OAuth2User oAuth2User = mock(OAuth2User.class);
         when(oAuth2User.getName()).thenReturn("fallback-id");
         lenient().when(oAuth2User.getAttribute("email_verified")).thenReturn(null);
-        lenient().when(oAuth2User.getAttribute("picture")).thenReturn(null);
         when(oAuth2User.getAttribute("name")).thenReturn(null);
         when(oAuth2User.getAttribute("username")).thenReturn(null);
 
@@ -123,7 +122,7 @@ class AuthServiceImplTest {
         lenient().when(oauthLinkRepository.save(any(UserOauthLink.class))).thenAnswer(inv -> inv.getArgument(0));
         when(jwtTokenProvider.generateToken(any())).thenReturn("jwt");
 
-        authService.processOAuth2Login(oAuth2User, "google");
+        authService.processOAuth2Login(oAuth2User, "discord");
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userRepository, atLeastOnce()).save(captor.capture());
@@ -141,7 +140,7 @@ class AuthServiceImplTest {
                 .thenReturn(Optional.of(link));
         when(jwtTokenProvider.generateToken(user)).thenReturn("jwt");
 
-        authService.processOAuth2Login(oAuth2User, "Google");
+        authService.processOAuth2Login(oAuth2User, "Discord");
 
         verify(oauthLinkRepository).findByProviderAndOauthId("DISCORD", "id1");
     }

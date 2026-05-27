@@ -1,5 +1,6 @@
 package be.freenote.controller;
 
+import be.freenote.security.SecurityUtils;
 import be.freenote.dto.request.ConfirmCodeRequest;
 import be.freenote.dto.request.VerifyEmailRequest;
 import be.freenote.dto.response.LinkedProviderResponse;
@@ -44,7 +45,7 @@ public class AuthController {
                description = "Sends a 6-digit verification code to the provided ISFCE email.")
     public ResponseEntity<Void> requestVerification(Authentication authentication,
                                                      @Valid @RequestBody VerifyEmailRequest request) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         authService.requestVerification(userId, request.getEmail());
         return ResponseEntity.accepted().build();
     }
@@ -56,7 +57,7 @@ public class AuthController {
     public ResponseEntity<Void> confirmVerification(Authentication authentication,
                                                      @Valid @RequestBody ConfirmCodeRequest request,
                                                      HttpServletResponse response) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         String jwt = authService.confirmVerification(userId, request.getCode());
         OAuth2LoginSuccessHandler.addJwtCookie(response, jwt, jwtExpirationMs, cookieSecure);
         return ResponseEntity.noContent().build();
@@ -66,7 +67,7 @@ public class AuthController {
     @Operation(summary = "List linked OAuth providers",
                description = "Returns every (provider, linkedAt) pair attached to the current user.")
     public ResponseEntity<List<LinkedProviderResponse>> listLinkedProviders(Authentication authentication) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         return ResponseEntity.ok(authService.getLinkedProviders(userId));
     }
 
@@ -79,7 +80,7 @@ public class AuthController {
                                                     regexp = "^(?i)DISCORD$",
                                                     message = "Provider must be DISCORD")
                                                 String provider) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         authService.unlinkProvider(userId, provider);
         return ResponseEntity.noContent().build();
     }

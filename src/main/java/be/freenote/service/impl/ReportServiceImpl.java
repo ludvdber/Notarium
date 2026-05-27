@@ -52,8 +52,7 @@ public class ReportServiceImpl implements ReportService {
         List<ReportResponse> content = page.getContent().stream()
                 .map(reportMapper::toResponse)
                 .toList();
-        return new PageResponse<>(content, page.getNumber(), page.getSize(),
-                page.getTotalElements(), page.getTotalPages());
+        return PageResponse.from(page, content);
     }
 
     @Override

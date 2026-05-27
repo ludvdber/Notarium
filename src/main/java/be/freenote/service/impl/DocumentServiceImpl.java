@@ -17,6 +17,7 @@ import be.freenote.service.MinioService;
 import be.freenote.service.PdfValidationService;
 import be.freenote.service.StatsService;
 import be.freenote.util.FileUtil;
+import be.freenote.util.HtmlSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -41,16 +42,6 @@ public class DocumentServiceImpl implements DocumentService {
 
     private static final String PDF_CONTENT_TYPE = "application/pdf";
     private static final String DL_BUFFER_PREFIX = "dl-buffer:";
-
-    private static String sanitize(String input) {
-        if (input == null) return null;
-        return input
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&#x27;");
-    }
 
     private final DocumentRepository documentRepository;
     private final UserRepository userRepository;
@@ -89,7 +80,7 @@ public class DocumentServiceImpl implements DocumentService {
         minioService.upload(fileKey, new ByteArrayInputStream(pdfBytes), pdfBytes.length, PDF_CONTENT_TYPE);
 
         Document document = Document.builder()
-                .title(sanitize(request.getTitle()))
+                .title(HtmlSanitizer.escape(request.getTitle()))
                 .course(course)
                 .category(category)
                 .fileKey(fileKey)
@@ -106,7 +97,7 @@ public class DocumentServiceImpl implements DocumentService {
 
         if (request.getTags() != null && !request.getTags().isEmpty()) {
             request.getTags().forEach(label -> {
-                Tag tag = Tag.builder().document(saved).label(sanitize(label.strip().toLowerCase())).build();
+                Tag tag = Tag.builder().document(saved).label(HtmlSanitizer.escape(label.strip().toLowerCase())).build();
                 saved.getTags().add(tag);
             });
             documentRepository.save(saved);
@@ -159,8 +150,7 @@ public class DocumentServiceImpl implements DocumentService {
         List<DocumentResponse> content = page.getContent().stream()
                 .map(documentMapper::toResponse)
                 .toList();
-        return new PageResponse<>(content, page.getNumber(), page.getSize(),
-                page.getTotalElements(), page.getTotalPages());
+        return PageResponse.from(page, content);
     }
 
     @Override
@@ -218,7 +208,7 @@ public class DocumentServiceImpl implements DocumentService {
         Document document = Repositories.findByIdOrThrow(documentRepository, documentId, "Document");
 
         if (request.getTitle() != null && !request.getTitle().isBlank()) {
-            document.setTitle(sanitize(request.getTitle()));
+            document.setTitle(HtmlSanitizer.escape(request.getTitle()));
         }
         if (request.getCourseId() != null) {
             Course course = Repositories.findByIdOrThrow(courseRepository, request.getCourseId(), "Course");
@@ -245,7 +235,7 @@ public class DocumentServiceImpl implements DocumentService {
             request.getTags().forEach(label -> {
                 Tag tag = Tag.builder()
                         .document(document)
-                        .label(sanitize(label.strip().toLowerCase()))
+                        .label(HtmlSanitizer.escape(label.strip().toLowerCase()))
                         .build();
                 document.getTags().add(tag);
             });
@@ -289,8 +279,7 @@ public class DocumentServiceImpl implements DocumentService {
         List<DocumentResponse> content = page.getContent().stream()
                 .map(documentMapper::toResponse)
                 .toList();
-        return new PageResponse<>(content, page.getNumber(), page.getSize(),
-                page.getTotalElements(), page.getTotalPages());
+        return PageResponse.from(page, content);
     }
 
     /** Flush buffered download counts to DB every 5 minutes */

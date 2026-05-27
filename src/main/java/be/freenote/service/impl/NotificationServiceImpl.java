@@ -57,7 +57,7 @@ public class NotificationServiceImpl implements NotificationService {
     public PageResponse<NotificationResponse> list(Long userId, Pageable pageable) {
         Page<Notification> page = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
         List<NotificationResponse> content = page.getContent().stream().map(this::toDto).toList();
-        return new PageResponse<>(content, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
+        return PageResponse.from(page, content);
     }
 
     @Override

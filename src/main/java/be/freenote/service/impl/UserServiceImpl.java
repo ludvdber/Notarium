@@ -14,6 +14,7 @@ import be.freenote.repository.Repositories;
 import be.freenote.repository.ReportRepository;
 import be.freenote.repository.UserRepository;
 import be.freenote.service.UserService;
+import be.freenote.util.HtmlSanitizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -61,11 +62,11 @@ public class UserServiceImpl implements UserService {
             user.setProfile(profile);
         }
 
-        profile.setBio(sanitize(request.getBio()));
-        profile.setWebsite(sanitize(request.getWebsite()));
-        profile.setGithub(sanitize(request.getGithub()));
-        profile.setLinkedin(sanitize(request.getLinkedin()));
-        profile.setDiscord(sanitize(request.getDiscord()));
+        profile.setBio(HtmlSanitizer.escape(request.getBio()));
+        profile.setWebsite(HtmlSanitizer.escape(request.getWebsite()));
+        profile.setGithub(HtmlSanitizer.escape(request.getGithub()));
+        profile.setLinkedin(HtmlSanitizer.escape(request.getLinkedin()));
+        profile.setDiscord(HtmlSanitizer.escape(request.getDiscord()));
         profile.setProfilePublic(request.isProfilePublic());
         // Verified users (and admins) can opt in/out of the homepage carousel themselves.
         // Unverified accounts cannot — keeps the carousel away from throwaway accounts.
@@ -75,8 +76,8 @@ public class UserServiceImpl implements UserService {
         if (request.getAvatarSource() != null) {
             profile.setAvatarSource(AvatarSource.valueOf(request.getAvatarSource()));
         }
-        profile.setFirstName(sanitize(request.getFirstName()));
-        profile.setLastName(sanitize(request.getLastName()));
+        profile.setFirstName(HtmlSanitizer.escape(request.getFirstName()));
+        profile.setLastName(HtmlSanitizer.escape(request.getLastName()));
         profile.setDisplayRealName(request.isDisplayRealName());
 
         User saved = userRepository.save(user);
@@ -234,15 +235,4 @@ public class UserServiceImpl implements UserService {
                 ));
     }
 
-    private static String sanitize(String input) {
-        if (input == null) return null;
-        String trimmed = input.trim();
-        if (trimmed.isEmpty()) return null;
-        return trimmed
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&#x27;");
-    }
 }

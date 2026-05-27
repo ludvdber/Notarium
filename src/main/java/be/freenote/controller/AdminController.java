@@ -1,5 +1,6 @@
 package be.freenote.controller;
 
+import be.freenote.security.SecurityUtils;
 import be.freenote.dto.request.CreateCourseRequest;
 import be.freenote.dto.request.UpdateDocumentRequest;
 import be.freenote.dto.response.CourseResponse;
@@ -255,7 +256,7 @@ public class AdminController {
     public ResponseEntity<DonationResponse> grantAdFree(@PathVariable Long id,
                                                          @RequestParam int days,
                                                          Authentication authentication) {
-        Long adminId = (Long) authentication.getPrincipal();
+        Long adminId = SecurityUtils.currentUserId(authentication);
         return ResponseEntity.ok(donationService.grantAdFree(id, days, adminId));
     }
 }

@@ -1,5 +1,6 @@
 package be.freenote.controller;
 
+import be.freenote.security.SecurityUtils;
 import be.freenote.dto.request.CreateDocumentRequest;
 import be.freenote.dto.response.DocumentResponse;
 import be.freenote.dto.response.PageResponse;
@@ -40,7 +41,7 @@ public class DocumentController {
     public ResponseEntity<DocumentResponse> create(Authentication authentication,
                                                     @Valid @RequestPart("data") CreateDocumentRequest request,
                                                     @RequestPart("file") MultipartFile file) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(documentService.create(request, file, userId));
     }
@@ -55,7 +56,7 @@ public class DocumentController {
     @Operation(summary = "Download document PDF",
                description = "Streams the PDF file. Buffers the download count via Redis and flushes to DB every 5 minutes.")
     public ResponseEntity<byte[]> downloadFile(@PathVariable Long id, Authentication authentication) {
-        Long userId = authentication != null ? (Long) authentication.getPrincipal() : null;
+        Long userId = authentication != null ? SecurityUtils.currentUserId(authentication) : null;
         byte[] data = documentService.download(id, userId);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"document.pdf\"")
@@ -97,7 +98,7 @@ public class DocumentController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a document")
     public ResponseEntity<Void> delete(@PathVariable Long id, Authentication authentication) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         documentService.delete(id, userId);
         return ResponseEntity.noContent().build();
     }

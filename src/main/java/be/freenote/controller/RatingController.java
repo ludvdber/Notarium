@@ -1,5 +1,6 @@
 package be.freenote.controller;
 
+import be.freenote.security.SecurityUtils;
 import be.freenote.dto.request.RateRequest;
 import be.freenote.security.ratelimit.RateLimit;
 import be.freenote.service.RatingService;
@@ -25,7 +26,7 @@ public class RatingController {
     public ResponseEntity<Void> rate(Authentication authentication,
                                       @PathVariable Long docId,
                                       @Valid @RequestBody RateRequest request) {
-        Long userId = (Long) authentication.getPrincipal();
+        Long userId = SecurityUtils.currentUserId(authentication);
         ratingService.rate(userId, docId, request.getScore());
         return ResponseEntity.ok().build();
     }

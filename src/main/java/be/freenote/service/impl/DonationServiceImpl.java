@@ -33,13 +33,7 @@ public class DonationServiceImpl implements DonationService {
     public PageResponse<DonationResponse> listAll(Pageable pageable) {
         Page<Donation> page = donationRepository.findAllByOrderByIdDesc(pageable);
         List<DonationResponse> content = page.getContent().stream().map(this::toResponse).toList();
-        return new PageResponse<>(
-                content,
-                page.getNumber(),
-                page.getSize(),
-                page.getTotalElements(),
-                page.getTotalPages()
-        );
+        return PageResponse.from(page, content);
     }
 
     @Override

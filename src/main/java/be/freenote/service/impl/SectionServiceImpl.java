@@ -12,6 +12,7 @@ import be.freenote.service.MeilisearchService;
 import be.freenote.service.MinioService;
 import be.freenote.service.SectionService;
 import be.freenote.service.StatsService;
+import be.freenote.util.HtmlSanitizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -73,7 +74,7 @@ public class SectionServiceImpl implements SectionService {
         }
         Section section = Section.builder()
                 .name(sanitized)
-                .icon(sanitize(icon))
+                .icon(HtmlSanitizer.escape(icon))
                 .approved(true)
                 .build();
         Section saved = sectionRepository.save(section);
@@ -100,7 +101,7 @@ public class SectionServiceImpl implements SectionService {
         }
         section.setName(sanitized);
         if (icon != null) {
-            section.setIcon(sanitize(icon));
+            section.setIcon(HtmlSanitizer.escape(icon));
         }
         Section saved = sectionRepository.save(section);
         long docCount = documentRepository.countBySectionId(id);
@@ -125,7 +126,7 @@ public class SectionServiceImpl implements SectionService {
     }
 
     private static String requireName(String name) {
-        String sanitized = sanitize(name);
+        String sanitized = HtmlSanitizer.escape(name);
         if (sanitized == null || sanitized.isEmpty()) {
             throw new IllegalArgumentException("Name is required");
         }
@@ -135,15 +136,4 @@ public class SectionServiceImpl implements SectionService {
         return sanitized;
     }
 
-    private static String sanitize(String input) {
-        if (input == null) return null;
-        String trimmed = input.trim();
-        if (trimmed.isEmpty()) return null;
-        return trimmed
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&#x27;");
-    }
 }
