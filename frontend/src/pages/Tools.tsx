@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Typography, Tabs, Tab, Container } from '@mui/material';
-import { Lan, SwapHoriz, Code } from '@mui/icons-material';
+import { Lan, SwapHoriz, Code, VpnKey } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,8 +8,10 @@ import GlassCard from '@/components/ui/GlassCard';
 import IPv4Calculator from '@/components/tools/IPv4Calculator';
 import BaseConverter from '@/components/tools/BaseConverter';
 import Base64Converter from '@/components/tools/Base64Converter';
+import JwtDecoder from '@/components/tools/JwtDecoder';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import AdSlot from '@/components/ui/AdSlot';
 import * as s from './Tools.styles';
 
 export default function Tools() {
@@ -30,6 +32,7 @@ export default function Tools() {
             <Tab icon={<Lan sx={s.tabIcon} />} iconPosition="start" label={t('tools.ipv4.tab')} />
             <Tab icon={<SwapHoriz sx={s.tabIcon} />} iconPosition="start" label={t('tools.base.tab')} />
             <Tab icon={<Code sx={s.tabIcon} />} iconPosition="start" label={t('tools.base64.tab')} />
+            <Tab icon={<VpnKey sx={s.tabIcon} />} iconPosition="start" label={t('tools.jwt.tab')} />
           </Tabs>
         </GlassCard>
 
@@ -44,8 +47,10 @@ export default function Tools() {
             {tab === 0 && <IPv4Calculator />}
             {tab === 1 && <BaseConverter />}
             {tab === 2 && <Base64Converter />}
+            {tab === 3 && <JwtDecoder />}
           </motion.div>
         </AnimatePresence>
+        <AdSlot width={728} height={90} sx={{ mt: 5 }} />
       </Container>
       <Footer />
     </>

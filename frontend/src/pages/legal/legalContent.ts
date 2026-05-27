@@ -16,7 +16,7 @@ export interface LegalPage {
 }
 
 // Updated when the content materially changes. Shown to users.
-export const LEGAL_UPDATED_AT = '2026-04-11';
+export const LEGAL_UPDATED_AT = '2026-04-27';
 
 // -------------------- LEGAL (mentions légales) --------------------
 
@@ -27,9 +27,9 @@ const legalFr: LegalPage = {
     {
       heading: 'Éditeur du site',
       body: [
-        "Freenote est un projet personnel édité par Ludovic, ancien étudiant de l'ISFCE (Institut Supérieur de Formation Continue Étudiante, Bruxelles).",
+        "Freenote est un projet personnel édité par un ancien étudiant de l'ISFCE (Institut Supérieur de Formation Continue Étudiante, Bruxelles).",
         "Le site est un projet indépendant, non affilié à l'ISFCE ni à aucune structure commerciale. Aucun numéro BCE n'y est rattaché : il s'agit d'une initiative étudiante sans but lucratif.",
-        "L'identité complète de l'éditeur est déposée chez le registrar du nom de domaine et peut être communiquée aux autorités compétentes sur réquisition judiciaire. Pour tout contact officiel, écrivez à contact@freenote.be.",
+        "L'identité complète de l'éditeur est déposée chez le registrar du nom de domaine et peut être communiquée aux autorités compétentes sur réquisition judiciaire. Pour tout contact officiel, rejoignez le serveur Discord communautaire (lien dans le pied de page).",
       ],
     },
     {
@@ -49,7 +49,7 @@ const legalFr: LegalPage = {
     {
       heading: 'Contact',
       body: [
-        "Toute demande (question, signalement, demande RGPD, retrait droit d'auteur) peut être adressée par email à contact@freenote.be. Les réponses sont apportées dans un délai raisonnable.",
+        "Toute demande (question, signalement, demande RGPD, retrait droit d'auteur) peut être adressée via le serveur Discord communautaire en mentionnant explicitement le motif de la demande, ou en ouvrant une issue sur le dépôt GitHub du projet pour les sujets techniques. Les réponses sont apportées dans un délai raisonnable.",
       ],
     },
     {
@@ -68,9 +68,9 @@ const legalEn: LegalPage = {
     {
       heading: 'Publisher',
       body: [
-        'Freenote is a personal project published by Ludovic, a former student at ISFCE (Brussels).',
+        'Freenote is a personal project published by a former ISFCE (Brussels) student.',
         'The site is an independent initiative, not affiliated with ISFCE or any commercial entity. No company registration (BCE) is attached to it: this is a non-profit student initiative.',
-        'The publisher\'s full identity is registered with the domain registrar and may be disclosed to competent authorities upon lawful request. For any official matter, email contact@freenote.be.',
+        "The publisher's full identity is registered with the domain registrar and may be disclosed to competent authorities upon lawful request. For any official matter, reach out via the community Discord server (link in the footer).",
       ],
     },
     {
@@ -82,7 +82,7 @@ const legalEn: LegalPage = {
     {
       heading: 'Intellectual property',
       body: [
-        'Freenote\'s source code is distributed under the MIT license and publicly available on GitHub.',
+        "Freenote's source code is distributed under the MIT license and publicly available on GitHub.",
         'Documents shared by users remain the property of their respective authors. Access is strictly restricted to verified members of the ISFCE student community.',
         'ISFCE logos, trademarks and names are the property of their respective owners and are used for informational purposes only.',
       ],
@@ -90,7 +90,7 @@ const legalEn: LegalPage = {
     {
       heading: 'Contact',
       body: [
-        'Any request (question, report, GDPR request, copyright takedown) can be sent by email to contact@freenote.be. Responses are provided within a reasonable timeframe.',
+        'Any request (question, report, GDPR request, copyright takedown) can be sent via the community Discord server with an explicit mention of the request type, or by opening an issue on the project GitHub repository for technical topics. Responses are provided within a reasonable timeframe.',
       ],
     },
     {
@@ -111,7 +111,7 @@ const privacyFr: LegalPage = {
     {
       heading: 'Responsable du traitement',
       body: [
-        "Le responsable du traitement des données personnelles est l'éditeur du site, identifié dans les mentions légales. Pour exercer vos droits, envoyez un email à contact@freenote.be avec l'objet « Demande RGPD ».",
+        "Le responsable du traitement des données personnelles est l'éditeur du site, identifié dans les mentions légales. Pour exercer vos droits, contactez l'éditeur via le serveur Discord communautaire (lien en pied de page) en mentionnant explicitement « Demande RGPD ».",
       ],
     },
     {
@@ -158,7 +158,7 @@ const privacyFr: LegalPage = {
       heading: 'Vos droits',
       body: [
         "Conformément au RGPD, vous disposez des droits suivants : accès à vos données, rectification, effacement (« droit à l'oubli »), portabilité, opposition au traitement, limitation du traitement.",
-        "Pour exercer ces droits, envoyez un email à contact@freenote.be avec l'objet « Demande RGPD ». Une réponse vous sera apportée dans un délai maximal d'un mois.",
+        "Pour exercer ces droits, contactez l'éditeur via le serveur Discord communautaire en mentionnant explicitement « Demande RGPD ». Une réponse vous sera apportée dans un délai maximal d'un mois.",
         "En cas de litige non résolu, vous pouvez introduire une réclamation auprès de l'Autorité de protection des données belge (APD) : autoriteprotectiondonnees.be.",
       ],
     },
@@ -178,7 +178,7 @@ const privacyEn: LegalPage = {
     {
       heading: 'Data controller',
       body: [
-        'The controller of personal data is the site publisher, identified in the legal notice. To exercise your rights, email contact@freenote.be with subject "GDPR request".',
+        'The controller of personal data is the site publisher, identified in the legal notice. To exercise your rights, reach out to the publisher via the community Discord server (link in the footer) explicitly mentioning "GDPR request".',
       ],
     },
     {
@@ -203,7 +203,7 @@ const privacyEn: LegalPage = {
       body: [
         'Discord and Google: OAuth2 authentication providers (limited data: identifier, display name, email).',
         'Brevo (formerly Sendinblue), servers hosted in Paris: transactional email delivery (verification). GDPR policy on brevo.com.',
-        'No other processor. Databases, file storage and search indexing run on the publisher\'s personal infrastructure in Belgium.',
+        "No other processor. Databases, file storage and search indexing run on the publisher's personal infrastructure in Belgium.",
       ],
     },
     {
@@ -216,7 +216,7 @@ const privacyEn: LegalPage = {
       heading: 'Retention period',
       body: [
         'User accounts: retained as long as the account is active. Automatic deletion after 3 years of continuous inactivity, or on user request at any time.',
-        'Shared documents: retained as long as the author\'s account exists. If the account is deleted, documents are anonymized (author becomes "Anonymous") but remain accessible to the community.',
+        "Shared documents: retained as long as the author's account exists. If the account is deleted, documents are anonymized (author becomes \"Anonymous\") but remain accessible to the community.",
         'Server logs (IP addresses): 30 days maximum, automatic rotation.',
         'Reports: retained for up to 1 year for traceability.',
       ],
@@ -225,7 +225,7 @@ const privacyEn: LegalPage = {
       heading: 'Your rights',
       body: [
         'Under GDPR, you have the following rights: access to your data, rectification, erasure ("right to be forgotten"), portability, objection to processing, restriction of processing.',
-        'To exercise these rights, email contact@freenote.be with subject "GDPR request". A response will be provided within one month.',
+        'To exercise these rights, reach out to the publisher via the community Discord server explicitly mentioning "GDPR request". A response will be provided within one month.',
         'If a dispute cannot be resolved, you may lodge a complaint with the Belgian Data Protection Authority: autoriteprotectiondonnees.be.',
       ],
     },
@@ -284,7 +284,7 @@ const termsFr: LegalPage = {
     {
       heading: 'Procédure de retrait (takedown)',
       body: [
-        "Tout contenu jugé illicite, contrefaisant ou portant atteinte à des droits peut être signalé par email à contact@freenote.be avec l'objet « Retrait droit d'auteur » ou « Signaler un contenu ».",
+        "Tout contenu jugé illicite, contrefaisant ou portant atteinte à des droits peut être signalé via le bouton « Signaler » présent sur la page de chaque document, ou via le serveur Discord communautaire en mentionnant explicitement « Retrait droit d'auteur » ou « Signaler un contenu ».",
         "L'éditeur s'engage à examiner chaque notification et, si le retrait est justifié, à supprimer le contenu dans un délai de 48 heures ouvrables à compter de la réception.",
         "Les auteurs des documents concernés seront informés de la décision de retrait.",
       ],
@@ -294,7 +294,7 @@ const termsFr: LegalPage = {
       body: [
         "Vous pouvez supprimer votre compte à tout moment depuis votre page profil. La suppression est définitive et entraîne la perte de votre nom d'utilisateur, badges, favoris et historique personnel.",
         "Les documents que vous avez partagés ne sont pas supprimés mais anonymisés : l'auteur affiché devient « Anonyme ». Ils restent accessibles à la communauté pour préserver la valeur collective des partages passés.",
-        "Si vous souhaitez également supprimer vos documents, faites-en explicitement la demande par email à contact@freenote.be avant de supprimer votre compte.",
+        "Si vous souhaitez également supprimer vos documents, faites-en explicitement la demande via le serveur Discord communautaire avant de supprimer votre compte.",
       ],
     },
     {
@@ -362,7 +362,7 @@ const termsEn: LegalPage = {
     {
       heading: 'Takedown procedure',
       body: [
-        'Any content deemed illegal, infringing or violating rights can be reported by email to contact@freenote.be with subject "Copyright takedown" or "Report content".',
+        'Any content deemed illegal, infringing or violating rights can be reported via the "Report" button on each document page, or via the community Discord server with an explicit mention of "Copyright takedown" or "Report content".',
         'The publisher commits to reviewing each notification and, if the takedown is justified, to removing the content within 48 working hours of receipt.',
         'Authors of concerned documents will be informed of the takedown decision.',
       ],
@@ -372,7 +372,7 @@ const termsEn: LegalPage = {
       body: [
         'You can delete your account at any time from your profile page. Deletion is permanent and results in the loss of your username, badges, favorites and personal history.',
         'Documents you have shared are not deleted but anonymized: the displayed author becomes "Anonymous". They remain accessible to the community to preserve the collective value of past contributions.',
-        'If you also want your documents deleted, explicitly request it by email to contact@freenote.be before deleting your account.',
+        'If you also want your documents deleted, explicitly request it via the community Discord server before deleting your account.',
       ],
     },
     {

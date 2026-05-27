@@ -1,21 +1,24 @@
-import { Typography, Box, Avatar, Chip, Grid } from '@mui/material';
-import { GitHub, LinkedIn } from '@mui/icons-material';
+import { Typography, Box, Chip, Grid, Button } from '@mui/material';
+import { GitHub, LinkedIn, Language, Edit } from '@mui/icons-material';
 import { Coffee } from 'lucide-react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link as RouterLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getUserById, getDelegateHistory, getDocumentsByUser } from '@/api/endpoints';
 import { formatDate } from '@/lib/utils';
+import { useAuthStore } from '@/stores/useAuthStore';
 import PageWrapper from '@/components/layout/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
-import Badge from '@/components/ui/Badge';
 import DocumentCard from '@/components/common/DocumentCard';
 import OrbitalLoader from '@/components/ui/OrbitalLoader';
+import UserAvatar from '@/components/common/UserAvatar';
 
 export default function UserPublic() {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const userId = Number(id);
+  const currentUser = useAuthStore((s) => s.user);
+  const isOwnProfile = currentUser?.id === userId;
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['user', userId],
@@ -61,18 +64,21 @@ export default function UserPublic() {
     <PageWrapper maxWidth="md">
       <GlassCard sx={{ p: { xs: 3, md: 4 }, mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, flexWrap: 'wrap' }}>
-          <Avatar sx={{ width: 64, height: 64, fontSize: 24, bgcolor: 'primary.main' }}>
-            {user.username.charAt(0).toUpperCase()}
-          </Avatar>
+          <UserAvatar username={user.username} url={user.avatarUrl} size={64} />
           <Box sx={{ flex: 1, minWidth: 200 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                {user.username}
+                {user.displayName}
               </Typography>
               {user.supporter && (
                 <Coffee size={18} color="#ffd93d" />
               )}
             </Box>
+            {user.displayName !== user.username && (
+              <Typography variant="caption" color="text.secondary">
+                @{user.username}
+              </Typography>
+            )}
             <Typography variant="body2" color="text.secondary" className="mono">
               {user.xp} XP — {user.documentCount} {t('stats.docs').toLowerCase()}
             </Typography>
@@ -87,7 +93,32 @@ export default function UserPublic() {
             )}
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          {isOwnProfile && (
+            <Button
+              variant="contained"
+              size="small"
+              component={RouterLink}
+              to="/profile"
+              startIcon={<Edit />}
+            >
+              {t('userPublic.editProfile')}
+            </Button>
+          )}
+
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {user.website && (
+              <Chip
+                icon={<Language sx={{ fontSize: 16 }} />}
+                label={t('profile.website')}
+                size="small"
+                variant="outlined"
+                component="a"
+                href={user.website.startsWith('http') ? user.website : `https://${user.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                clickable
+              />
+            )}
             {user.github && (
               <Chip
                 icon={<GitHub sx={{ fontSize: 16 }} />}
@@ -95,7 +126,7 @@ export default function UserPublic() {
                 size="small"
                 variant="outlined"
                 component="a"
-                href={`https://github.com/${user.github}`}
+                href={user.github.startsWith('http') ? user.github : `https://github.com/${user.github}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 clickable
@@ -108,10 +139,17 @@ export default function UserPublic() {
                 size="small"
                 variant="outlined"
                 component="a"
-                href={user.linkedin}
+                href={user.linkedin.startsWith('http') ? user.linkedin : `https://linkedin.com/in/${user.linkedin}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 clickable
+              />
+            )}
+            {user.discord && (
+              <Chip
+                label={`Discord: ${user.discord}`}
+                size="small"
+                variant="outlined"
               />
             )}
           </Box>
@@ -123,13 +161,6 @@ export default function UserPublic() {
           </Typography>
         )}
 
-        {user.badges.length > 0 && (
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 2 }}>
-            {user.badges.map((b) => (
-              <Badge key={b} label={b} />
-            ))}
-          </Box>
-        )}
       </GlassCard>
 
       {delegateHistory && delegateHistory.length > 0 && (

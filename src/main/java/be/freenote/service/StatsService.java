@@ -4,4 +4,5 @@ import be.freenote.dto.response.StatsResponse;
 
 public interface StatsService {
     StatsResponse getStats();
+    void invalidateCache();
 }

@@ -95,12 +95,8 @@ export const profileCard: Sx = {
 };
 
 export const profileAvatar: Sx = {
-  width: 48,
-  height: 48,
   mx: 'auto',
   mb: 1,
-  bgcolor: 'primary.main',
-  fontSize: 18,
 };
 
 export const profileName: Sx = { fontWeight: 700 };
@@ -121,14 +117,6 @@ export const discordPill: Sx = {
   py: 0.2,
   borderRadius: 1,
   fontWeight: 600,
-};
-
-export const profileBadges: Sx = {
-  display: 'flex',
-  gap: 0.5,
-  justifyContent: 'center',
-  mt: 1,
-  flexWrap: 'wrap',
 };
 
 export const popupBackdrop: CSSProperties = {
@@ -164,11 +152,8 @@ export const popupClose: Sx = {
 export const popupBody: Sx = { textAlign: 'center' };
 
 export const popupAvatar: Sx = {
-  width: 56,
-  height: 56,
   mx: 'auto',
   mb: 1,
-  bgcolor: 'primary.main',
 };
 
 export const popupName: Sx = { fontWeight: 700 };
@@ -190,10 +175,3 @@ export const popupDiscordPill: Sx = {
   fontWeight: 600,
 };
 
-export const popupBadges: Sx = {
-  display: 'flex',
-  gap: 0.5,
-  justifyContent: 'center',
-  mt: 2,
-  flexWrap: 'wrap',
-};

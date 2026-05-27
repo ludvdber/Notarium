@@ -1,7 +1,19 @@
 import { Card, type CardProps } from '@mui/material';
+import type { ElementType } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function GlassCard({ sx, children, ...props }: CardProps<any>) {
+/**
+ * `component` lets callers swap the underlying DOM/element (e.g. `component={Link}` with `to=`).
+ * MUI's generic CardProps overload explodes into a "union too complex" TS error when combined
+ * with our generic, so we accept the pragmatic trade-off: wide props, narrowed at the call site
+ * via `component={...}`. Runtime behaviour is unchanged — this is purely a typing concession.
+ */
+type GlassCardProps = Omit<CardProps, 'component'> & {
+  component?: ElementType;
+  to?: string;
+  href?: string;
+};
+
+export default function GlassCard({ sx, children, ...props }: GlassCardProps) {
   return (
     <Card
       sx={{
@@ -16,7 +28,7 @@ export default function GlassCard({ sx, children, ...props }: CardProps<any>) {
           t.palette.mode === 'dark'
             ? '1px solid rgba(255, 255, 255, 0.07)'
             : '1px solid rgba(0, 0, 0, 0.08)',
-        borderRadius: 4,
+        borderRadius: 2.5,
         boxShadow: 'none',
         transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s',
         '&:hover': {

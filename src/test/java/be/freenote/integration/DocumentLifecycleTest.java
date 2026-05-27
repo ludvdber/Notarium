@@ -3,7 +3,6 @@ package be.freenote.integration;
 import be.freenote.entity.*;
 import be.freenote.service.MeilisearchService;
 import be.freenote.service.MinioService;
-import be.freenote.service.PdfCompressionService;
 import be.freenote.service.impl.DocumentServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -29,7 +28,6 @@ class DocumentLifecycleTest extends AbstractIntegrationTest {
     // External services mocked — we test persistence, not file storage
     @MockitoBean private MinioService minioService;
     @MockitoBean private MeilisearchService meilisearchService;
-    @MockitoBean private PdfCompressionService pdfCompressionService;
 
     @Autowired private DocumentServiceImpl documentServiceImpl;
 
@@ -43,7 +41,6 @@ class DocumentLifecycleTest extends AbstractIntegrationTest {
         // Clean all data in correct order (respecting FK constraints)
         ratingRepository.deleteAll();
         favoriteRepository.deleteAll();
-        badgeRepository.deleteAll();
         donationRepository.deleteAll();
         documentRepository.deleteAll();
         courseRepository.deleteAll();
@@ -64,8 +61,6 @@ class DocumentLifecycleTest extends AbstractIntegrationTest {
         // Minimal valid PDF bytes
         byte[] pdfBytes = "%PDF-1.4 minimal test content".getBytes();
 
-        // PdfCompressionService returns the same bytes (no actual Ghostscript needed)
-        when(pdfCompressionService.compress(any(byte[].class))).thenReturn(pdfBytes);
         // MinIO upload returns the object key
         when(minioService.upload(anyString(), any(InputStream.class), anyLong(), anyString()))
                 .thenReturn("test/algo-notes.pdf");
@@ -107,9 +102,9 @@ class DocumentLifecycleTest extends AbstractIntegrationTest {
         assertThat(doc.getFileKey()).isNotNull();
         assertThat(doc.getUser().getId()).isEqualTo(verifiedUser.getId());
 
-        // Verify XP was awarded (10 XP for uploading)
+        // XP is only awarded when an admin verifies the document (not at upload) to prevent spam farming.
         User refreshed = userRepository.findById(verifiedUser.getId()).orElseThrow();
-        assertThat(refreshed.getXp()).isEqualTo(10);
+        assertThat(refreshed.getXp()).isZero();
     }
 
     @Test

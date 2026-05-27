@@ -3,10 +3,8 @@ import { GitHub } from '@mui/icons-material';
 import { Coffee } from 'lucide-react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { KOFI_URL, GITHUB_URL } from '@/lib/constants';
 import * as s from './Footer.styles';
-
-const GITHUB_URL = import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/AST_Ludo/Freenote';
-const KOFI_URL = import.meta.env.VITE_KOFI_URL ?? 'https://ko-fi.com/ludovic01';
 
 export default function Footer() {
   const { t } = useTranslation();

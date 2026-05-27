@@ -2,6 +2,7 @@ package be.freenote.controller;
 
 import be.freenote.dto.request.AssignDelegateRequest;
 import be.freenote.dto.request.EndDelegateRequest;
+import be.freenote.dto.request.UpdateDelegateRequest;
 import be.freenote.dto.response.DelegateHistoryResponse;
 import be.freenote.dto.response.DelegateMember;
 import be.freenote.dto.response.DelegateResponse;
@@ -62,6 +63,15 @@ public class DelegateController {
             @PathVariable Long id,
             @Valid @RequestBody EndDelegateRequest request) {
         return ResponseEntity.ok(delegateService.endDelegate(id, request));
+    }
+
+    @PatchMapping("/api/admin/delegates/{id}/edit")
+    @Operation(summary = "Edit a delegate mandate",
+               description = "Updates the start and/or end date of an existing mandate. Set `clearEndDate=true` to reopen a closed mandate (fails if the user already has another active one).")
+    public ResponseEntity<DelegateMember> updateMandate(
+            @PathVariable Long id,
+            @RequestBody UpdateDelegateRequest request) {
+        return ResponseEntity.ok(delegateService.updateMandate(id, request));
     }
 
     @DeleteMapping("/api/admin/delegates/{id}")

@@ -12,9 +12,17 @@ import {
   IconButton,
   Tooltip,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Autocomplete,
+  Pagination,
 } from '@mui/material';
-import { CheckCircle, Edit, Delete, Save, Close } from '@mui/icons-material';
+import { CheckCircle, Edit, Delete, Save, Close, Visibility } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   getPendingDocuments,
@@ -22,27 +30,49 @@ import {
   adminUpdateDocument,
   adminDeleteDocument,
   searchDocuments,
+  adminListCourses,
 } from '@/api/endpoints';
 import { formatDate } from '@/lib/utils';
-import { CATEGORIES } from '@/lib/constants';
+import { CATEGORIES, STALE_15M } from '@/lib/constants';
+import { useDebounce } from '@/hooks/useDebounce';
 import GlassCard from '@/components/ui/GlassCard';
-import type { DocumentResponse, UpdateDocumentRequest } from '@/types';
+import type { Course, DocumentResponse, UpdateDocumentRequest } from '@/types';
+
+const PAGE_SIZE = 10;
 
 export default function AdminDocuments() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 400);
+  const [page, setPage] = useState(0);
+  const [prevSearch, setPrevSearch] = useState(debouncedSearch);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<UpdateDocumentRequest>({});
+  const [deleteCandidate, setDeleteCandidate] = useState<number | null>(null);
+
+  // Reset to page 0 whenever the search changes — otherwise we could land on a stale page
+  // that no longer exists after the query narrows the result set. Adjusting state during
+  // render (React's recommended pattern) instead of an effect avoids a cascading re-render.
+  if (debouncedSearch !== prevSearch) {
+    setPrevSearch(debouncedSearch);
+    setPage(0);
+  }
 
   const { data: pendingDocs } = useQuery({
     queryKey: ['admin-pending-docs'],
     queryFn: getPendingDocuments,
   });
 
+  const { data: courses } = useQuery({
+    queryKey: ['admin-courses-all'],
+    queryFn: adminListCourses,
+    staleTime: STALE_15M,
+  });
+
   const { data: allDocs, isLoading } = useQuery({
-    queryKey: ['admin-all-docs', searchQuery],
-    queryFn: () => searchDocuments({ q: searchQuery || undefined, page: 0, size: 50 }),
+    queryKey: ['admin-all-docs', debouncedSearch, page],
+    queryFn: () => searchDocuments({ q: debouncedSearch || undefined, page, size: PAGE_SIZE }),
   });
 
   const invalidateAll = () => {
@@ -70,6 +100,7 @@ export default function AdminDocuments() {
     setEditingId(doc.id);
     setEditForm({
       title: doc.title,
+      courseId: doc.courseId,
       category: doc.category,
       language: doc.language,
       year: doc.year ?? '',
@@ -92,7 +123,7 @@ export default function AdminDocuments() {
             {pendingDocs!.map((doc) => (
               <Box
                 key={doc.id}
-                sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1.5, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.02)', flexWrap: 'wrap' }}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1.5, borderRadius: 1.5, bgcolor: 'rgba(255,255,255,0.02)', flexWrap: 'wrap' }}
               >
                 <Box sx={{ flex: 1, minWidth: 200 }}>
                   <Typography variant="body2" sx={{ fontWeight: 700 }}>{doc.title}</Typography>
@@ -100,11 +131,21 @@ export default function AdminDocuments() {
                     {doc.courseName} — {doc.authorName} — {formatDate(doc.createdAt, i18n.language)}
                   </Typography>
                 </Box>
+                <Tooltip title={t('admin.docs.view')}>
+                  <IconButton size="small" component={Link} to={`/documents/${doc.id}`} target="_blank">
+                    <Visibility fontSize="small" />
+                  </IconButton>
+                </Tooltip>
                 <Button size="small" variant="contained" color="success" startIcon={<CheckCircle />}
                   onClick={() => verifyMut.mutate(doc.id)} disabled={verifyMut.isPending}
                 >
                   {t('admin.docs.verify')}
                 </Button>
+                <Tooltip title={t('document.delete')}>
+                  <IconButton size="small" color="error" onClick={() => setDeleteCandidate(doc.id)}>
+                    <Delete fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </Box>
             ))}
           </Box>
@@ -138,6 +179,7 @@ export default function AdminDocuments() {
             {editingId === doc.id ? (
               <EditRow
                 form={editForm}
+                courses={courses ?? []}
                 onChange={setEditForm}
                 onSave={() => updateMut.mutate({ id: doc.id, data: editForm })}
                 onCancel={() => setEditingId(null)}
@@ -155,15 +197,18 @@ export default function AdminDocuments() {
                 <Chip label={t(`categories.${doc.category}`)} size="small" variant="outlined" />
                 {doc.verified && <Chip label={t('document.verified')} size="small" color="primary" variant="outlined" />}
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  <Tooltip title={t('admin.docs.view')}>
+                    <IconButton size="small" component={Link} to={`/documents/${doc.id}`} target="_blank">
+                      <Visibility fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title={t('admin.docs.edit')}>
                     <IconButton size="small" onClick={() => startEdit(doc)}>
                       <Edit fontSize="small" />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title={t('document.delete')}>
-                    <IconButton size="small" color="error"
-                      onClick={() => { if (confirm(t('admin.docs.deleteConfirm'))) deleteMut.mutate(doc.id); }}
-                    >
+                    <IconButton size="small" color="error" onClick={() => setDeleteCandidate(doc.id)}>
                       <Delete fontSize="small" />
                     </IconButton>
                   </Tooltip>
@@ -173,12 +218,49 @@ export default function AdminDocuments() {
           </GlassCard>
         ))}
       </Box>
+
+      {allDocs && allDocs.totalPages > 1 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, mt: 2 }}>
+          <Pagination
+            count={allDocs.totalPages}
+            page={page + 1}
+            onChange={(_, p) => setPage(p - 1)}
+            color="primary"
+            shape="rounded"
+          />
+          <Typography variant="caption" color="text.secondary" className="mono">
+            {allDocs.totalElements} docs
+          </Typography>
+        </Box>
+      )}
+
+      <Dialog open={deleteCandidate !== null} onClose={() => setDeleteCandidate(null)}>
+        <DialogTitle color="error">{t('document.delete')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{t('admin.docs.deleteConfirm')}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteCandidate(null)}>{t('common.cancel')}</Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={deleteMut.isPending}
+            onClick={() => {
+              if (deleteCandidate !== null) deleteMut.mutate(deleteCandidate);
+              setDeleteCandidate(null);
+            }}
+          >
+            {t('common.confirm')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
 
 interface EditRowProps {
   form: UpdateDocumentRequest;
+  courses: Course[];
   onChange: (f: UpdateDocumentRequest) => void;
   onSave: () => void;
   onCancel: () => void;
@@ -186,7 +268,8 @@ interface EditRowProps {
   t: (key: string) => string;
 }
 
-function EditRow({ form, onChange, onSave, onCancel, isPending, t }: EditRowProps) {
+function EditRow({ form, courses, onChange, onSave, onCancel, isPending, t }: EditRowProps) {
+  const selectedCourse = courses.find((c) => c.id === form.courseId) ?? null;
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
@@ -196,6 +279,24 @@ function EditRow({ form, onChange, onSave, onCancel, isPending, t }: EditRowProp
           value={form.title ?? ''}
           onChange={(e) => onChange({ ...form, title: e.target.value })}
           sx={{ flex: 2, minWidth: 200 }}
+        />
+        <Autocomplete<Course, false, false, false>
+          size="small"
+          sx={{ flex: 2, minWidth: 240 }}
+          options={courses}
+          value={selectedCourse}
+          onChange={(_, v) => onChange({ ...form, courseId: v?.id })}
+          getOptionLabel={(c) => `${c.name} — ${c.sectionName}`}
+          isOptionEqualToValue={(a, b) => a.id === b.id}
+          renderInput={(params) => <TextField {...params} label={t('document.course')} />}
+          renderOption={(props, c) => (
+            <li {...props} key={c.id}>
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>{c.name}</Typography>
+                <Typography variant="caption" color="text.secondary">{c.sectionName}</Typography>
+              </Box>
+            </li>
+          )}
         />
         <FormControl size="small" sx={{ flex: 1, minWidth: 120 }}>
           <InputLabel>{t('document.category')}</InputLabel>

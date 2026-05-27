@@ -12,6 +12,7 @@ import tools.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -82,7 +83,6 @@ public class MeilisearchServiceImpl implements MeilisearchService {
             searchableAttrs.add("courseName");
             searchableAttrs.add("sectionName");
             searchableAttrs.add("professorName");
-            searchableAttrs.add("summaryAi");
 
             HttpRequest searchReq = HttpRequest.newBuilder()
                     .uri(URI.create(meilisearchConfig.getHost() + "/indexes/" + INDEX + "/settings/searchable-attributes"))
@@ -113,6 +113,20 @@ public class MeilisearchServiceImpl implements MeilisearchService {
 
         } catch (Exception e) {
             log.warn("Meilisearch index init failed (search will use DB fallback): {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Daily safety net. {@link #initIndex()} already runs at boot, but a long-running process
+     * can drift if a document was indexed between an outage of Meilisearch and its restart.
+     * Cheap when the counts match (one HTTP GET + one COUNT(*) query).
+     */
+    @Scheduled(cron = "0 0 4 * * *")
+    public void dailyResync() {
+        try {
+            reindexIfNeeded();
+        } catch (Exception e) {
+            log.warn("Meilisearch daily re-sync skipped: {}", e.getMessage());
         }
     }
 
@@ -162,9 +176,6 @@ public class MeilisearchServiceImpl implements MeilisearchService {
             doc.put("year", document.getYear());
             if (document.getProfessor() != null) {
                 doc.put("professorName", document.getProfessor().getName());
-            }
-            if (document.getSummaryAi() != null) {
-                doc.put("summaryAi", document.getSummaryAi());
             }
             doc.put("verified", document.isVerified());
             doc.put("downloadCount", document.getDownloadCount());

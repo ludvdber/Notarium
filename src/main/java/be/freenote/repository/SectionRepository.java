@@ -11,19 +11,32 @@ import java.util.List;
 public interface SectionRepository extends JpaRepository<Section, Long> {
 
     @Query("""
-        SELECT s.id AS id, s.name AS name, s.icon AS icon, COUNT(d.id) AS documentCount
+        SELECT s.id AS id, s.name AS name, s.icon AS icon, s.approved AS approved, COUNT(d.id) AS documentCount
         FROM Section s
         LEFT JOIN s.courses c
         LEFT JOIN c.documents d
         WHERE s.approved = true
-        GROUP BY s.id, s.name, s.icon
+        GROUP BY s.id, s.name, s.icon, s.approved
         """)
     List<SectionWithDocCount> findAllApprovedWithDocCount();
+
+    @Query("""
+        SELECT s.id AS id, s.name AS name, s.icon AS icon, s.approved AS approved, COUNT(d.id) AS documentCount
+        FROM Section s
+        LEFT JOIN s.courses c
+        LEFT JOIN c.documents d
+        GROUP BY s.id, s.name, s.icon, s.approved
+        ORDER BY s.name
+        """)
+    List<SectionWithDocCount> findAllWithDocCount();
+
+    boolean existsByNameIgnoreCase(String name);
 
     interface SectionWithDocCount {
         Long getId();
         String getName();
         String getIcon();
+        Boolean getApproved();
         Long getDocumentCount();
     }
 }

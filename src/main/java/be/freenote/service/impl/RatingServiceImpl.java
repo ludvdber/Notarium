@@ -3,10 +3,10 @@ package be.freenote.service.impl;
 import be.freenote.entity.Document;
 import be.freenote.entity.Rating;
 import be.freenote.entity.User;
-import be.freenote.exception.ResourceNotFoundException;
 import be.freenote.event.XpEvent;
 import be.freenote.repository.DocumentRepository;
 import be.freenote.repository.RatingRepository;
+import be.freenote.repository.Repositories;
 import be.freenote.repository.UserRepository;
 import be.freenote.service.RatingService;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +30,8 @@ public class RatingServiceImpl implements RatingService {
     @Override
     @Transactional
     public void rate(Long userId, Long documentId, int score) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+        User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
+        Document document = Repositories.findByIdOrThrow(documentRepository, documentId, "Document");
 
         Optional<Rating> existing = ratingRepository.findByDocumentIdAndUserId(documentId, userId);
 
@@ -64,8 +62,7 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public Double getAverageRating(Long documentId) {
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+        Document document = Repositories.findByIdOrThrow(documentRepository, documentId, "Document");
         return document.getAverageRating().doubleValue();
     }
 

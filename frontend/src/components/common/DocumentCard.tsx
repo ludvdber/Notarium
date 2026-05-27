@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CardContent, Typography, Box, Chip, Rating, Tooltip, IconButton, Snackbar, Alert } from '@mui/material';
-import { Download, Verified, SmartToy, PictureAsPdf, ContentCopy } from '@mui/icons-material';
+import { Download, Verified, SmartToy, PictureAsPdf, Share } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import type { DocumentResponse } from '@/types';
 import GlassCard from '@/components/ui/GlassCard';
-import { categoryColor, formatDate } from '@/lib/utils';
+import { categoryColor, formatDate, shareOrCopy } from '@/lib/utils';
 import * as s from './DocumentCard.styles';
 
 interface Props {
@@ -16,13 +16,17 @@ interface Props {
 
 export default function DocumentCard({ document: doc, haloStrength = 0 }: Props) {
   const { t, i18n } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const [shareStatus, setShareStatus] = useState<'copied' | 'shared' | null>(null);
 
-  const handleCopyLink = (e: React.MouseEvent) => {
+  const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    navigator.clipboard.writeText(`${window.location.origin}/documents/${doc.id}`);
-    setCopied(true);
+    const result = await shareOrCopy({
+      title: doc.title,
+      text: doc.title,
+      url: `${window.location.origin}/documents/${doc.id}`,
+    });
+    if (result !== 'error') setShareStatus(result);
   };
 
   return (
@@ -92,15 +96,17 @@ export default function DocumentCard({ document: doc, haloStrength = 0 }: Props)
           <Typography variant="caption" color="text.secondary" sx={s.createdAt}>
             {formatDate(doc.createdAt, i18n.language)}
           </Typography>
-          <Tooltip title={t('common.copyLink')} enterDelay={300}>
-            <IconButton size="small" onClick={handleCopyLink} sx={{ p: 0.5 }}>
-              <ContentCopy sx={{ fontSize: 14, color: 'text.secondary' }} />
+          <Tooltip title={t('common.share')} enterDelay={300}>
+            <IconButton size="small" onClick={handleShare} sx={{ p: 0.5 }}>
+              <Share sx={{ fontSize: 14, color: 'text.secondary' }} />
             </IconButton>
           </Tooltip>
         </Box>
       </CardContent>
-      <Snackbar open={copied} autoHideDuration={2000} onClose={() => setCopied(false)}>
-        <Alert severity="success" onClose={() => setCopied(false)}>{t('common.linkCopied')}</Alert>
+      <Snackbar open={shareStatus !== null} autoHideDuration={2000} onClose={() => setShareStatus(null)}>
+        <Alert severity="success" onClose={() => setShareStatus(null)}>
+          {shareStatus === 'shared' ? t('common.shared') : t('common.linkCopied')}
+        </Alert>
       </Snackbar>
     </GlassCard>
   );

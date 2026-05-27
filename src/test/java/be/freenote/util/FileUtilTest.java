@@ -33,22 +33,4 @@ class FileUtilTest {
     void shouldHandleAccentedCharacters() {
         assertThat(FileUtil.sanitizeFileName("résumé.pdf")).isEqualTo("r_sum_.pdf");
     }
-
-    // ---- getFileExtension ----
-
-    @Test
-    void shouldReturnExtension() {
-        assertThat(FileUtil.getFileExtension("document.pdf")).isEqualTo("pdf");
-        assertThat(FileUtil.getFileExtension("archive.tar.gz")).isEqualTo("gz");
-    }
-
-    @Test
-    void shouldReturnEmptyWhenNoExtension() {
-        assertThat(FileUtil.getFileExtension("README")).isEmpty();
-    }
-
-    @Test
-    void shouldReturnEmptyWhenNull() {
-        assertThat(FileUtil.getFileExtension(null)).isEmpty();
-    }
 }

@@ -1,16 +1,16 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
-import { Container, Skeleton, Box, Snackbar, Alert } from '@mui/material';
+import { lazy, Suspense } from 'react';
+import { Container, Skeleton, Box } from '@mui/material';
 import { Helmet } from 'react-helmet-async';
-import { useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useAuthStore } from '@/stores/useAuthStore';
 import HeroSection from '@/components/home/HeroSection';
 import Divider from '@/components/ui/Divider';
+import AdSlot from '@/components/ui/AdSlot';
 
 const StatsSection = lazy(() => import('@/components/home/StatsSection'));
 const NewsAndLinks = lazy(() => import('@/components/home/NewsAndLinks'));
 const PopularDocs = lazy(() => import('@/components/home/PopularDocs'));
-const LeaderboardDelegates = lazy(() => import('@/components/home/LeaderboardDelegates'));
-const SignupBanner = lazy(() => import('@/components/home/SignupBanner'));
+const RecentAndShortcuts = lazy(() => import('@/components/home/RecentAndShortcuts'));
+const DelegatesDiscord = lazy(() => import('@/components/home/DelegatesDiscord'));
 
 function SectionFallback() {
   return (
@@ -21,52 +21,45 @@ function SectionFallback() {
 }
 
 export default function Home() {
-  const { t } = useTranslation();
-  const location = useLocation();
-  const [showLoginAlert, setShowLoginAlert] = useState(false);
+  const { token } = useAuthStore();
 
-  useEffect(() => {
-    if (location.state?.loginRequired) {
-      setShowLoginAlert(true);
-      // Clear state so refresh doesn't re-show
-      window.history.replaceState({}, '');
-    }
-  }, [location.state]);
+  // The "please log in" snackbar is now global — rendered by <AuthPromptSnackbar/>
+  // at the App root, fired either by NAV link clicks (no URL flash) or by
+  // <ProtectedRoute> on direct URL entry (fallback).
 
   return (
     <>
       <Helmet><title>Freenote — Éclaire ta promo</title></Helmet>
-      <Snackbar
-        open={showLoginAlert}
-        autoHideDuration={5000}
-        onClose={() => setShowLoginAlert(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setShowLoginAlert(false)} severity="info" variant="filled">
-          {t('auth.loginRequired')}
-        </Alert>
-      </Snackbar>
       <HeroSection />
       <Container maxWidth="lg">
-        <Suspense fallback={<SectionFallback />}>
-          <StatsSection />
-        </Suspense>
-        <Divider />
+        {token && (
+          <>
+            <Suspense fallback={<SectionFallback />}>
+              <StatsSection />
+            </Suspense>
+            <Divider />
+          </>
+        )}
+        {!token && <AdSlot width={728} height={90} sx={{ my: 4 }} />}
         <Suspense fallback={<SectionFallback />}>
           <NewsAndLinks />
         </Suspense>
-        <Divider />
-        <Suspense fallback={<SectionFallback />}>
-          <PopularDocs />
-        </Suspense>
-        <Divider />
-        <Suspense fallback={<SectionFallback />}>
-          <LeaderboardDelegates />
-        </Suspense>
-        <Divider />
-        <Suspense fallback={<SectionFallback />}>
-          <SignupBanner />
-        </Suspense>
+        {token && (
+          <>
+            <Divider />
+            <Suspense fallback={<SectionFallback />}>
+              <PopularDocs />
+            </Suspense>
+            <Divider />
+            <Suspense fallback={<SectionFallback />}>
+              <RecentAndShortcuts />
+            </Suspense>
+            <Divider />
+            <Suspense fallback={<SectionFallback />}>
+              <DelegatesDiscord />
+            </Suspense>
+          </>
+        )}
       </Container>
     </>
   );

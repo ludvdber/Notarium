@@ -33,11 +33,6 @@
     "courses": "Courses",
     "weekUploads": "docs added this week"
   },
-  "sections": {
-    "title": "Sections",
-    "viewAll": "View all",
-    "docsCount": "docs"
-  },
   "popular": {
     "title": "Popular documents",
     "viewAll": "View all",
@@ -49,9 +44,10 @@
     "username": "User",
     "xp": "XP",
     "docs": "Documents",
-    "badges": "Badges",
     "viewAll": "View all",
-    "empty": "The podium is wide open. Claim it."
+    "empty": "The podium is wide open. Claim it.",
+    "you": "You",
+    "yourRank": "Your rank"
   },
   "delegates": {
     "title": "Delegates",
@@ -74,16 +70,9 @@
     "discordRoles": "Create an account on the site to get the Verified role on Discord and access course discussions. Other roles are granted based on your XP.",
     "discordRolesShort": "Discord roles linked to your XP"
   },
-  "signup": {
-    "title": "Join your class in 30 seconds.",
-    "subtitle": "Discord or Google login, verify your @isfce.be, done.",
-    "cta": "Sign in with Discord or Google",
-    "stickyLabel": "Ready to join your class?",
-    "discordISFCE": "ISFCE Discord",
-    "discordLink": "💬 ISFCE Discord →"
-  },
   "ad": {
-    "disclaimer": "Ad — support Freenote on Ko-fi to hide these."
+    "disclaimer": "Ad — support Freenote to hide these.",
+    "loginHint": "Log in so your donation disables ads."
   },
   "links": {
     "title": "Useful links",
@@ -94,7 +83,7 @@
     "tfe": "Thesis",
     "stages": "Internships",
     "emplois": "Jobs",
-    "bibliotheque": "Library",
+    "anciensTfe": "Past theses",
     "aideReussite": "Study help"
   },
   "document": {
@@ -111,6 +100,7 @@
     "professor": "Professor",
     "rating": "Rating",
     "downloads": "Downloads",
+    "publishedAt": "Published on",
     "tags": "Tags",
     "summary": "AI Summary",
     "upload": "Share a document",
@@ -120,6 +110,7 @@
     "noResults": "No documents found — try different keywords.",
     "favorite": "Favorite",
     "addFavorite": "Add to favorites",
+    "removeFavorite": "Remove from favorites",
     "reportPlaceholder": "Reason...",
     "courseDocuments": "Course documents",
     "aiShort": "AI",
@@ -128,24 +119,58 @@
   "admin": {
     "tabs": {
       "documents": "Documents",
+      "sections": "Sections",
       "courses": "Courses",
       "professors": "Professors",
       "reports": "Reports",
-      "delegates": "Delegates"
+      "delegates": "Delegates",
+      "users": "Users",
+      "donations": "Donations"
     },
-    "placeholder": "Admin panel — to be implemented in next phases.",
     "docs": {
       "pending": "Pending documents",
       "noPending": "No documents pending verification.",
       "verify": "Verify",
+      "view": "View document",
       "all": "All documents",
       "edit": "Edit",
       "deleteConfirm": "Permanently delete this document and its file? This cannot be undone."
     },
+    "sections": {
+      "title": "Sections",
+      "name": "Name",
+      "icon": "Icon",
+      "create": "Create",
+      "rename": "Rename",
+      "renameTitle": "Rename section",
+      "delete": "Delete",
+      "deleteTitle": "Delete section",
+      "deleteConfirm": "Delete \"{{name}}\" and {{count}} linked document(s)? Files will be permanently lost.",
+      "approve": "Approve",
+      "pending": "Pending",
+      "docCount_one": "{{count}} document",
+      "docCount_other": "{{count}} documents"
+    },
     "courses": {
-      "pending": "Pending courses",
+      "title": "Courses",
+      "name": "Name",
+      "section": "Section",
+      "create": "Create",
+      "rename": "Rename",
+      "renameTitle": "Rename course",
+      "delete": "Delete",
+      "deleteTitle": "Delete course",
+      "deleteConfirm": "Delete \"{{name}}\" and {{count}} linked document(s)? Files will be permanently lost.",
+      "pending": "Pending",
+      "approved": "Approved",
+      "all": "All",
+      "approve": "Approve",
+      "filterSection": "Filter by section",
+      "filterStatus": "Status",
+      "allSections": "All sections",
       "noPending": "No courses pending approval.",
-      "approve": "Approve"
+      "docCount_one": "{{count}} document",
+      "docCount_other": "{{count}} documents"
     },
     "profs": {
       "pending": "Pending professors",
@@ -162,7 +187,9 @@
       "title": "Delegate Management",
       "assign": "Assign",
       "assignTitle": "New mandate",
-      "userId": "User ID",
+      "user": "User",
+      "userSearchPlaceholder": "Type the first letters of the username…",
+      "userSearchEmpty": "No user found",
       "section": "Section",
       "startDate": "Start date",
       "confirm": "Confirm",
@@ -172,19 +199,59 @@
       "end": "End mandate",
       "delete": "Delete",
       "activeChip": "Active",
-      "endedChip": "Ended"
+      "endedChip": "Ended",
+      "edit": "Edit",
+      "editTitle": "Edit mandate",
+      "endDateOptional": "End date (optional)",
+      "reopen": "Reopen this mandate (clears end date)",
+      "tagVerified": "verified",
+      "tagSupporter": "supporter"
+    },
+    "users": {
+      "title": "Users",
+      "searchPlaceholder": "Search by username…",
+      "empty": "No users found.",
+      "verified": "Verified",
+      "unverified": "Unverified",
+      "verify": "Verify manually",
+      "unverify": "Revoke verification",
+      "role": "Role",
+      "xp": "{{xp}} XP",
+      "delete": "Delete this account",
+      "deleteTitle": "Delete account",
+      "deleteConfirm": "Permanently delete the account of \"{{username}}\"? Their documents will stay online but displayed as \"Anonymous\". This cannot be undone."
+    },
+    "donations": {
+      "title": "Donations & ad-free",
+      "grantTitle": "Manually grant ad-free time",
+      "grantHelp": "Use this if a Ko-fi donation didn't match an account, or to gift an ad-free period. The duration is added on top of any existing active period.",
+      "user": "User",
+      "days": "Days",
+      "grant": "Grant",
+      "granted": "{{username}} is ad-free until {{until}}",
+      "totalCount": "Total donations",
+      "totalAmount": "Total amount",
+      "empty": "No donations yet.",
+      "unmatched": "Unmatched donor",
+      "manualGrant": "Manual grant",
+      "active": "Active",
+      "adFreeUntil": "Ad-free until",
+      "userSummary": "{{kofi}} Ko-fi donation(s) · {{manual}} manual grant(s) · {{amount}} €"
     }
   },
   "upload": {
     "title": "Share a document",
     "dragDrop": "Drag & drop a PDF here or click to pick one",
     "maxSize": "Max size: 10 MB",
+    "compressSuggestion": "Your PDF is larger than 5 MB — consider compressing it (e.g. ilovepdf.com/compress_pdf) before uploading to save bandwidth.",
     "submit": "Share",
     "success": "Doc shared — thanks for your class!",
     "successMessage": "Your document is live! It will be reviewed by a moderator within 24-48h. You'll earn XP and badges after approval.",
     "pdfOnly": "PDFs only for now — convert and try again.",
     "tagsHelper": "Separate tags with commas (e.g. java, algo, s3)",
-    "titleCounter": "{{count}}/{{max}}"
+    "titleCounter": "{{count}}/{{max}}",
+    "anonymousHelp": "Hide your username on the document page — other students will see \"Anonymous\" as the author. You still earn XP, badges and contributions on your profile.",
+    "aiGeneratedHelp": "Check if the content was written or heavily generated by an AI (ChatGPT, Claude, etc.). An \"AI\" badge will be shown on the document."
   },
   "profile": {
     "title": "My profile",
@@ -194,28 +261,80 @@
     "socialGithub": "GitHub",
     "socialLinkedin": "LinkedIn",
     "socialDiscord": "Discord",
-    "badges": "Badges",
     "documents": "My documents",
-    "favorites": "My favorites",
     "settings": "Settings",
     "theme": "Theme",
     "deleteAccount": "Delete my account",
     "deleteConfirm": "This is permanent. Your docs stay online, your account doesn't. Confirm?",
     "save": "Save",
+    "saved": "Changes saved",
+    "viewPublic": "View my public profile",
     "public": "Public profile",
-    "carousel": "Show in carousel"
+    "publicHelp": "Makes your profile page visible to other signed-in users.",
+    "carousel": "Show in carousel",
+    "carouselHelp": "Shows your avatar in the community carousel on the home page.",
+    "carouselLocked": "Verified users only. Verify your @isfce.be email to unlock.",
+    "aboutSection": "About",
+    "linksSection": "Socials",
+    "preferencesSection": "Preferences",
+    "statsSection": "Stats",
+    "delegationSection": "Delegate mandates",
+    "dangerZone": "Danger zone",
+    "dangerZoneHelp": "This is permanent. Your docs stay online but will be shown as \"Anonymous\".",
+    "memberSince": "Member since",
+    "documentsPublished": "Documents published",
+    "supporter": "Supporter",
+    "verified": "Verified",
+    "favoritesTitle": "My favorites ({{count}})",
+    "noFavorites": "You haven't favorited any document yet.",
+    "avatar": {
+      "title": "Avatar",
+      "help": "Pick how your avatar is shown. No upload — either your username letter or a generated avatar.",
+      "source": {
+        "AUTO": "Automatic",
+        "LETTER": "Letter",
+        "DICEBEAR": "Generated"
+      }
+    },
+    "identitySection": "Identity",
+    "identityHelp": "Optional. Your username stays your identifier; these fields only drive the displayed label.",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "displayRealName": "Display my real name",
+    "displayRealNameHelp": "When enabled, others see \"First Last\" instead of your username.",
+    "linkedAccounts": {
+      "title": "Linked accounts",
+      "help": "Link multiple providers to your account so you can sign in with any of them.",
+      "linked": "Linked",
+      "link": "Link",
+      "unlink": "Unlink",
+      "cannotUnlinkLast": "You cannot unlink your only sign-in method",
+      "linkSuccess": "Account {{provider}} linked successfully"
+    }
   },
   "auth": {
-    "verifyEmail": "Verify your ISFCE email",
-    "enterEmail": "Enter your @isfce.be email",
-    "sendCode": "Send code",
-    "enterCode": "Enter the code you received",
     "confirm": "Confirm",
-    "verified": "Email verified!",
-    "codeExpired": "Wrong or expired code — grab a fresh one.",
     "verificationRequired": "Verification required",
     "verifyEmailMessage": "Verify your @isfce.be email to unlock this feature.",
-    "loginRequired": "Log in to access this content"
+    "loginRequired": "Log in to access this content",
+    "adminRequired": "Admin access required"
+  },
+  "home": {
+    "recent": {
+      "title": "Keep reading",
+      "empty": "Open a document and it will show up here next time."
+    },
+    "shortcuts": {
+      "title": "Quick access",
+      "items": {
+        "share": "Share a doc",
+        "favorites": "My favorites",
+        "mySection": "Browse",
+        "leaderboard": "Leaderboard",
+        "bug": "Report a bug",
+        "kofi": "Buy a coffee"
+      }
+    }
   },
   "search": {
     "placeholder": "Search documents...",
@@ -230,14 +349,14 @@
     "error": "Something went wrong — try again in a moment.",
     "errorTitle": "Oops",
     "errorRetry": "Back to home",
-    "retry": "Retry",
     "cancel": "Cancel",
     "save": "Save",
     "confirm": "Confirm",
-    "back": "Back",
     "seeAll": "See all",
     "copyLink": "Copy link",
-    "linkCopied": "Link copied!"
+    "linkCopied": "Link copied!",
+    "share": "Share",
+    "shared": "Shared!"
   },
   "footer": {
     "tagline": "ISFCE Document Hub",
@@ -304,6 +423,21 @@
       "output": "Result",
       "invalid": "Invalid Base64",
       "placeholder": "Enter text to encode/decode…"
+    },
+    "jwt": {
+      "tab": "JWT",
+      "help": "Paste a JSON Web Token below. Everything stays in your browser — the token is never sent to the server.",
+      "tokenLabel": "JWT token",
+      "header": "Header",
+      "payload": "Payload",
+      "signature": "Signature",
+      "signatureNote": "The signature is not verified in the browser (it would require the issuer's public key).",
+      "invalidFormat": "A valid JWT has three segments separated by dots.",
+      "invalidContent": "One of the segments could not be decoded as JSON.",
+      "valid": "Still valid",
+      "expired": "Expired",
+      "issuedAt": "Issued at",
+      "expiresAt": "Expires at"
     }
   },
   "notifications": {
@@ -314,27 +448,21 @@
     "xpEarned": "+{{xp}} XP earned"
   },
   "userPublic": {
-    "notFound": "User not found."
+    "notFound": "User not found.",
+    "editProfile": "Edit my profile"
   },
   "notFound": {
     "title": "Page not found",
     "subtitle": "This page doesn't exist or has been moved.",
     "cta": "Back to home"
   },
-  "badges": {
-    "FIRST_UPLOAD": "First share",
-    "CONTRIBUTOR_10": "10 contributions",
-    "CONTRIBUTOR_50": "50 contributions",
-    "CONTRIBUTOR_100": "100 contributions",
-    "XP_100": "100 XP",
-    "XP_500": "500 XP",
-    "XP_1000": "1000 XP"
-  },
   "categories": {
     "SYNTHESE": "Summary",
     "EXAMEN": "Exam",
     "NOTES": "Notes",
     "EXERCICES": "Exercises",
+    "COURS": "Course material",
+    "TFE": "Thesis (TFE)",
     "DIVERS": "Miscellaneous"
   }
 }

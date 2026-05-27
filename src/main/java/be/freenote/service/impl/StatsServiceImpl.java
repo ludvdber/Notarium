@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@org.springframework.transaction.annotation.Transactional(readOnly = true)
 public class StatsServiceImpl implements StatsService {
 
     private static final String CACHE_KEY = "stats:global";
@@ -23,6 +24,11 @@ public class StatsServiceImpl implements StatsService {
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+
+    @Override
+    public void invalidateCache() {
+        redisTemplate.delete(CACHE_KEY);
+    }
 
     @Override
     public StatsResponse getStats() {

@@ -1,22 +1,38 @@
+export type AvatarSource = 'AUTO' | 'LETTER' | 'DICEBEAR';
+
 export interface User {
   id: number;
   username: string;
+  role: string | null;
+  verified: boolean;
   xp: number;
   bio: string | null;
   website: string | null;
   github: string | null;
   linkedin: string | null;
   discord: string | null;
-  badges: string[];
   documentCount: number;
   profilePublic: boolean;
+  showInCarousel: boolean;
   supporter: boolean;
   termsAccepted: boolean;
+  avatarUrl: string | null;
+  avatarSource: AvatarSource;
+  displayName: string;
+  firstName: string | null;
+  lastName: string | null;
+  displayRealName: boolean;
+}
+
+export interface LinkedProvider {
+  provider: 'DISCORD';
+  linkedAt: string;
 }
 
 export interface DocumentResponse {
   id: number;
   title: string;
+  courseId: number;
   courseName: string;
   sectionName: string;
   category: string;
@@ -29,7 +45,6 @@ export interface DocumentResponse {
   averageRating: number;
   downloadCount: number;
   tags: string[];
-  summaryAi: string | null;
   createdAt: string;
 }
 
@@ -38,13 +53,16 @@ export interface Section {
   name: string;
   icon: string | null;
   documentCount: number;
+  approved: boolean;
 }
 
 export interface Course {
   id: number;
   name: string;
+  sectionId: number;
   sectionName: string;
   documentCount: number;
+  approved: boolean;
 }
 
 export interface StatsResponse {
@@ -59,10 +77,11 @@ export interface LeaderboardEntry {
   userId: number;
   rank: number;
   username: string;
+  displayName: string;
   xp: number;
   documentCount: number;
-  badges: string[];
   supporter: boolean;
+  avatarUrl: string | null;
 }
 
 export interface DelegateMember {
@@ -99,6 +118,12 @@ export interface EndDelegateRequest {
   endDate: string;
 }
 
+export interface UpdateDelegateRequest {
+  startDate?: string;
+  endDate?: string | null;
+  clearEndDate?: boolean;
+}
+
 export interface NewsItem {
   title: string;
   date: string | null;
@@ -108,12 +133,13 @@ export interface NewsItem {
 
 export interface ProfileCardResponse {
   username: string;
+  displayName: string;
   role: string;
   discord: string | null;
   github: string | null;
   linkedin: string | null;
-  badges: string[];
   supporter: boolean;
+  avatarUrl: string | null;
 }
 
 export interface ErrorResponse {
@@ -132,6 +158,7 @@ export interface PageResponse<T> {
 
 export interface UpdateDocumentRequest {
   title?: string;
+  courseId?: number;
   category?: string;
   language?: string;
   year?: string;
@@ -160,7 +187,10 @@ export interface UpdateProfileRequest {
   discord?: string;
   profilePublic: boolean;
   showInCarousel: boolean;
-  themePref: string;
+  avatarSource?: AvatarSource;
+  firstName?: string;
+  lastName?: string;
+  displayRealName: boolean;
 }
 
 export interface RateRequest {
@@ -191,5 +221,14 @@ export interface ReportResponse {
   createdAt: string;
 }
 
-export type Category = 'SYNTHESE' | 'EXAMEN' | 'NOTES' | 'EXERCICES' | 'DIVERS';
+export interface DonationResponse {
+  id: number;
+  userId: number | null;
+  username: string | null;
+  amount: number;
+  kofiTransactionId: string;
+  adFreeUntil: string | null;
+}
+
+export type Category = 'SYNTHESE' | 'EXAMEN' | 'NOTES' | 'EXERCICES' | 'COURS' | 'TFE' | 'DIVERS';
 

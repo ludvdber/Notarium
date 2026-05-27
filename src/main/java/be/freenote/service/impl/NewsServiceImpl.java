@@ -75,17 +75,17 @@ public class NewsServiceImpl implements NewsService {
 
             for (int i = 0; i < Math.min(entries.getLength(), 10); i++) {
                 Element entry = (Element) entries.item(i);
-                NewsItem item = new NewsItem();
 
-                item.setTitle(getTextContent(entry, "title"));
-                item.setDate(getTextContent(entry, "published"));
+                String title = getTextContent(entry, "title");
+                String date = getTextContent(entry, "published");
 
                 // Extract link
+                String url = null;
                 NodeList links = entry.getElementsByTagNameNS("http://www.w3.org/2005/Atom", "link");
                 for (int j = 0; j < links.getLength(); j++) {
                     Element link = (Element) links.item(j);
                     if ("alternate".equals(link.getAttribute("rel"))) {
-                        item.setUrl(link.getAttribute("href"));
+                        url = link.getAttribute("href");
                         break;
                     }
                 }
@@ -101,9 +101,8 @@ public class NewsServiceImpl implements NewsService {
                         labels.add(term);
                     }
                 }
-                item.setLabels(labels);
 
-                items.add(item);
+                items.add(new NewsItem(title, date, labels, url));
             }
 
             return items;

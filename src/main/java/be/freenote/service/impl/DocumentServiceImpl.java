@@ -7,14 +7,15 @@ import be.freenote.dto.response.PageResponse;
 import be.freenote.entity.*;
 import be.freenote.enums.Category;
 import be.freenote.exception.ForbiddenException;
-import be.freenote.exception.ResourceNotFoundException;
 import be.freenote.mapper.DocumentMapper;
 import be.freenote.repository.*;
+import be.freenote.repository.Repositories;
 import be.freenote.event.XpEvent;
 import be.freenote.service.DocumentService;
 import be.freenote.service.MeilisearchService;
 import be.freenote.service.MinioService;
 import be.freenote.service.PdfValidationService;
+import be.freenote.service.StatsService;
 import be.freenote.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -30,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -58,24 +60,21 @@ public class DocumentServiceImpl implements DocumentService {
     private final MinioService minioService;
     private final PdfValidationService pdfValidationService;
     private final MeilisearchService meilisearchService;
+    private final StatsService statsService;
     private final ApplicationEventPublisher eventPublisher;
     private final StringRedisTemplate redisTemplate;
 
     @Override
     @Transactional
     public DocumentResponse create(CreateDocumentRequest request, MultipartFile file, Long userId) {
-        // Validate + compress PDF (MIME, size, magic bytes, Ghostscript)
-        byte[] compressed = pdfValidationService.validateAndCompress(file);
+        byte[] pdfBytes = pdfValidationService.validate(file);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-        Course course = courseRepository.findById(request.getCourseId())
-                .orElseThrow(() -> new ResourceNotFoundException("Course", "id", request.getCourseId()));
+        User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
+        Course course = Repositories.findByIdOrThrow(courseRepository, request.getCourseId(), "Course");
 
         Professor professor = null;
         if (request.getProfessorId() != null) {
-            professor = professorRepository.findById(request.getProfessorId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Professor", "id", request.getProfessorId()));
+            professor = Repositories.findByIdOrThrow(professorRepository, request.getProfessorId(), "Professor");
         }
 
         // Validate category against enum
@@ -87,7 +86,7 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         String fileKey = UUID.randomUUID() + "/" + FileUtil.sanitizeFileName(file.getOriginalFilename());
-        minioService.upload(fileKey, new ByteArrayInputStream(compressed), compressed.length, PDF_CONTENT_TYPE);
+        minioService.upload(fileKey, new ByteArrayInputStream(pdfBytes), pdfBytes.length, PDF_CONTENT_TYPE);
 
         Document document = Document.builder()
                 .title(sanitize(request.getTitle()))
@@ -100,7 +99,7 @@ public class DocumentServiceImpl implements DocumentService {
                 .aiGenerated(request.isAiGenerated())
                 .year(request.getYear())
                 .professor(professor)
-                .fileSize((long) compressed.length)
+                .fileSize((long) pdfBytes.length)
                 .build();
 
         Document saved = documentRepository.save(document);
@@ -114,45 +113,48 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         meilisearchService.indexDocument(saved); // async — does not block the transaction
+        statsService.invalidateCache();
         // XP is awarded when admin verifies the document, not at upload — prevents spam farming
 
         log.info("Document uploaded: id={}, title='{}', user={}, size={}KB",
-                saved.getId(), saved.getTitle(), userId, compressed.length / 1024);
+                saved.getId(), saved.getTitle(), userId, pdfBytes.length / 1024);
 
         return documentMapper.toResponse(saved);
     }
 
     @Override
     public DocumentResponse getById(Long id) {
-        Document document = documentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Document", "id", id));
+        Document document = Repositories.findByIdOrThrow(documentRepository, id, "Document");
         return documentMapper.toResponse(document);
     }
 
     @Override
-    public PageResponse<DocumentResponse> search(String query, Long courseId, String category,
+    public PageResponse<DocumentResponse> search(String query, Long sectionId, Long courseId, String category,
                                                    String sort, Pageable pageable) {
         if (query != null && !query.isBlank()) {
             List<Long> ids = meilisearchService.search(query, courseId, category, sort, pageable);
-            if (!ids.isEmpty()) {
-                List<DocumentResponse> results = documentRepository.findAllById(ids).stream()
-                        .map(documentMapper::toResponse)
-                        .toList();
-                return new PageResponse<>(results, pageable.getPageNumber(), pageable.getPageSize(),
-                        results.size(), 1);
+            if (ids.isEmpty()) {
+                return new PageResponse<>(List.of(), pageable.getPageNumber(), pageable.getPageSize(), 0, 0);
             }
+            // Preserve Meilisearch relevance/sort ordering — findAllById returns rows in DB order.
+            // Section is post-filtered in Java because it's not a Meilisearch filterable attribute today.
+            Map<Long, Document> byId = documentRepository.findAllById(ids).stream()
+                    .filter(d -> sectionId == null
+                            || (d.getCourse() != null
+                                && d.getCourse().getSection() != null
+                                && sectionId.equals(d.getCourse().getSection().getId())))
+                    .collect(Collectors.toMap(Document::getId, d -> d));
+            List<DocumentResponse> results = ids.stream()
+                    .map(byId::get)
+                    .filter(java.util.Objects::nonNull)
+                    .map(documentMapper::toResponse)
+                    .toList();
+            return new PageResponse<>(results, pageable.getPageNumber(), pageable.getPageSize(),
+                    results.size(), 1);
         }
 
-        Page<Document> page;
-        if (courseId != null && category != null) {
-            page = documentRepository.findByVerifiedTrueAndCourseIdAndCategory(courseId, Category.valueOf(category), pageable);
-        } else if (courseId != null) {
-            page = documentRepository.findByVerifiedTrueAndCourseId(courseId, pageable);
-        } else if (category != null) {
-            page = documentRepository.findByVerifiedTrueAndCategory(Category.valueOf(category), pageable);
-        } else {
-            page = documentRepository.findByVerifiedTrue(pageable);
-        }
+        Category cat = category != null ? Category.valueOf(category) : null;
+        Page<Document> page = documentRepository.findVerifiedFiltered(sectionId, courseId, cat, pageable);
 
         List<DocumentResponse> content = page.getContent().stream()
                 .map(documentMapper::toResponse)
@@ -164,11 +166,8 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     @Transactional
     public void delete(Long documentId, Long userId) {
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        Document document = Repositories.findByIdOrThrow(documentRepository, documentId, "Document");
+        User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
 
         boolean isAuthor = document.getUser() != null && document.getUser().getId().equals(userId);
         boolean isAdmin = "ADMIN".equals(user.getRole());
@@ -179,19 +178,13 @@ public class DocumentServiceImpl implements DocumentService {
         minioService.delete(document.getFileKey());
         meilisearchService.deleteDocument(document.getId());
         documentRepository.delete(document);
+        statsService.invalidateCache();
         log.info("Document deleted: id={}, by user={}", documentId, userId);
     }
 
     @Override
     public List<DocumentResponse> getPopular() {
         return documentRepository.findTop10ByVerifiedTrueOrderByDownloadCountDesc().stream()
-                .map(documentMapper::toResponse)
-                .toList();
-    }
-
-    @Override
-    public List<DocumentResponse> getRecent() {
-        return documentRepository.findTop10ByVerifiedTrueOrderByCreatedAtDesc().stream()
                 .map(documentMapper::toResponse)
                 .toList();
     }
@@ -206,8 +199,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     @Transactional
     public DocumentResponse verify(Long documentId) {
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+        Document document = Repositories.findByIdOrThrow(documentRepository, documentId, "Document");
         document.setVerified(true);
         Document saved = documentRepository.save(document);
 
@@ -215,6 +207,7 @@ public class DocumentServiceImpl implements DocumentService {
         if (document.getUser() != null) {
             eventPublisher.publishEvent(new XpEvent.DocumentVerified(document.getUser().getId(), documentId));
         }
+        statsService.invalidateCache();
 
         return documentMapper.toResponse(saved);
     }
@@ -222,11 +215,14 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     @Transactional
     public DocumentResponse adminUpdate(Long documentId, UpdateDocumentRequest request) {
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+        Document document = Repositories.findByIdOrThrow(documentRepository, documentId, "Document");
 
         if (request.getTitle() != null && !request.getTitle().isBlank()) {
             document.setTitle(sanitize(request.getTitle()));
+        }
+        if (request.getCourseId() != null) {
+            Course course = Repositories.findByIdOrThrow(courseRepository, request.getCourseId(), "Course");
+            document.setCourse(course);
         }
         if (request.getCategory() != null) {
             document.setCategory(Category.valueOf(request.getCategory()));
@@ -241,8 +237,7 @@ public class DocumentServiceImpl implements DocumentService {
             document.setVerified(request.getVerified());
         }
         if (request.getProfessorId() != null) {
-            Professor professor = professorRepository.findById(request.getProfessorId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Professor", "id", request.getProfessorId()));
+            Professor professor = Repositories.findByIdOrThrow(professorRepository, request.getProfessorId(), "Professor");
             document.setProfessor(professor);
         }
         if (request.getTags() != null) {
@@ -264,19 +259,18 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     @Transactional
     public void adminDelete(Long documentId) {
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+        Document document = Repositories.findByIdOrThrow(documentRepository, documentId, "Document");
         minioService.delete(document.getFileKey());
         meilisearchService.deleteDocument(document.getId());
         documentRepository.delete(document);
+        statsService.invalidateCache();
     }
 
     // --- Download with Redis buffer ---
 
     @Override
     public byte[] download(Long documentId, Long userId) {
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+        Document document = Repositories.findByIdOrThrow(documentRepository, documentId, "Document");
 
         // Buffer in Redis — no DB write on each download
         redisTemplate.opsForValue().increment(DL_BUFFER_PREFIX + documentId);

@@ -14,6 +14,8 @@ export const chipsRow: Sx = {
 export const categoryChip = (color: string): Sx => ({
   bgcolor: `${color}20`,
   color,
+  border: `1px solid ${color}66`,
+  fontWeight: 600,
 });
 
 export const title: Sx = { fontWeight: 800, mb: 1 };
@@ -57,11 +59,6 @@ export const reportRow: Sx = {
   mt: 2,
   display: 'flex',
   gap: 1,
-};
-
-export const createdAt: Sx = {
-  mt: 3,
-  display: 'block',
 };
 
 export const pdfViewerWrapper: Sx = {

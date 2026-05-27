@@ -1,0 +1,61 @@
+package be.freenote.config;
+
+import org.springframework.core.io.Resource;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.resource.PathResourceResolver;
+
+import java.io.IOException;
+import java.util.Set;
+
+/**
+ * Serves the Vite SPA from {@code classpath:/static/} and falls back to {@code index.html}
+ * for deep-link routes that React Router owns ({@code /browse}, {@code /profile/42}, …).
+ * API, OAuth and actuator paths are never rewritten, so adding a new frontend route
+ * requires zero backend changes.
+ *
+ * <p>The single fat jar produced by {@code ./gradlew bootJar} therefore contains both
+ * the API and the SPA — ready to drop into a Proxmox LXC and run with {@code java -jar}.
+ */
+@Configuration
+public class SpaForwardingConfig implements WebMvcConfigurer {
+
+    /** Prefixes that must NOT fall back to index.html (they're backend endpoints). */
+    private static final Set<String> BACKEND_PREFIXES = Set.of(
+            "api/",
+            "oauth2/",
+            "login/",
+            "actuator/",
+            "v3/",
+            "swagger-ui",
+            "webjars/"
+    );
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/**")
+                .addResourceLocations("classpath:/static/")
+                .resourceChain(true)
+                .addResolver(new SpaPathResourceResolver());
+    }
+
+    private static final class SpaPathResourceResolver extends PathResourceResolver {
+        @Override
+        protected Resource getResource(String resourcePath, Resource location) throws IOException {
+            Resource requested = location.createRelative(resourcePath);
+            if (requested.exists() && requested.isReadable()) {
+                return requested;
+            }
+            // Backend paths: do not rewrite to index.html, let Spring return the normal 404/response.
+            for (String prefix : BACKEND_PREFIXES) {
+                if (resourcePath.startsWith(prefix)) {
+                    return null;
+                }
+            }
+            // SPA deep link — serve index.html so React Router can resolve it client-side.
+            Resource index = location.createRelative("index.html");
+            return index.exists() ? index : null;
+        }
+    }
+}

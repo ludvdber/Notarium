@@ -4,6 +4,7 @@ import { Box } from '@mui/material';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
+import AuthPromptSnackbar from '@/components/common/AuthPromptSnackbar';
 import ScrollToTop from '@/components/common/ScrollToTop';
 import TermsGate from '@/components/common/TermsGate';
 import OrbitalLoader from '@/components/ui/OrbitalLoader';
@@ -58,6 +59,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <AuthPromptSnackbar />
       <Routes>
         {/* Tools route without main layout */}
         <Route element={<ToolsLayout />}>
@@ -74,7 +76,7 @@ export default function App() {
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/users/:id" element={<ProtectedRoute><UserPublic /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
-          <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
+          <Route path="/news" element={<News />} />
           <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
           <Route path="/legal" element={<Legal />} />
           <Route path="/privacy" element={<Privacy />} />

@@ -5,13 +5,14 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { getNews } from '@/api/endpoints';
 import { formatRelativeDate } from '@/lib/utils';
+import { STALE_15M } from '@/lib/constants';
 import GlassCard from '@/components/ui/GlassCard';
 import { MAIN_LINKS, SECONDARY_LINKS } from './NewsAndLinks.data';
 import * as s from './NewsAndLinks.styles';
 
 export default function NewsAndLinks() {
   const { t, i18n } = useTranslation();
-  const { data: news } = useQuery({ queryKey: ['news'], queryFn: getNews });
+  const { data: news } = useQuery({ queryKey: ['news'], queryFn: getNews, staleTime: STALE_15M });
   const hasNews = (news?.length ?? 0) > 0;
 
   return (
@@ -21,7 +22,7 @@ export default function NewsAndLinks() {
           {/* News column */}
           <Box sx={s.newsCol}>
             <Typography variant="h5" sx={s.columnTitle}>
-              <span role="img" aria-label="">📰</span> {t('news.title')}
+              <span aria-hidden="true">📰</span> {t('news.title')}
             </Typography>
             <GlassCard sx={s.newsCard}>
               {!hasNews && (
@@ -66,7 +67,7 @@ export default function NewsAndLinks() {
           {/* Links column */}
           <Box sx={s.linksCol}>
             <Typography variant="h5" sx={s.columnTitle}>
-              <span role="img" aria-label="">🔗</span> {t('links.title')}
+              <span aria-hidden="true">🔗</span> {t('links.title')}
             </Typography>
             <GlassCard sx={s.linksCard}>
               <Box sx={s.mainLinksCol}>

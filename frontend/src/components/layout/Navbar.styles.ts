@@ -50,4 +50,25 @@ export const navButton = (active: boolean): Sx => ({
     : undefined,
 });
 
-export const avatar: Sx = { width: 32, height: 32, fontSize: 14 };
+export const langToggle: Sx = {
+  display: 'flex',
+  borderRadius: 1,
+  overflow: 'hidden',
+  border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+};
+
+export const langOption = (active: boolean): Sx => ({
+  all: 'unset',
+  cursor: 'pointer',
+  px: 0.8,
+  py: 0.3,
+  fontSize: 11,
+  fontWeight: 700,
+  letterSpacing: 0.5,
+  lineHeight: 1,
+  transition: 'all 0.15s',
+  bgcolor: active ? 'primary.main' : 'transparent',
+  color: active ? '#fff' : 'text.secondary',
+  '&:hover': active ? {} : { bgcolor: 'action.hover' },
+});
+

@@ -3,6 +3,8 @@ package be.freenote.dto.response;
 public record CourseResponse(
         Long id,
         String name,
+        Long sectionId,
         String sectionName,
-        long documentCount
+        long documentCount,
+        boolean approved
 ) {}

@@ -21,6 +21,20 @@ public class MinioServiceImpl implements MinioService {
     @Value("${app.minio.bucket}")
     private String bucket;
 
+    private static final String PRIVATE_BUCKET_POLICY = """
+            {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Deny",
+                  "Principal": {"AWS": ["*"]},
+                  "Action": ["s3:GetObject"],
+                  "Resource": ["arn:aws:s3:::%s/*"]
+                }
+              ]
+            }
+            """;
+
     @PostConstruct
     @Override
     public void initBucket() {
@@ -29,6 +43,11 @@ public class MinioServiceImpl implements MinioService {
             if (!exists) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
             }
+            minioClient.setBucketPolicy(SetBucketPolicyArgs.builder()
+                    .bucket(bucket)
+                    .config(PRIVATE_BUCKET_POLICY.formatted(bucket))
+                    .build());
+            log.info("MinIO bucket '{}' initialized with private policy", bucket);
         } catch (Exception e) {
             throw new FileStorageException("Failed to initialize MinIO bucket", e);
         }

@@ -3,16 +3,23 @@ package be.freenote.service.impl;
 import be.freenote.dto.request.CreateCourseRequest;
 import be.freenote.dto.response.CourseResponse;
 import be.freenote.entity.Course;
+import be.freenote.entity.Document;
 import be.freenote.entity.Section;
 import be.freenote.entity.User;
+import be.freenote.exception.DuplicateResourceException;
 import be.freenote.exception.ResourceNotFoundException;
 import be.freenote.mapper.CourseMapper;
 import be.freenote.repository.CourseRepository;
 import be.freenote.repository.DocumentRepository;
+import be.freenote.repository.Repositories;
 import be.freenote.repository.SectionRepository;
 import be.freenote.repository.UserRepository;
 import be.freenote.service.CourseService;
+import be.freenote.service.MeilisearchService;
+import be.freenote.service.MinioService;
+import be.freenote.service.StatsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +28,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
@@ -28,13 +36,15 @@ public class CourseServiceImpl implements CourseService {
     private final UserRepository userRepository;
     private final DocumentRepository documentRepository;
     private final CourseMapper courseMapper;
+    private final MinioService minioService;
+    private final MeilisearchService meilisearchService;
+    private final StatsService statsService;
 
     @Override
     public List<CourseResponse> getBySectionId(Long sectionId) {
         if (!sectionRepository.existsById(sectionId)) {
             throw new ResourceNotFoundException("Section", "id", sectionId);
         }
-        // Single query: fetch approved courses + doc count in one JOIN
         return courseRepository.findApprovedBySectionIdWithDocCount(sectionId).stream()
                 .map(row -> courseMapper.toResponse((Course) row[0], (Long) row[1]))
                 .toList();
@@ -42,21 +52,23 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public CourseResponse getById(Long id) {
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", "id", id));
+        Course course = Repositories.findByIdOrThrow(courseRepository, id, "Course");
         return courseMapper.toResponse(course, documentRepository.countByCourseId(id));
     }
 
     @Override
     @Transactional
     public CourseResponse create(CreateCourseRequest request, Long userId) {
-        Section section = sectionRepository.findById(request.getSectionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Section", "id", request.getSectionId()));
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        Section section = Repositories.findByIdOrThrow(sectionRepository, request.getSectionId(), "Section");
+        User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
+
+        String name = requireName(request.getName());
+        if (courseRepository.existsBySectionIdAndNameIgnoreCase(section.getId(), name)) {
+            throw new DuplicateResourceException("A course with this name already exists in this section");
+        }
 
         Course course = Course.builder()
-                .name(request.getName())
+                .name(name)
                 .section(section)
                 .createdBy(user)
                 .build();
@@ -66,18 +78,91 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
+    public CourseResponse adminCreate(CreateCourseRequest request) {
+        Section section = Repositories.findByIdOrThrow(sectionRepository, request.getSectionId(), "Section");
+        String name = requireName(request.getName());
+        if (courseRepository.existsBySectionIdAndNameIgnoreCase(section.getId(), name)) {
+            throw new DuplicateResourceException("A course with this name already exists in this section");
+        }
+        Course course = Course.builder()
+                .name(name)
+                .section(section)
+                .approved(true)
+                .build();
+        return courseMapper.toResponse(courseRepository.save(course), 0);
+    }
+
+    @Override
+    @Transactional
     public CourseResponse approve(Long id) {
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", "id", id));
+        Course course = Repositories.findByIdOrThrow(courseRepository, id, "Course");
         course.setApproved(true);
         return courseMapper.toResponse(courseRepository.save(course), documentRepository.countByCourseId(id));
     }
 
     @Override
     public List<CourseResponse> getPending() {
-        // Pending courses have 0 docs (not yet approved → no uploads possible)
         return courseRepository.findByApprovedFalse().stream()
                 .map(c -> courseMapper.toResponse(c, 0L))
                 .toList();
+    }
+
+    @Override
+    public List<CourseResponse> getAllForAdmin() {
+        return courseRepository.findAllWithDocCount().stream()
+                .map(row -> courseMapper.toResponse((Course) row[0], (Long) row[1]))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public CourseResponse rename(Long id, String name) {
+        Course course = Repositories.findByIdOrThrow(courseRepository, id, "Course");
+        String sanitized = requireName(name);
+        if (!course.getName().equalsIgnoreCase(sanitized)
+                && courseRepository.existsBySectionIdAndNameIgnoreCase(course.getSection().getId(), sanitized)) {
+            throw new DuplicateResourceException("A course with this name already exists in this section");
+        }
+        course.setName(sanitized);
+        Course saved = courseRepository.save(course);
+        return courseMapper.toResponse(saved, documentRepository.countByCourseId(id));
+    }
+
+    @Override
+    @Transactional
+    public void adminDelete(Long id) {
+        Course course = Repositories.findByIdOrThrow(courseRepository, id, "Course");
+        for (Document doc : course.getDocuments()) {
+            if (doc.getFileKey() != null) {
+                minioService.delete(doc.getFileKey());
+            }
+            meilisearchService.deleteDocument(doc.getId());
+        }
+        courseRepository.delete(course);
+        statsService.invalidateCache();
+        log.info("Course deleted by admin: id={}, name={}", id, course.getName());
+    }
+
+    private static String requireName(String input) {
+        String sanitized = sanitize(input);
+        if (sanitized == null || sanitized.isEmpty()) {
+            throw new IllegalArgumentException("Name is required");
+        }
+        if (sanitized.length() > 200) {
+            throw new IllegalArgumentException("Name too long (max 200)");
+        }
+        return sanitized;
+    }
+
+    private static String sanitize(String input) {
+        if (input == null) return null;
+        String trimmed = input.trim();
+        if (trimmed.isEmpty()) return null;
+        return trimmed
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#x27;");
     }
 }

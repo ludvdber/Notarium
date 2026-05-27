@@ -2,6 +2,7 @@ package be.freenote.service.impl;
 
 import be.freenote.dto.request.AssignDelegateRequest;
 import be.freenote.dto.request.EndDelegateRequest;
+import be.freenote.dto.request.UpdateDelegateRequest;
 import be.freenote.dto.response.DelegateHistoryResponse;
 import be.freenote.dto.response.DelegateMember;
 import be.freenote.dto.response.DelegateResponse;
@@ -12,6 +13,7 @@ import be.freenote.exception.DuplicateResourceException;
 import be.freenote.exception.ResourceNotFoundException;
 import be.freenote.mapper.DelegateMapper;
 import be.freenote.repository.DelegateHistoryRepository;
+import be.freenote.repository.Repositories;
 import be.freenote.repository.SectionRepository;
 import be.freenote.repository.UserRepository;
 import be.freenote.service.DelegateService;
@@ -71,11 +73,8 @@ public class DelegateServiceImpl implements DelegateService {
     @Override
     @Transactional
     public DelegateMember assignDelegate(AssignDelegateRequest request) {
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", request.getUserId()));
-
-        Section section = sectionRepository.findById(request.getSectionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Section", "id", request.getSectionId()));
+        User user = Repositories.findByIdOrThrow(userRepository, request.getUserId(), "User");
+        Section section = Repositories.findByIdOrThrow(sectionRepository, request.getSectionId(), "Section");
 
         // A user can only be an active delegate for one section at a time
         delegateHistoryRepository.findByUserIdAndEndDateIsNull(user.getId())
@@ -97,8 +96,7 @@ public class DelegateServiceImpl implements DelegateService {
     @Override
     @Transactional
     public DelegateMember endDelegate(Long historyId, EndDelegateRequest request) {
-        DelegateHistory dh = delegateHistoryRepository.findById(historyId)
-                .orElseThrow(() -> new ResourceNotFoundException("DelegateHistory", "id", historyId));
+        DelegateHistory dh = Repositories.findByIdOrThrow(delegateHistoryRepository, historyId, "DelegateHistory");
 
         if (dh.getEndDate() != null) {
             throw new IllegalArgumentException("This mandate is already ended (end date: " + dh.getEndDate() + ")");
@@ -109,6 +107,37 @@ public class DelegateServiceImpl implements DelegateService {
         }
 
         dh.setEndDate(request.getEndDate());
+        return delegateMapper.toMember(delegateHistoryRepository.save(dh));
+    }
+
+    @Override
+    @Transactional
+    public DelegateMember updateMandate(Long historyId, UpdateDelegateRequest request) {
+        DelegateHistory dh = Repositories.findByIdOrThrow(delegateHistoryRepository, historyId, "DelegateHistory");
+
+        if (request.getStartDate() != null) {
+            dh.setStartDate(request.getStartDate());
+        }
+
+        if (request.isClearEndDate()) {
+            // Reopening a closed mandate — refuse if the user is already active elsewhere.
+            delegateHistoryRepository.findByUserIdAndEndDateIsNull(dh.getUser().getId())
+                    .filter(other -> !other.getId().equals(dh.getId()))
+                    .ifPresent(other -> {
+                        throw new DuplicateResourceException(
+                                "Cannot reopen this mandate: user already has an active mandate in section '"
+                                        + other.getSection().getName() + "'");
+                    });
+            dh.setEndDate(null);
+        } else if (request.getEndDate() != null) {
+            dh.setEndDate(request.getEndDate());
+        }
+
+        if (dh.getEndDate() != null && dh.getEndDate().isBefore(dh.getStartDate())) {
+            throw new IllegalArgumentException(
+                    "End date (" + dh.getEndDate() + ") cannot be before start date (" + dh.getStartDate() + ")");
+        }
+
         return delegateMapper.toMember(delegateHistoryRepository.save(dh));
     }
 

@@ -15,19 +15,13 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"profile", "ratings", "favorites", "reports", "badges", "donations", "delegateHistories"})
+@ToString(exclude = {"profile", "ratings", "favorites", "reports", "donations", "delegateHistories", "oauthLinks"})
 @EqualsAndHashCode(of = "id")
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
-    private String oauthProvider;
-
-    @Column(nullable = false)
-    private String oauthId;
 
     @Column(nullable = false, unique = true)
     private String username;
@@ -66,10 +60,6 @@ public class User {
     @Builder.Default
     private List<Report> reports = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<Badge> badges = new ArrayList<>();
-
     @OneToMany(mappedBy = "user")
     @Builder.Default
     private List<Donation> donations = new ArrayList<>();
@@ -77,4 +67,8 @@ public class User {
     @OneToMany(mappedBy = "user")
     @Builder.Default
     private List<DelegateHistory> delegateHistories = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<UserOauthLink> oauthLinks = new ArrayList<>();
 }

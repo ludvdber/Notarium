@@ -12,6 +12,7 @@ import type {
   UpdateDocumentRequest,
   AssignDelegateRequest,
   EndDelegateRequest,
+  UpdateDelegateRequest,
   NewsItem,
   User,
   ProfileCardResponse,
@@ -22,6 +23,8 @@ import type {
   RateRequest,
   ReportRequest,
   ReportResponse,
+  DonationResponse,
+  LinkedProvider,
 } from '@/types';
 
 // --- Stats ---
@@ -34,6 +37,7 @@ export const getDocumentById = (id: number) =>
 
 export const searchDocuments = (params: {
   q?: string;
+  sectionId?: number;
   courseId?: number;
   category?: string;
   sort?: string;
@@ -80,6 +84,9 @@ export const toggleFavorite = (docId: number) =>
 export const getFavorites = (page = 0, size = 20) =>
   api.get<PageResponse<DocumentResponse>>('/favorites', { params: { page, size } }).then((r) => r.data);
 
+export const getFavoriteStatus = (docId: number) =>
+  api.get<{ isFavorite: boolean }>(`/favorites/${docId}`).then((r) => r.data);
+
 // --- Sections ---
 export const getSections = () =>
   api.get<Section[]>('/sections').then((r) => r.data);
@@ -114,12 +121,18 @@ export const getFeaturedProfiles = () =>
 export const acceptTerms = () =>
   api.post('/users/me/accept-terms');
 
+export const getRecentDocs = (limit = 6) =>
+  api.get<DocumentResponse[]>('/users/me/recent-docs', { params: { limit } }).then((r) => r.data);
+
+export const recordDocVisit = (docId: number) =>
+  api.post(`/users/me/recent-docs/${docId}`);
+
 export const deleteAccount = () =>
   api.delete('/users/me');
 
 // --- Leaderboard ---
-export const getLeaderboard = () =>
-  api.get<LeaderboardEntry[]>('/leaderboard').then((r) => r.data);
+export const getLeaderboard = (size?: number) =>
+  api.get<LeaderboardEntry[]>('/leaderboard', { params: size ? { size } : undefined }).then((r) => r.data);
 
 // --- Delegates ---
 export const getDelegates = () =>
@@ -140,6 +153,9 @@ export const endDelegate = (id: number, data: EndDelegateRequest) =>
 export const deleteMandate = (id: number) =>
   api.delete(`/admin/delegates/${id}`);
 
+export const updateMandate = (id: number, data: UpdateDelegateRequest) =>
+  api.patch<DelegateMember>(`/admin/delegates/${id}/edit`, data).then((r) => r.data);
+
 // --- Admin: Documents ---
 export const getPendingDocuments = () =>
   api.get<DocumentResponse[]>('/admin/documents/pending').then((r) => r.data);
@@ -153,12 +169,56 @@ export const adminUpdateDocument = (id: number, data: UpdateDocumentRequest) =>
 export const adminDeleteDocument = (id: number) =>
   api.delete(`/admin/documents/${id}`);
 
+// --- Admin: Sections ---
+export const adminListSections = () =>
+  api.get<Section[]>('/admin/sections').then((r) => r.data);
+
+export const adminCreateSection = (name: string, icon?: string) =>
+  api.post<Section>('/admin/sections', null, { params: { name, icon } }).then((r) => r.data);
+
+export const approveSection = (id: number) =>
+  api.put<Section>(`/admin/sections/${id}/approve`).then((r) => r.data);
+
+export const adminRenameSection = (id: number, name: string, icon?: string) =>
+  api.patch<Section>(`/admin/sections/${id}`, null, { params: { name, icon } }).then((r) => r.data);
+
+export const adminDeleteSection = (id: number) =>
+  api.delete(`/admin/sections/${id}`);
+
 // --- Admin: Courses ---
+export const adminListCourses = () =>
+  api.get<Course[]>('/admin/courses').then((r) => r.data);
+
 export const getPendingCourses = () =>
   api.get<Course[]>('/admin/courses/pending').then((r) => r.data);
 
+export const adminCreateCourse = (data: CreateCourseRequest) =>
+  api.post<Course>('/admin/courses', data).then((r) => r.data);
+
 export const approveCourse = (id: number) =>
   api.put<Course>(`/admin/courses/${id}/approve`).then((r) => r.data);
+
+export const adminRenameCourse = (id: number, name: string) =>
+  api.patch<Course>(`/admin/courses/${id}`, null, { params: { name } }).then((r) => r.data);
+
+export const adminDeleteCourse = (id: number) =>
+  api.delete(`/admin/courses/${id}`);
+
+// --- Admin: Users ---
+export const adminSearchUsers = (q = '', limit = 30) =>
+  api.get<User[]>('/admin/users', { params: { q, limit } }).then((r) => r.data);
+
+export const adminVerifyUser = (id: number) =>
+  api.put<User>(`/admin/users/${id}/verify`).then((r) => r.data);
+
+export const adminUnverifyUser = (id: number) =>
+  api.put<User>(`/admin/users/${id}/unverify`).then((r) => r.data);
+
+export const adminUpdateUserRole = (id: number, role: 'USER' | 'VERIFIED' | 'ADMIN') =>
+  api.patch<User>(`/admin/users/${id}/role`, null, { params: { role } }).then((r) => r.data);
+
+export const adminDeleteUser = (id: number) =>
+  api.delete(`/admin/users/${id}`);
 
 // --- Admin: Professors ---
 export const getPendingProfessors = () =>
@@ -177,6 +237,13 @@ export const resolveReport = (id: number) =>
 export const dismissReport = (id: number) =>
   api.put(`/admin/reports/${id}/dismiss`);
 
+// --- Admin: Donations ---
+export const getAdminDonations = (page = 0, size = 30) =>
+  api.get<PageResponse<DonationResponse>>('/admin/donations', { params: { page, size } }).then((r) => r.data);
+
+export const adminGrantAdFree = (userId: number, days: number) =>
+  api.post<DonationResponse>(`/admin/users/${userId}/grant-ad-free`, null, { params: { days } }).then((r) => r.data);
+
 // --- News ---
 export const getNews = () =>
   api.get<NewsItem[]>('/news').then((r) => r.data);
@@ -192,8 +259,14 @@ export const requestVerification = (email: string) =>
 export const confirmVerification = (code: string) =>
   api.post<void>('/auth/confirm-verification', { code });
 
-export const logoutApi = () =>
+export const logout = () =>
   api.post('/auth/logout');
+
+export const getLinkedProviders = () =>
+  api.get<LinkedProvider[]>('/auth/linked-providers').then((r) => r.data);
+
+export const unlinkProvider = (provider: string) =>
+  api.delete(`/auth/linked-providers/${provider}`);
 
 // --- Dev-only ---
 export const devLogin = (username: string) =>

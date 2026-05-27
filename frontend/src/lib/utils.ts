@@ -39,3 +39,28 @@ export function categoryColor(category: string): string {
   const key = category as keyof typeof TOKENS.categories;
   return TOKENS.categories[key] ?? '#888';
 }
+
+/**
+ * Uses the Web Share API when available (mobile, installed PWAs, some desktop browsers),
+ * otherwise falls back to writing the URL to the clipboard.
+ * Returns 'shared' / 'copied' / 'error' so the caller can display the right toast.
+ */
+export async function shareOrCopy(data: { title?: string; text?: string; url: string }): Promise<'shared' | 'copied' | 'error'> {
+  const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+  if (typeof nav.share === 'function') {
+    try {
+      await nav.share(data);
+      return 'shared';
+    } catch (e) {
+      // User cancelled the share sheet — don't treat as error, just bail without the copy fallback.
+      if (e instanceof Error && e.name === 'AbortError') return 'error';
+      // Any other failure → fall through to clipboard.
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(data.url);
+    return 'copied';
+  } catch {
+    return 'error';
+  }
+}

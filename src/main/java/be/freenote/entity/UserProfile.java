@@ -1,5 +1,6 @@
 package be.freenote.entity;
 
+import be.freenote.enums.AvatarSource;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,19 +39,13 @@ public class UserProfile {
 
     private String discord;
 
-    private String discordId;
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean profilePublic = true;
 
     @Column(nullable = false)
     @Builder.Default
-    private boolean profilePublic = false;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private boolean showInCarousel = false;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private String themePref = "dark";
+    private boolean showInCarousel = true;
 
     @Column(nullable = false)
     @Builder.Default
@@ -59,4 +54,19 @@ public class UserProfile {
     private LocalDateTime adFreeUntil;
 
     private LocalDateTime termsAcceptedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "avatar_source", nullable = false, length = 20)
+    @Builder.Default
+    private AvatarSource avatarSource = AvatarSource.AUTO;
+
+    @Column(name = "first_name", length = 50)
+    private String firstName;
+
+    @Column(name = "last_name", length = 50)
+    private String lastName;
+
+    @Column(name = "display_real_name", nullable = false)
+    @Builder.Default
+    private boolean displayRealName = false;
 }

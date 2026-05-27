@@ -6,12 +6,24 @@ import PageWrapper from '@/components/layout/PageWrapper';
 import OrbitalLoader from '@/components/ui/OrbitalLoader';
 
 const AdminDocuments = lazy(() => import('@/components/admin/AdminDocuments'));
+const AdminSections = lazy(() => import('@/components/admin/AdminSections'));
 const AdminCourses = lazy(() => import('@/components/admin/AdminCourses'));
 const AdminProfessors = lazy(() => import('@/components/admin/AdminProfessors'));
 const AdminReports = lazy(() => import('@/components/admin/AdminReports'));
 const AdminDelegates = lazy(() => import('@/components/admin/AdminDelegates'));
+const AdminUsers = lazy(() => import('@/components/admin/AdminUsers'));
+const AdminDonations = lazy(() => import('@/components/admin/AdminDonations'));
 
-const PANELS = [AdminDocuments, AdminCourses, AdminProfessors, AdminReports, AdminDelegates];
+const PANELS = [
+  AdminDocuments,
+  AdminSections,
+  AdminCourses,
+  AdminProfessors,
+  AdminReports,
+  AdminDelegates,
+  AdminUsers,
+  AdminDonations,
+];
 
 function TabFallback() {
   return (
@@ -33,10 +45,13 @@ export default function Admin() {
       <Typography variant="h4" sx={{ fontWeight: 700, mb: 3 }}>{t('nav.admin')}</Typography>
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3 }} variant="scrollable" scrollButtons="auto">
         <Tab label={t('admin.tabs.documents')} />
+        <Tab label={t('admin.tabs.sections')} />
         <Tab label={t('admin.tabs.courses')} />
         <Tab label={t('admin.tabs.professors')} />
         <Tab label={t('admin.tabs.reports')} />
         <Tab label={t('admin.tabs.delegates')} />
+        <Tab label={t('admin.tabs.users')} />
+        <Tab label={t('admin.tabs.donations')} />
       </Tabs>
 
       <Suspense fallback={<TabFallback />}>

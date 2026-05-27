@@ -1,6 +1,7 @@
 package be.freenote.controller;
 
 import be.freenote.dto.response.SectionResponse;
+import be.freenote.security.AdminRoleVerificationFilter;
 import be.freenote.security.JwtAuthFilter;
 import be.freenote.service.*;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,10 @@ class AdminControllerTest {
     @MockitoBean private ProfessorService professorService;
     @MockitoBean private ReportService reportService;
     @MockitoBean private SectionService sectionService;
+    @MockitoBean private UserService userService;
+    @MockitoBean private DonationService donationService;
     @MockitoBean private JwtAuthFilter jwtAuthFilter;
+    @MockitoBean private AdminRoleVerificationFilter adminRoleVerificationFilter;
 
     @Test
     void pendingDocuments_shouldCallService() throws Exception {
@@ -43,7 +47,7 @@ class AdminControllerTest {
     @Test
     void createSection_shouldReturn201() throws Exception {
         when(sectionService.create("Test", null))
-                .thenReturn(new SectionResponse(1L, "Test", null, 0));
+                .thenReturn(new SectionResponse(1L, "Test", null, 0, true));
 
         mockMvc.perform(post("/api/admin/sections").param("name", "Test"))
                 .andExpect(status().isCreated())
@@ -53,7 +57,7 @@ class AdminControllerTest {
     @Test
     void approveSection_shouldCallService() throws Exception {
         when(sectionService.approve(1L))
-                .thenReturn(new SectionResponse(1L, "Test", null, 0));
+                .thenReturn(new SectionResponse(1L, "Test", null, 0, true));
 
         mockMvc.perform(put("/api/admin/sections/1/approve"))
                 .andExpect(status().isOk())

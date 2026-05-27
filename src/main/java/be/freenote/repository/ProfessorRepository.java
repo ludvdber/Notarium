@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface ProfessorRepository extends JpaRepository<Professor, Long> {
     List<Professor> findByApprovedFalse();
+    List<Professor> findByApprovedTrue();
 }

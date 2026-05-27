@@ -7,7 +7,7 @@ import {
   FormControlLabel,
   Alert,
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { acceptTerms, getCurrentUser } from '@/api/endpoints';
@@ -15,10 +15,13 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import PageWrapper from '@/components/layout/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 
+const LEGAL_ROUTES = new Set(['/legal', '/privacy', '/terms']);
+
 export default function TermsGate({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { user, token, setUser } = useAuthStore();
   const queryClient = useQueryClient();
+  const location = useLocation();
   const [checked, setChecked] = useState(false);
 
   const mutation = useMutation({
@@ -32,7 +35,7 @@ export default function TermsGate({ children }: { children: React.ReactNode }) {
     },
   });
 
-  if (!token || !user || user.termsAccepted) {
+  if (!token || !user || user.termsAccepted || LEGAL_ROUTES.has(location.pathname)) {
     return <>{children}</>;
   }
 

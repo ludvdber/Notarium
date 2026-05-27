@@ -41,4 +41,12 @@ public class FavoriteController {
         Long userId = (Long) authentication.getPrincipal();
         return ResponseEntity.ok(favoriteService.getFavorites(userId, PageRequest.of(page, size)));
     }
+
+    @GetMapping("/{docId}")
+    @Operation(summary = "Check favorite status", description = "Returns whether the given document is in the current user's favorites.")
+    public ResponseEntity<Map<String, Boolean>> status(Authentication authentication,
+                                                        @PathVariable Long docId) {
+        Long userId = (Long) authentication.getPrincipal();
+        return ResponseEntity.ok(Map.of("isFavorite", favoriteService.isFavorite(userId, docId)));
+    }
 }

@@ -6,6 +6,7 @@ import java.util.List;
 public record DocumentResponse(
         Long id,
         String title,
+        Long courseId,
         String courseName,
         String sectionName,
         String category,
@@ -18,6 +19,5 @@ public record DocumentResponse(
         double averageRating,
         int downloadCount,
         List<String> tags,
-        String summaryAi,
         LocalDateTime createdAt
 ) {}

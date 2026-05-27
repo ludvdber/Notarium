@@ -12,7 +12,7 @@ export interface IPv4Result {
   maskBinary: string;
 }
 
-export function parseIp(ip: string): number[] | null {
+function parseIp(ip: string): number[] | null {
   const parts = ip.split('.');
   if (parts.length !== 4) return null;
   const octets = parts.map(Number);
@@ -34,7 +34,7 @@ export function cidrToMaskOctets(cidr: number): number[] {
   ];
 }
 
-export function maskOctetsToCidr(octets: number[]): number {
+function maskOctetsToCidr(octets: number[]): number {
   const num = ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]) >>> 0;
   let count = 0;
   let n = num;

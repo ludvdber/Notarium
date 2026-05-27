@@ -34,11 +34,8 @@ spring:
       client:
         registration:
           discord:
-            client-id: your-discord-client-id
-            client-secret: your-discord-client-secret
-          google:
-            client-id: your-google-client-id
-            client-secret: your-google-client-secret
+            client-id: ${DISCORD_CLIENT_ID:your-discord-client-id}
+            client-secret: ${DISCORD_CLIENT_SECRET:your-discord-client-secret}
 
 server:
   port: 8080

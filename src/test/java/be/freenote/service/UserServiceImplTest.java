@@ -32,7 +32,6 @@ class UserServiceImplTest {
     @Mock private DocumentRepository documentRepository;
     @Mock private ReportRepository reportRepository;
     @Mock private UserMapper userMapper;
-    @Mock private BadgeService badgeService;
 
     @InjectMocks private UserServiceImpl userService;
 
@@ -46,7 +45,7 @@ class UserServiceImplTest {
     // ---- addXp ----
 
     @Test
-    void shouldIncrementXpAndCheckBadges() {
+    void shouldIncrementXp() {
         User user = userWithProfile();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
@@ -55,7 +54,6 @@ class UserServiceImplTest {
 
         assertThat(user.getXp()).isEqualTo(60);
         verify(userRepository).save(user);
-        verify(badgeService).checkAndAwardBadges(user);
     }
 
     @Test
@@ -138,8 +136,8 @@ class UserServiceImplTest {
         counts.add(new Object[]{2L, 5L});
         when(documentRepository.countByUserIds(List.of(1L, 2L))).thenReturn(counts);
 
-        LeaderboardEntry e1 = new LeaderboardEntry(1L, 1, "top", 500, 10, List.of(), false);
-        LeaderboardEntry e2 = new LeaderboardEntry(2L, 2, "second", 300, 5, List.of(), false);
+        LeaderboardEntry e1 = new LeaderboardEntry(1L, 1, "top", "top", 500, 10L, false, null);
+        LeaderboardEntry e2 = new LeaderboardEntry(2L, 2, "second", "second", 300, 5L, false, null);
         when(userMapper.toLeaderboardEntry(u1, 1, 10L)).thenReturn(e1);
         when(userMapper.toLeaderboardEntry(u2, 2, 5L)).thenReturn(e2);
 
@@ -159,20 +157,18 @@ class UserServiceImplTest {
         when(userRepository.save(user)).thenReturn(user);
 
         when(documentRepository.countByUserId(1L)).thenReturn(0L);
-        UserResponse resp = new UserResponse(1L, "test", 50, "new bio", null, null, null, null,
-                List.of(), 0, true, false, false);
+        UserResponse resp = new UserResponse(1L, "test", "USER", false, 50, "new bio", null, null, null, null,
+                0L, true, false, false, false, null, "AUTO", "test", null, null, false);
         when(userMapper.toResponse(user, 0L)).thenReturn(resp);
 
         UpdateProfileRequest req = new UpdateProfileRequest();
         req.setBio("new bio");
         req.setProfilePublic(true);
-        req.setThemePref("light");
 
         userService.updateProfile(1L, req);
 
         assertThat(user.getProfile().getBio()).isEqualTo("new bio");
         assertThat(user.getProfile().isProfilePublic()).isTrue();
-        assertThat(user.getProfile().getThemePref()).isEqualTo("light");
     }
 
     @Test
@@ -183,8 +179,8 @@ class UserServiceImplTest {
         when(userRepository.save(user)).thenReturn(user);
 
         when(documentRepository.countByUserId(1L)).thenReturn(0L);
-        UserResponse resp = new UserResponse(1L, "test", 0, null, null, null, null, null,
-                List.of(), 0, false, false, false);
+        UserResponse resp = new UserResponse(1L, "test", "USER", false, 0, null, null, null, null, null,
+                0L, false, false, false, false, null, "AUTO", "test", null, null, false);
         when(userMapper.toResponse(user, 0L)).thenReturn(resp);
 
         UpdateProfileRequest req = new UpdateProfileRequest();
@@ -194,5 +190,94 @@ class UserServiceImplTest {
 
         assertThat(user.getProfile()).isNotNull();
         assertThat(user.getProfile().getBio()).isEqualTo("bio");
+    }
+
+    // ---- admin user management ----
+
+    @Test
+    void adminVerifyUser_shouldPromoteRoleToVerified() {
+        User user = userWithProfile();
+        user.setRole("USER");
+        user.setVerified(false);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toResponse(user, 0L)).thenReturn(stubResponse());
+
+        userService.adminVerifyUser(1L);
+
+        assertThat(user.isVerified()).isTrue();
+        assertThat(user.getRole()).isEqualTo("VERIFIED");
+    }
+
+    @Test
+    void adminVerifyUser_shouldKeepAdminRole() {
+        User user = userWithProfile();
+        user.setRole("ADMIN");
+        user.setVerified(false);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toResponse(user, 0L)).thenReturn(stubResponse());
+
+        userService.adminVerifyUser(1L);
+
+        assertThat(user.getRole()).isEqualTo("ADMIN");
+        assertThat(user.isVerified()).isTrue();
+    }
+
+    @Test
+    void adminUnverifyUser_shouldDemoteVerifiedRoleToUser() {
+        User user = userWithProfile();
+        user.setRole("VERIFIED");
+        user.setVerified(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toResponse(user, 0L)).thenReturn(stubResponse());
+
+        userService.adminUnverifyUser(1L);
+
+        assertThat(user.isVerified()).isFalse();
+        assertThat(user.getRole()).isEqualTo("USER");
+    }
+
+    @Test
+    void adminUnverifyUser_shouldKeepAdminRole() {
+        User user = userWithProfile();
+        user.setRole("ADMIN");
+        user.setVerified(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toResponse(user, 0L)).thenReturn(stubResponse());
+
+        userService.adminUnverifyUser(1L);
+
+        assertThat(user.getRole()).isEqualTo("ADMIN");
+        assertThat(user.isVerified()).isFalse();
+    }
+
+    @Test
+    void adminUpdateRole_shouldRejectInvalidValue() {
+        assertThatThrownBy(() -> userService.adminUpdateRole(1L, "MODERATOR"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void adminUpdateRole_shouldForceVerifiedWhenPromoting() {
+        User user = userWithProfile();
+        user.setRole("USER");
+        user.setVerified(false);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toResponse(user, 0L)).thenReturn(stubResponse());
+
+        userService.adminUpdateRole(1L, "ADMIN");
+
+        assertThat(user.getRole()).isEqualTo("ADMIN");
+        assertThat(user.isVerified()).isTrue();
+    }
+
+    private static UserResponse stubResponse() {
+        return new UserResponse(1L, "test", "USER", false, 0,
+                null, null, null, null, null, 0L, false, false, false, false,
+                null, "AUTO", "test", null, null, false);
     }
 }

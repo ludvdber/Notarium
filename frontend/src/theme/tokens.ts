@@ -48,6 +48,8 @@ export const TOKENS = {
     EXAMEN: '#ff6b6b',
     NOTES: '#ffd93d',
     EXERCICES: '#6bcb77',
+    COURS: '#3b82f6',
+    TFE: '#ec4899',
     DIVERS: '#a66cff',
   },
 } as const;

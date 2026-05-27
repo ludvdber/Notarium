@@ -1,24 +1,27 @@
-import { Box, Typography, Fade } from '@mui/material';
+import { Box, Typography, Fade, Link as MuiLink } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { KOFI_URL } from '@/lib/constants';
 
 interface AdBannerProps {
   width?: number;
   height?: number;
 }
 
+/**
+ * Returns the placeholder when an ad should be shown, or `null` for Ko-fi supporters
+ * (so the surrounding layout collapses instead of leaving a reserved empty slot).
+ * Anonymous visitors see the ad — tracking is still gated by cookie consent at the slot level.
+ */
 export default function AdBanner({ width = 728, height = 90 }: AdBannerProps) {
   const { t } = useTranslation();
-  const user = useAuthStore((s) => s.user);
+  const { user, token } = useAuthStore();
 
-  // Reserve space to avoid CLS even when hidden for supporters
-  const minH = height + 24; // banner + disclaimer
-
-  if (user?.supporter) return <Box sx={{ minHeight: minH }} />;
+  if (user?.supporter) return null;
 
   return (
     <Fade in timeout={600}>
-      <Box sx={{ textAlign: 'center', minHeight: minH }}>
+      <Box sx={{ textAlign: 'center' }}>
         <Box
           sx={{
             width: { xs: '100%', md: width },
@@ -39,7 +42,21 @@ export default function AdBanner({ width = 728, height = 90 }: AdBannerProps) {
           </Typography>
         </Box>
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', opacity: 0.5, fontSize: 10 }}>
-          {t('ad.disclaimer')}
+          {t('ad.disclaimer')}{' '}
+          <MuiLink
+            href={KOFI_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ fontSize: 'inherit', opacity: 1 }}
+          >
+            Ko-fi ☕
+          </MuiLink>
+          {!token && (
+            <>
+              {' · '}
+              {t('ad.loginHint')}
+            </>
+          )}
         </Typography>
       </Box>
     </Fade>

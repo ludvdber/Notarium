@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Tests cascading behavior when a user is deleted.
  * Verifies ON DELETE SET NULL for documents, courses, donations, delegate_history,
- * and CascadeType.ALL + orphanRemoval for UserProfile, Rating, Favorite, Badge.
+ * and CascadeType.ALL + orphanRemoval for UserProfile, Rating, Favorite.
  */
 @Tag("integration")
 class CascadeTest extends AbstractIntegrationTest {
@@ -36,7 +36,6 @@ class CascadeTest extends AbstractIntegrationTest {
     void setUp() {
         ratingRepository.deleteAll();
         favoriteRepository.deleteAll();
-        badgeRepository.deleteAll();
         donationRepository.deleteAll();
         documentRepository.deleteAll();
         courseRepository.deleteAll();
@@ -64,12 +63,6 @@ class CascadeTest extends AbstractIntegrationTest {
         docByA.setRatingCount(1);
         documentRepository.save(docByA);
 
-        // Give userA a badge
-        Badge badge = Badge.builder()
-                .user(userA)
-                .badgeType("FIRST_UPLOAD")
-                .build();
-        badgeRepository.save(badge);
     }
 
     @Test
@@ -110,12 +103,7 @@ class CascadeTest extends AbstractIntegrationTest {
         assertThat(ratings.getFirst().getUser().getId()).isEqualTo(userBId);
         assertThat(ratings.getFirst().getDocument().getId()).isEqualTo(docByAId);
 
-        // 5. UserA's badges are deleted (CascadeType.ALL + orphanRemoval)
-        assertThat(badgeRepository.findAll().stream()
-                .filter(b -> userAId.equals(b.getUser().getId()))
-                .toList()).isEmpty();
-
-        // 6. UserA's profile is deleted (CascadeType.ALL + orphanRemoval)
+        // 5. UserA's profile is deleted (CascadeType.ALL + orphanRemoval)
         assertThat(userRepository.findById(userAId)).isEmpty();
     }
 

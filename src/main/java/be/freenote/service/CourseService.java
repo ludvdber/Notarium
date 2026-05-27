@@ -11,4 +11,8 @@ public interface CourseService {
     CourseResponse create(CreateCourseRequest request, Long userId);
     CourseResponse approve(Long id);
     List<CourseResponse> getPending();
+    List<CourseResponse> getAllForAdmin();
+    CourseResponse adminCreate(CreateCourseRequest request);
+    CourseResponse rename(Long id, String name);
+    void adminDelete(Long id);
 }

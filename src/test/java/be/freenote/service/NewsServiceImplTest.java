@@ -30,7 +30,7 @@ class NewsServiceImplTest {
 
     @Test
     void getNews_shouldReturnCachedDataWhenAvailable() {
-        List<NewsItem> cached = List.of(new NewsItem());
+        List<NewsItem> cached = List.of(new NewsItem("t", "d", List.of(), "u"));
         when(redisTemplate.opsForValue()).thenReturn(valueOps);
         when(valueOps.get("news:isfce")).thenReturn(cached);
         when(objectMapper.convertValue(eq(cached), any(TypeReference.class))).thenReturn(cached);

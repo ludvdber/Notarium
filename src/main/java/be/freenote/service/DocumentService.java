@@ -13,11 +13,10 @@ public interface DocumentService {
     DocumentResponse create(CreateDocumentRequest request, MultipartFile file, Long userId);
     DocumentResponse getById(Long id);
     DocumentResponse adminUpdate(Long documentId, UpdateDocumentRequest request);
-    PageResponse<DocumentResponse> search(String query, Long courseId, String category, String sort, Pageable pageable);
+    PageResponse<DocumentResponse> search(String query, Long sectionId, Long courseId, String category, String sort, Pageable pageable);
     void delete(Long documentId, Long userId);
     void adminDelete(Long documentId);
     List<DocumentResponse> getPopular();
-    List<DocumentResponse> getRecent();
     List<DocumentResponse> getUnverified();
     DocumentResponse verify(Long documentId);
     byte[] download(Long documentId, Long userId);

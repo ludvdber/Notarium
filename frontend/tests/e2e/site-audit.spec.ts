@@ -166,12 +166,8 @@ test.describe('Utilisateur connecté', () => {
     ];
     expect(categories.some((c) => body!.includes(c))).toBeTruthy();
 
-    // PDF iframe should be present (user is verified)
-    const iframe = page.locator('iframe');
-    // Give the PDF time to load
+    // Give the PDF iframe time to load, then assert the page rendered without errors.
     await page.waitForTimeout(2_000);
-    const iframeCount = await iframe.count();
-    // At least we check the page loaded without errors
     expect(body!.length).toBeGreaterThan(100);
 
     await page.screenshot({ path: path.join(SCREENSHOTS_DIR, 'auth-document.png'), fullPage: true });

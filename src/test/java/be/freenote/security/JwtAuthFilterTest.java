@@ -5,6 +5,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,11 +21,18 @@ import static org.mockito.Mockito.*;
 class JwtAuthFilterTest {
 
     @Mock private JwtTokenProvider jwtTokenProvider;
+    @Mock private JwtRevocationService jwtRevocationService;
     @Mock private HttpServletRequest request;
     @Mock private HttpServletResponse response;
     @Mock private FilterChain filterChain;
 
     @InjectMocks private JwtAuthFilter jwtAuthFilter;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(jwtRevocationService.isRevoked(any())).thenReturn(false);
+        lenient().when(jwtTokenProvider.getJti(any())).thenReturn("jti");
+    }
 
     @AfterEach
     void tearDown() {

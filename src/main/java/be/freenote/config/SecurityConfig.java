@@ -1,5 +1,6 @@
 package be.freenote.config;
 
+import be.freenote.security.AdminRoleVerificationFilter;
 import be.freenote.security.JwtAuthFilter;
 import be.freenote.security.CustomOAuth2UserService;
 import be.freenote.security.OAuth2LoginSuccessHandler;
@@ -25,6 +26,7 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final AdminRoleVerificationFilter adminRoleVerificationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
@@ -39,25 +41,45 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .csrfTokenRepository(csrfTokenRepository)
                 .csrfTokenRequestHandler(csrfHandler)
-                // Exempt webhook + public GET endpoints from CSRF
+                // Exempt webhook + public GET endpoints from CSRF.
+                // /api/dev/** is handled by DevSecurityConfig under the dev profile only.
                 .ignoringRequestMatchers(
                     "/api/webhooks/**",
-                    "/api/auth/**",
-                    "/api/dev/**"
+                    "/api/auth/**"
                 )
             )
             .cors(cors -> cors.configure(http))
             .headers(headers -> headers
                 .cacheControl(cache -> cache.disable()) // Controllers set Cache-Control explicitly where needed
+                // HSTS: force HTTPS for 2 years, applies to all subdomains, eligible for browser preload lists.
+                // Only emitted when the request is secure (nginx sets X-Forwarded-Proto=https in prod).
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .preload(true)
+                    .maxAgeInSeconds(63072000)
+                )
+                // Stronger referrer: send only origin on cross-origin, nothing on HTTP downgrade.
+                .referrerPolicy(ref -> ref.policy(
+                    org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN
+                ))
+                // Lock down sensitive browser features we don't use.
+                .permissionsPolicyHeader(policy -> policy.policy(
+                    "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+                ))
+                // X-Frame-Options: SAMEORIGIN so we can embed our own PDFs in <iframe>
+                // (DocumentView). Combined with CSP frame-ancestors 'self' below, third-party
+                // sites still cannot embed Freenote — only the app itself can iframe its own pages.
+                .frameOptions(frame -> frame.sameOrigin())
                 .contentSecurityPolicy(csp -> csp
                     .policyDirectives(
                         "default-src 'self'; " +
                         "script-src 'self'; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
-                        "img-src 'self' data: blob:; " +
+                        "img-src 'self' data: blob: https://api.dicebear.com; " +
                         "connect-src 'self'; " +
-                        "frame-ancestors 'none'; " +
+                        "frame-src 'self'; " +
+                        "frame-ancestors 'self'; " +
                         "base-uri 'self'; " +
                         "form-action 'self'"
                     )
@@ -65,28 +87,37 @@ public class SecurityConfig {
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+                // SPA static assets (Vite bundle embedded in the fat jar under /static)
+                // — everything served by SpaForwardingConfig must be publicly reachable,
+                // otherwise the login page itself would require a login.
+                .requestMatchers(HttpMethod.GET,
+                        "/", "/index.html", "/favicon.ico", "/robots.txt",
+                        "/assets/**", "/static/**", "/*.svg", "/*.png", "/*.jpg", "/*.webp", "/*.ico"
+                ).permitAll()
+
+                // Public endpoints — tout le reste exige une authentification.
+                // Politique appliquée : seules la home, Tools, les pages légales et le flux RSS école sont exposés sans login.
                 .requestMatchers("/api/auth/logout").permitAll()
-                .requestMatchers("/api/dev/**").permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/sections").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/courses").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/stats").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/leaderboard").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/news").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/documents/search").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/documents/popular").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/documents/{id}").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/documents/{id}/ratings/average").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/professors").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/delegates").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/delegates/user/{userId}").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/users/featured").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/users/{id}").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/webhooks/kofi").permitAll()
+
+                // SPA deep-link routes (React Router owns them; index.html is served back by SpaForwardingConfig)
+                .requestMatchers(HttpMethod.GET,
+                        "/browse", "/browse/**",
+                        "/upload", "/upload/**",
+                        "/profile", "/profile/**",
+                        "/leaderboard",
+                        "/news", "/news/**",
+                        "/admin", "/admin/**",
+                        "/tools", "/tools/**",
+                        "/legal", "/privacy", "/terms",
+                        "/courses/**",
+                        "/documents/**",
+                        "/users/**"
+                ).permitAll()
 
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -120,7 +151,8 @@ public class SecurityConfig {
                 )
                 .successHandler(oAuth2LoginSuccessHandler)
             )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(adminRoleVerificationFilter, JwtAuthFilter.class);
 
         return http.build();
     }

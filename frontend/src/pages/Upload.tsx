@@ -12,20 +12,26 @@ import {
   Checkbox,
   Alert,
   Autocomplete,
+  Tooltip,
+  IconButton,
+  FormHelperText,
 } from '@mui/material';
-import { CloudUpload, CheckCircle } from '@mui/icons-material';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { CloudUpload, CheckCircle, HelpOutlined } from '@mui/icons-material';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { uploadDocument, getSections, getCourses, getProfessors, getTagSuggestions } from '@/api/endpoints';
-import { CATEGORIES, MAX_FILE_SIZE } from '@/lib/constants';
+import { CATEGORIES, MAX_FILE_SIZE, STALE_15M } from '@/lib/constants';
+import { useAuthStore } from '@/stores/useAuthStore';
 import PageWrapper from '@/components/layout/PageWrapper';
 import * as s from './Upload.styles';
 
 export default function Upload() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
   const [title, setTitle] = useState('');
   const [sectionId, setSectionId] = useState<number | ''>('');
   const [courseId, setCourseId] = useState<number | ''>('');
@@ -38,19 +44,21 @@ export default function Upload() {
   const [tags, setTags] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
+  const [warning, setWarning] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const TITLE_MAX = 200;
 
-  const { data: sections } = useQuery({ queryKey: ['sections'], queryFn: getSections });
+  const { data: sections } = useQuery({ queryKey: ['sections'], queryFn: getSections, staleTime: STALE_15M });
   const { data: courses } = useQuery({
     queryKey: ['courses', sectionId],
     queryFn: () => getCourses(sectionId as number),
     enabled: sectionId !== '',
+    staleTime: STALE_15M,
   });
-  const { data: professors } = useQuery({ queryKey: ['professors'], queryFn: getProfessors });
-  const { data: tagSuggestions } = useQuery({ queryKey: ['tag-suggestions'], queryFn: getTagSuggestions });
+  const { data: professors } = useQuery({ queryKey: ['professors'], queryFn: getProfessors, staleTime: STALE_15M });
+  const { data: tagSuggestions } = useQuery({ queryKey: ['tag-suggestions'], queryFn: getTagSuggestions, staleTime: STALE_15M });
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -69,6 +77,12 @@ export default function Upload() {
         file!
       ),
     onSuccess: (doc) => {
+      queryClient.invalidateQueries({ queryKey: ['popular-docs'] });
+      queryClient.invalidateQueries({ queryKey: ['tag-suggestions'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: ['user-docs', user.id] });
+      }
       setShowSuccess(true);
       setTimeout(() => navigate(`/documents/${doc.id}`), 3000);
     },
@@ -83,6 +97,11 @@ export default function Upload() {
     if (f.size > MAX_FILE_SIZE) {
       setError(t('upload.maxSize'));
       return;
+    }
+    if (f.size > 5 * 1024 * 1024) {
+      setWarning(t('upload.compressSuggestion'));
+    } else {
+      setWarning('');
     }
     setFile(f);
     setError('');
@@ -133,6 +152,12 @@ export default function Upload() {
       {error && (
         <Alert severity="error" sx={s.errorAlert}>
           {error}
+        </Alert>
+      )}
+
+      {warning && (
+        <Alert severity="warning" sx={s.errorAlert}>
+          {warning}
         </Alert>
       )}
 
@@ -222,14 +247,34 @@ export default function Upload() {
           )}
         />
 
-        <FormControlLabel
-          control={<Checkbox checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} />}
-          label={t('document.anonymous')}
-        />
-        <FormControlLabel
-          control={<Checkbox checked={aiGenerated} onChange={(e) => setAiGenerated(e.target.checked)} />}
-          label={t('document.aiGenerated')}
-        />
+        <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <FormControlLabel
+              control={<Checkbox checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} />}
+              label={t('document.anonymous')}
+            />
+            <Tooltip title={t('upload.anonymousHelp')} arrow>
+              <IconButton size="small" aria-label={t('upload.anonymousHelp')}>
+                <HelpOutlined fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <FormHelperText sx={{ mt: -0.5, ml: 2 }}>{t('upload.anonymousHelp')}</FormHelperText>
+        </Box>
+        <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <FormControlLabel
+              control={<Checkbox checked={aiGenerated} onChange={(e) => setAiGenerated(e.target.checked)} />}
+              label={t('document.aiGenerated')}
+            />
+            <Tooltip title={t('upload.aiGeneratedHelp')} arrow>
+              <IconButton size="small" aria-label={t('upload.aiGeneratedHelp')}>
+                <HelpOutlined fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <FormHelperText sx={{ mt: -0.5, ml: 2 }}>{t('upload.aiGeneratedHelp')}</FormHelperText>
+        </Box>
 
         <Box
           role="button"

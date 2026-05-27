@@ -2,9 +2,9 @@ package be.freenote.service.impl;
 
 import be.freenote.dto.response.ProfessorResponse;
 import be.freenote.entity.Professor;
-import be.freenote.exception.ResourceNotFoundException;
 import be.freenote.mapper.ProfessorMapper;
 import be.freenote.repository.ProfessorRepository;
+import be.freenote.repository.Repositories;
 import be.freenote.service.ProfessorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,8 +22,7 @@ public class ProfessorServiceImpl implements ProfessorService {
 
     @Override
     public List<ProfessorResponse> getAll() {
-        return professorRepository.findAll().stream()
-                .filter(Professor::isApproved)
+        return professorRepository.findByApprovedTrue().stream()
                 .map(professorMapper::toResponse)
                 .toList();
     }
@@ -40,8 +39,7 @@ public class ProfessorServiceImpl implements ProfessorService {
     @Override
     @Transactional
     public ProfessorResponse approve(Long id) {
-        Professor professor = professorRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Professor", "id", id));
+        Professor professor = Repositories.findByIdOrThrow(professorRepository, id, "Professor");
         professor.setApproved(true);
         return professorMapper.toResponse(professorRepository.save(professor));
     }

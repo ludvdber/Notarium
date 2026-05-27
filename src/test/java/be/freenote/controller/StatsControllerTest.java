@@ -1,6 +1,7 @@
 package be.freenote.controller;
 
 import be.freenote.dto.response.StatsResponse;
+import be.freenote.security.AdminRoleVerificationFilter;
 import be.freenote.security.JwtAuthFilter;
 import be.freenote.service.StatsService;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ class StatsControllerTest {
     @Autowired private MockMvc mockMvc;
     @MockitoBean private StatsService statsService;
     @MockitoBean private JwtAuthFilter jwtAuthFilter;
+    @MockitoBean private AdminRoleVerificationFilter adminRoleVerificationFilter;
 
     @Test
     void getStats_shouldReturnData() throws Exception {

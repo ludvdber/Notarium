@@ -1,6 +1,7 @@
 package be.freenote.controller;
 
 import be.freenote.dto.request.KofiWebhookPayload;
+import be.freenote.security.ratelimit.RateLimit;
 import be.freenote.service.KofiService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +22,7 @@ public class KofiWebhookController {
     private final ObjectMapper objectMapper;
 
     @PostMapping("/kofi")
+    @RateLimit(max = 30, window = 60)
     @Operation(summary = "Ko-fi webhook",
                description = "Receives donation notifications from Ko-fi. Public endpoint, verified by token.")
     public ResponseEntity<Void> handleKofiWebhook(@RequestParam(value = "data", required = false) String data) {
@@ -29,7 +31,7 @@ public class KofiWebhookController {
                 KofiWebhookPayload payload = objectMapper.readValue(data, KofiWebhookPayload.class);
                 kofiService.processWebhook(payload);
             } catch (Exception e) {
-                log.warn("Ko-fi webhook parsing failed: {}", e.getMessage());
+                log.debug("Ko-fi webhook parsing failed: {}", e.getMessage());
             }
         }
         // Always return 200 so Ko-fi doesn't retry endlessly

@@ -29,9 +29,7 @@ import org.testcontainers.utility.DockerImageName;
 @ActiveProfiles("test")
 public abstract class AbstractIntegrationTest {
 
-    @SuppressWarnings("resource")
     static final PostgreSQLContainer postgres = createPostgres();
-    @SuppressWarnings("resource")
     static final GenericContainer<?> redis = createRedis();
 
     static {
@@ -39,7 +37,7 @@ public abstract class AbstractIntegrationTest {
         redis.start();
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked", "resource"})
+    @SuppressWarnings("resource")
     private static PostgreSQLContainer createPostgres() {
         return new PostgreSQLContainer(
                 DockerImageName.parse("pgvector/pgvector:pg17")
@@ -74,15 +72,12 @@ public abstract class AbstractIntegrationTest {
     @Autowired protected DocumentRepository documentRepository;
     @Autowired protected RatingRepository ratingRepository;
     @Autowired protected FavoriteRepository favoriteRepository;
-    @Autowired protected BadgeRepository badgeRepository;
     @Autowired protected DonationRepository donationRepository;
 
     // --- Factory helpers ---
 
     protected User createUser(String username, boolean verified, String role) {
         User user = User.builder()
-                .oauthProvider("DISCORD")
-                .oauthId("oauth-" + username)
                 .username(username)
                 .verified(verified)
                 .role(role)
@@ -91,6 +86,12 @@ public abstract class AbstractIntegrationTest {
         user = userRepository.save(user);
         UserProfile profile = UserProfile.builder().user(user).build();
         user.setProfile(profile);
+        be.freenote.entity.UserOauthLink link = be.freenote.entity.UserOauthLink.builder()
+                .user(user)
+                .provider("DISCORD")
+                .oauthId("oauth-" + username)
+                .build();
+        user.getOauthLinks().add(link);
         return userRepository.save(user);
     }
 

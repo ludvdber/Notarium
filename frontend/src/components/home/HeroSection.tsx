@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useRef, useCallback } from 'react';
 import { Box, Typography, Button, Container } from '@mui/material';
 import { Explore, CloudUpload, KeyboardArrowDown } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
@@ -12,8 +12,9 @@ import * as s from './HeroSection.styles';
 export default function HeroSection() {
   const { t } = useTranslation();
   const theme = useThemeStore((st) => st.theme);
+  const scrolledRef = useRef(false);
 
-  const handleScrollDown = () => {
+  const handleScrollDown = useCallback(() => {
     const hero = document.getElementById('hero-section');
     if (hero) {
       const next = hero.nextElementSibling;
@@ -23,7 +24,22 @@ export default function HeroSection() {
       }
     }
     window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
-  };
+  }, []);
+
+  useEffect(() => {
+    const onWheel = (e: WheelEvent) => {
+      if (scrolledRef.current) return;
+      if (window.scrollY > 50) return;
+      if (e.deltaY > 0) {
+        scrolledRef.current = true;
+        e.preventDefault();
+        handleScrollDown();
+        setTimeout(() => { scrolledRef.current = false; }, 1000);
+      }
+    };
+    window.addEventListener('wheel', onWheel, { passive: false });
+    return () => window.removeEventListener('wheel', onWheel);
+  }, [handleScrollDown]);
 
   return (
     <motion.section initial="hidden" animate="show" variants={s.staggerVariants}>

@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useMediaQuery } from '@mui/material';
 import CosmicDust from './CosmicDust';
 import Nebulae from './Nebulae';
 import OrbsFallback from './OrbsFallback';

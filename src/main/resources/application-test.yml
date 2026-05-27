@@ -34,9 +34,6 @@ spring:
           discord:
             client-id: test-discord-id
             client-secret: test-discord-secret
-          google:
-            client-id: test-google-id
-            client-secret: test-google-secret
 
 app:
   jwt:

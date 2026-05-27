@@ -1,25 +1,26 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Typography, Box, Button, Chip, TextField, Grid, Snackbar, Alert } from '@mui/material';
-import { Download, Favorite, FavoriteBorder, Flag, ContentCopy } from '@mui/icons-material';
+import { Download, Favorite, FavoriteBorder, Flag, Share, Verified, SmartToy } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   getDocumentById,
-  downloadDocument,
   rateDocument,
   toggleFavorite,
   reportDocument,
   getAverageRating,
+  recordDocVisit,
+  getFavoriteStatus,
 } from '@/api/endpoints';
 import { Helmet } from 'react-helmet-async';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { categoryColor, formatDate } from '@/lib/utils';
+import { categoryColor, formatDate, shareOrCopy } from '@/lib/utils';
 import PageWrapper from '@/components/layout/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StarRating from '@/components/ui/StarRating';
 import Shimmer from '@/components/ui/Shimmer';
-import AdBanner from '@/components/ui/AdBanner';
+import AdSlot from '@/components/ui/AdSlot';
 import * as s from './DocumentView.styles';
 
 export default function DocumentView() {
@@ -30,8 +31,7 @@ export default function DocumentView() {
   const [reportReason, setReportReason] = useState('');
   const [showReport, setShowReport] = useState(false);
   const [isFav, setIsFav] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
-  const pdfUrlRef = useRef<string | null>(null);
+  const [shareStatus, setShareStatus] = useState<'copied' | 'shared' | null>(null);
 
   const { data: doc, isLoading } = useQuery({
     queryKey: ['document', id],
@@ -45,24 +45,33 @@ export default function DocumentView() {
     enabled: !!id,
   });
 
-  // Auto-load PDF for verified users via useQuery
-  const { data: pdfUrl, isLoading: pdfLoading } = useQuery({
-    queryKey: ['pdf-blob', id],
-    queryFn: async () => {
-      const blob = await downloadDocument(Number(id));
-      return URL.createObjectURL(blob);
-    },
-    enabled: isVerified && !!doc,
-    staleTime: Infinity,
+  // Hydrate the heart icon at load — without this, the button always says "Add to favorites"
+  // even when the doc is already in the user's favorites.
+  const { data: favStatus } = useQuery({
+    queryKey: ['favorite-status', id],
+    queryFn: () => getFavoriteStatus(Number(id)),
+    enabled: !!id && !!token,
   });
 
-  // Cleanup blob URL on unmount
+  // Sync the heart icon with the server's favorite status when it loads/changes. Adjusting
+  // state during render (React's recommended pattern) instead of an effect avoids a cascading render.
+  const [prevFavStatus, setPrevFavStatus] = useState(favStatus);
+  if (favStatus !== prevFavStatus) {
+    setPrevFavStatus(favStatus);
+    if (favStatus) setIsFav(favStatus.isFavorite);
+  }
+
+  // Iframe pulls the PDF directly from the authenticated endpoint — same-origin, browser sends the
+  // HttpOnly JWT cookie automatically. Avoids the blob/URL.createObjectURL dance which raced with
+  // React StrictMode's double-mount cleanup and left the iframe pointing at a revoked URL on first paint.
+  const pdfSrc = isVerified && doc ? `/api/documents/${id}/file` : null;
+
+  // Record visit so this doc surfaces in the user's "recent" trail on the home page
   useEffect(() => {
-    if (pdfUrl) pdfUrlRef.current = pdfUrl;
-    return () => {
-      if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
-    };
-  }, [pdfUrl]);
+    if (!token || !doc?.id || !doc.verified) return;
+    recordDocVisit(doc.id).catch(() => { /* best-effort, no UX impact */ });
+    queryClient.invalidateQueries({ queryKey: ['recent-docs'] });
+  }, [token, doc?.id, doc?.verified, queryClient]);
 
   const rateMutation = useMutation({
     mutationFn: (score: number) => rateDocument(Number(id), { score }),
@@ -71,7 +80,11 @@ export default function DocumentView() {
 
   const favMutation = useMutation({
     mutationFn: () => toggleFavorite(Number(id)),
-    onSuccess: (data) => setIsFav(data.isFavorite),
+    onSuccess: (data) => {
+      setIsFav(data.isFavorite);
+      queryClient.setQueryData(['favorite-status', id], data);
+      queryClient.invalidateQueries({ queryKey: ['my-favorites'] });
+    },
   });
 
   const reportMutation = useMutation({
@@ -83,12 +96,11 @@ export default function DocumentView() {
   });
 
   const handleDownload = () => {
-    if (pdfUrl) {
-      const a = document.createElement('a');
-      a.href = pdfUrl;
-      a.download = `${doc?.title ?? 'document'}.pdf`;
-      a.click();
-    }
+    if (!pdfSrc) return;
+    const a = document.createElement('a');
+    a.href = pdfSrc;
+    a.download = `${doc?.title ?? 'document'}.pdf`;
+    a.click();
   };
 
   if (isLoading) {
@@ -111,9 +123,29 @@ export default function DocumentView() {
       <Helmet><title>{doc ? `${doc.title} — Freenote` : 'Freenote'}</title></Helmet>
       <Box sx={s.header}>
         <Box sx={s.chipsRow}>
-          <Chip label={t(`categories.${doc.category}`)} sx={s.categoryChip(categoryColor(doc.category))} />
-          {doc.verified && <Chip label={t('document.verified')} color="primary" size="small" />}
-          {doc.aiGenerated && <Chip label={t('document.aiGenerated')} color="warning" size="small" />}
+          <Chip
+            size="small"
+            label={t(`categories.${doc.category}`)}
+            sx={s.categoryChip(categoryColor(doc.category))}
+          />
+          {doc.verified && (
+            <Chip
+              size="small"
+              variant="outlined"
+              color="primary"
+              icon={<Verified sx={{ fontSize: 14 }} />}
+              label={t('document.verified')}
+            />
+          )}
+          {doc.aiGenerated && (
+            <Chip
+              size="small"
+              variant="outlined"
+              color="warning"
+              icon={<SmartToy sx={{ fontSize: 14 }} />}
+              label={t('document.aiGenerated')}
+            />
+          )}
         </Box>
 
         <Typography variant="h3" sx={s.title}>
@@ -125,21 +157,14 @@ export default function DocumentView() {
       </Box>
 
       {/* PDF Viewer */}
-      {isVerified && (
+      {isVerified && pdfSrc && (
         <Box sx={s.pdfViewerWrapper}>
-          {pdfLoading && (
-            <Box sx={s.pdfLoading}>
-              <Typography color="text.secondary">{t('common.loading')}</Typography>
-            </Box>
-          )}
-          {pdfUrl && (
-            <Box
-              component="iframe"
-              src={pdfUrl}
-              sx={s.pdfIframe}
-              title={doc.title}
-            />
-          )}
+          <Box
+            component="iframe"
+            src={pdfSrc}
+            sx={s.pdfIframe}
+            title={doc.title}
+          />
         </Box>
       )}
 
@@ -153,30 +178,38 @@ export default function DocumentView() {
 
       <GlassCard sx={s.metaCard}>
         <Grid container spacing={3}>
-          <Grid size={{ xs: 6, sm: 3 }}>
+          <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
             <Typography variant="caption" color="text.secondary">
               {t('document.language')}
             </Typography>
             <Typography variant="body2">{doc.language}</Typography>
           </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
+          <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
             <Typography variant="caption" color="text.secondary">
               {t('document.year')}
             </Typography>
             <Typography variant="body2">{doc.year ?? '—'}</Typography>
           </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
+          <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
             <Typography variant="caption" color="text.secondary">
               {t('document.professor')}
             </Typography>
             <Typography variant="body2">{doc.professorName ?? '—'}</Typography>
           </Grid>
-          <Grid size={{ xs: 6, sm: 3 }}>
+          <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
             <Typography variant="caption" color="text.secondary">
               {t('document.downloads')}
             </Typography>
             <Typography variant="body2" className="mono">
               {doc.downloadCount}
+            </Typography>
+          </Grid>
+          <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
+            <Typography variant="caption" color="text.secondary">
+              {t('document.publishedAt')}
+            </Typography>
+            <Typography variant="body2" className="mono">
+              {formatDate(doc.createdAt, i18n.language)}
             </Typography>
           </Grid>
         </Grid>
@@ -188,15 +221,6 @@ export default function DocumentView() {
             <Chip key={tag} label={tag} size="small" variant="outlined" />
           ))}
         </Box>
-      )}
-
-      {doc.summaryAi && (
-        <GlassCard sx={s.summaryCard}>
-          <Typography variant="subtitle2" color="text.secondary" sx={s.summaryLabel}>
-            {t('document.summary')}
-          </Typography>
-          <Typography variant="body2">{doc.summaryAi}</Typography>
-        </GlassCard>
       )}
 
       <Box sx={s.ratingRow}>
@@ -213,28 +237,33 @@ export default function DocumentView() {
       </Box>
 
       <Box sx={s.actionsRow}>
-        {isVerified && pdfUrl && (
+        {isVerified && pdfSrc && (
           <Button variant="contained" startIcon={<Download />} onClick={handleDownload}>
             {t('document.download')}
           </Button>
         )}
         <Button
           variant="outlined"
-          startIcon={<ContentCopy />}
-          onClick={() => {
-            navigator.clipboard.writeText(window.location.href);
-            setLinkCopied(true);
+          startIcon={<Share />}
+          onClick={async () => {
+            const result = await shareOrCopy({
+              title: doc?.title,
+              text: doc?.title,
+              url: window.location.href,
+            });
+            if (result !== 'error') setShareStatus(result);
           }}
         >
-          {t('common.copyLink')}
+          {t('common.share')}
         </Button>
         {token && (
           <Button
             variant="outlined"
+            color={isFav ? 'error' : 'primary'}
             startIcon={isFav ? <Favorite /> : <FavoriteBorder />}
             onClick={() => favMutation.mutate()}
           >
-            {isFav ? t('document.favorite') : t('document.addFavorite')}
+            {isFav ? t('document.removeFavorite') : t('document.addFavorite')}
           </Button>
         )}
         {isVerified && (
@@ -244,9 +273,9 @@ export default function DocumentView() {
         )}
       </Box>
 
-      <Snackbar open={linkCopied} autoHideDuration={2000} onClose={() => setLinkCopied(false)}>
-        <Alert severity="success" onClose={() => setLinkCopied(false)}>
-          {t('common.linkCopied')}
+      <Snackbar open={shareStatus !== null} autoHideDuration={2000} onClose={() => setShareStatus(null)}>
+        <Alert severity="success" onClose={() => setShareStatus(null)}>
+          {shareStatus === 'shared' ? t('common.shared') : t('common.linkCopied')}
         </Alert>
       </Snackbar>
 
@@ -270,13 +299,7 @@ export default function DocumentView() {
         </Box>
       )}
 
-      <Typography variant="caption" color="text.secondary" sx={s.createdAt}>
-        {formatDate(doc.createdAt, i18n.language)}
-      </Typography>
-
-      <Box sx={{ mt: 4 }}>
-        <AdBanner width={728} height={90} />
-      </Box>
+      <AdSlot width={728} height={90} sx={{ mt: 4 }} />
     </PageWrapper>
   );
 }

@@ -20,9 +20,25 @@ spring:
       hibernate:
         "[format_sql]": false
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+
   flyway:
     enabled: true
     locations: classpath:db/migration
+    # V12 runs CREATE INDEX CONCURRENTLY which cannot be in a transaction.
+    # Its companion .conf sets executeInTransaction=false, but Flyway still
+    # refuses the mixed classification unless mixed=true globally.
+    mixed: true
+    # Flyway's default migration lock is a Postgres advisory lock held INSIDE a transaction.
+    # CREATE INDEX CONCURRENTLY waits for all open transactions to finish — including the one
+    # holding the lock — resulting in an indefinite self-deadlock. Setting the lock to
+    # session-level (not transaction-level) prevents this while still serialising concurrent
+    # Flyway instances.
+    postgresql:
+      transactional-lock: false
 
   data:
     redis:
@@ -51,10 +67,6 @@ spring:
             scope: identify,email
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            scope: openid,profile,email
         provider:
           discord:
             authorization-uri: https://discord.com/api/oauth2/authorize
@@ -65,12 +77,21 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
   forward-headers-strategy: NATIVE
+  tomcat:
+    remoteip:
+      # Comma-separated CIDR list of trusted reverse proxies (Nginx, Cloudflare, …).
+      # Unset by default — set TRUSTED_PROXIES in prod so X-Forwarded-For can't be spoofed.
+      trusted-proxies: ${TRUSTED_PROXIES:}
+      remote-ip-header: X-Forwarded-For
+      protocol-header: X-Forwarded-Proto
 
 # Application custom properties
 app:
   jwt:
     secret: ${JWT_SECRET}
     expiration-ms: 86400000
+  cookie:
+    secure: ${COOKIE_SECURE:true}
   minio:
     endpoint: ${MINIO_ENDPOINT}
     access-key: ${MINIO_ACCESS_KEY}

@@ -4,5 +4,6 @@ public record SectionResponse(
         Long id,
         String name,
         String icon,
-        long documentCount
+        long documentCount,
+        boolean approved
 ) {}

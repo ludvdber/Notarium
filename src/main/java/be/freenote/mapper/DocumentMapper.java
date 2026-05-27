@@ -10,6 +10,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface DocumentMapper {
 
+    @Mapping(target = "courseId", source = "course.id")
     @Mapping(target = "courseName", source = "course.name")
     @Mapping(target = "sectionName", source = "course.section.name")
     @Mapping(target = "category", source = "category")

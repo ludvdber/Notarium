@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Typography, Box, Button } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useAuthPromptStore } from '@/stores/useAuthPromptStore';
 import PageWrapper from '@/components/layout/PageWrapper';
 
 interface Props {
@@ -10,15 +12,28 @@ interface Props {
   children: React.ReactNode;
 }
 
+/**
+ * Guards routes that require authentication (or verified / admin status).
+ *
+ * <p>The primary UX path is via {@link AuthPromptSnackbar}: navbar/mobile-menu links
+ * intercept clicks before navigation and show the snackbar without any URL change.
+ * This component stays as a defence-in-depth layer for direct URL entry (bookmark,
+ * shared link, back/forward button) — it fires the same snackbar + redirects home.
+ */
 export default function ProtectedRoute({ requireVerified, requireAdmin, children }: Props) {
   const { t } = useTranslation();
   const { token, isVerified, isAdmin } = useAuthStore();
+  const promptLogin = useAuthPromptStore((s) => s.show);
 
-  if (!token) {
-    return <Navigate to="/" replace state={{ loginRequired: true }} />;
-  }
+  const needsLogin = !token;
+  const needsAdmin = !needsLogin && requireAdmin && !isAdmin;
 
-  if (requireAdmin && !isAdmin) {
+  useEffect(() => {
+    if (needsLogin) promptLogin('auth.loginRequired');
+    else if (needsAdmin) promptLogin('auth.adminRequired');
+  }, [needsLogin, needsAdmin, promptLogin]);
+
+  if (needsLogin || needsAdmin) {
     return <Navigate to="/" replace />;
   }
 

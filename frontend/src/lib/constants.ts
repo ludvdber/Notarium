@@ -1,9 +1,18 @@
-export const CATEGORIES = ['SYNTHESE', 'EXAMEN', 'NOTES', 'EXERCICES', 'DIVERS'] as const;
+export const CATEGORIES = ['SYNTHESE', 'EXAMEN', 'NOTES', 'EXERCICES', 'COURS', 'TFE', 'DIVERS'] as const;
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 export const DISCORD_OAUTH_URL = '/oauth2/authorization/discord';
-export const GOOGLE_OAUTH_URL = '/oauth2/authorization/google';
 
 export const DISCORD_INVITE_URL =
   import.meta.env.VITE_DISCORD_INVITE_URL ?? 'https://discord.gg/5mYdsDSKk9';
+
+export const KOFI_URL =
+  import.meta.env.VITE_KOFI_URL ?? 'https://ko-fi.com/ludovic01';
+
+export const GITHUB_URL =
+  import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/AST_Ludo/Freenote';
+
+// TanStack Query staleTime for rarely-changing data (sections, professors, news, tag suggestions).
+// Backend caches these too (5 min Redis), so 15 min on the client avoids useless refetches between pages.
+export const STALE_15M = 15 * 60 * 1000;

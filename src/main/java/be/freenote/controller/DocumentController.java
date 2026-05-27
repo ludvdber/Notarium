@@ -5,6 +5,7 @@ import be.freenote.dto.response.DocumentResponse;
 import be.freenote.dto.response.PageResponse;
 import be.freenote.security.ratelimit.RateLimit;
 import be.freenote.service.DocumentService;
+import be.freenote.service.TagService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -30,7 +31,7 @@ import java.util.List;
 public class DocumentController {
 
     private final DocumentService documentService;
-    private final be.freenote.repository.TagRepository tagRepository;
+    private final TagService tagService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @RateLimit(max = 5, window = 86400)
@@ -66,12 +67,13 @@ public class DocumentController {
     @Operation(summary = "Search documents")
     public ResponseEntity<PageResponse<DocumentResponse>> search(
             @RequestParam(required = false) String q,
+            @RequestParam(required = false) Long sectionId,
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(documentService.search(q, courseId, category, sort,
+        return ResponseEntity.ok(documentService.search(q, sectionId, courseId, category, sort,
                 PageRequest.of(page, size)));
     }
 
@@ -105,6 +107,6 @@ public class DocumentController {
     public ResponseEntity<List<String>> getTags() {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())
-                .body(tagRepository.findDistinctLabels());
+                .body(tagService.getAllLabels());
     }
 }

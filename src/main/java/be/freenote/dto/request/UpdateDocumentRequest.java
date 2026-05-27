@@ -11,6 +11,8 @@ public class UpdateDocumentRequest {
     @Size(max = 255, message = "Title must not exceed 255 characters")
     private String title;
 
+    private Long courseId;
+
     private String category;
 
     private String language;

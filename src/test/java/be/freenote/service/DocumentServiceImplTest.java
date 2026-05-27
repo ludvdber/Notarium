@@ -23,11 +23,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -44,6 +42,7 @@ class DocumentServiceImplTest {
     @Mock private MinioService minioService;
     @Mock private PdfValidationService pdfValidationService;
     @Mock private MeilisearchService meilisearchService;
+    @Mock private StatsService statsService;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private StringRedisTemplate redisTemplate;
     @Mock private ValueOperations<String, String> valueOps;
@@ -69,18 +68,9 @@ class DocumentServiceImplTest {
     }
 
     private DocumentResponse dummyResponse() {
-        return new DocumentResponse(100L, "Test Doc", "Java", "IT", "SYNTHESE",
+        return new DocumentResponse(100L, "Test Doc", 1L, "Java", "IT", "SYNTHESE",
                 "author", false, false, "FR", null, null, 0.0, 0,
-                List.of(), null, LocalDateTime.now());
-    }
-
-    private MultipartFile validPdfFile() throws IOException {
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.getContentType()).thenReturn("application/pdf");
-        when(file.getSize()).thenReturn(5000L);
-        when(file.getBytes()).thenReturn(VALID_PDF_BYTES);
-        when(file.getOriginalFilename()).thenReturn("test.pdf");
-        return file;
+                List.of(), LocalDateTime.now());
     }
 
     private CreateDocumentRequest validRequest() {
@@ -102,7 +92,7 @@ class DocumentServiceImplTest {
         User user = testUser();
         Course course = testCourse();
 
-        when(pdfValidationService.validateAndCompress(file)).thenReturn(VALID_PDF_BYTES);
+        when(pdfValidationService.validate(file)).thenReturn(VALID_PDF_BYTES);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(course));
         when(documentRepository.save(any(Document.class))).thenAnswer(inv -> {
@@ -124,7 +114,7 @@ class DocumentServiceImplTest {
     @Test
     void shouldThrowWhenPdfValidationFails() {
         MultipartFile file = mock(MultipartFile.class);
-        when(pdfValidationService.validateAndCompress(file))
+        when(pdfValidationService.validate(file))
                 .thenThrow(new IllegalArgumentException("Only PDF files are accepted"));
 
         assertThatThrownBy(() -> documentService.create(validRequest(), file, 1L))
@@ -135,7 +125,7 @@ class DocumentServiceImplTest {
     @Test
     void shouldThrowWhenFileTooLarge() {
         MultipartFile file = mock(MultipartFile.class);
-        when(pdfValidationService.validateAndCompress(file))
+        when(pdfValidationService.validate(file))
                 .thenThrow(new PayloadTooLargeException("File size exceeds the 10 MB limit"));
 
         assertThatThrownBy(() -> documentService.create(validRequest(), file, 1L))
@@ -149,7 +139,7 @@ class DocumentServiceImplTest {
         CreateDocumentRequest req = validRequest();
         req.setCategory("INVALID_CAT");
 
-        when(pdfValidationService.validateAndCompress(file)).thenReturn(VALID_PDF_BYTES);
+        when(pdfValidationService.validate(file)).thenReturn(VALID_PDF_BYTES);
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser()));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(testCourse()));
 
@@ -165,7 +155,7 @@ class DocumentServiceImplTest {
         CreateDocumentRequest req = validRequest();
         req.setTags(List.of("Java", " SPRING ", "sql"));
 
-        when(pdfValidationService.validateAndCompress(file)).thenReturn(VALID_PDF_BYTES);
+        when(pdfValidationService.validate(file)).thenReturn(VALID_PDF_BYTES);
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser()));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(testCourse()));
         when(documentRepository.save(any(Document.class))).thenAnswer(inv -> {
@@ -190,7 +180,7 @@ class DocumentServiceImplTest {
         CreateDocumentRequest req = validRequest();
         req.setTitle("<script>alert(1)</script>");
 
-        when(pdfValidationService.validateAndCompress(file)).thenReturn(VALID_PDF_BYTES);
+        when(pdfValidationService.validate(file)).thenReturn(VALID_PDF_BYTES);
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser()));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(testCourse()));
         when(documentRepository.save(any(Document.class))).thenAnswer(inv -> {
@@ -216,7 +206,7 @@ class DocumentServiceImplTest {
         CreateDocumentRequest req = validRequest();
         req.setTags(List.of("<b>bold</b>"));
 
-        when(pdfValidationService.validateAndCompress(file)).thenReturn(VALID_PDF_BYTES);
+        when(pdfValidationService.validate(file)).thenReturn(VALID_PDF_BYTES);
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser()));
         when(courseRepository.findById(10L)).thenReturn(Optional.of(testCourse()));
         when(documentRepository.save(any(Document.class))).thenAnswer(inv -> {
@@ -375,8 +365,9 @@ class DocumentServiceImplTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void shouldHandleEmptyKeysOnFlush() {
-        var emptyCursor = mock(org.springframework.data.redis.core.Cursor.class);
+        org.springframework.data.redis.core.Cursor<String> emptyCursor = mock(org.springframework.data.redis.core.Cursor.class);
         when(emptyCursor.hasNext()).thenReturn(false);
         when(redisTemplate.scan(any(org.springframework.data.redis.core.ScanOptions.class))).thenReturn(emptyCursor);
 
@@ -386,8 +377,9 @@ class DocumentServiceImplTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void shouldSkipNullValueOnFlush() {
-        var cursor = mock(org.springframework.data.redis.core.Cursor.class);
+        org.springframework.data.redis.core.Cursor<String> cursor = mock(org.springframework.data.redis.core.Cursor.class);
         when(cursor.hasNext()).thenReturn(true, false);
         when(cursor.next()).thenReturn("dl-buffer:1");
         when(redisTemplate.scan(any(org.springframework.data.redis.core.ScanOptions.class))).thenReturn(cursor);

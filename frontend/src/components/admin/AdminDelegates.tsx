@@ -12,27 +12,50 @@ import {
   Alert,
   IconButton,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControlLabel,
+  Switch,
+  Autocomplete,
 } from '@mui/material';
-import { Add, EventBusy, Delete } from '@mui/icons-material';
+import { Add, EventBusy, Delete, Edit } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { getAllMandates, assignDelegate, endDelegate, deleteMandate, getSections } from '@/api/endpoints';
+import { getAllMandates, assignDelegate, endDelegate, deleteMandate, updateMandate, getSections, adminSearchUsers } from '@/api/endpoints';
+import { useDebounce } from '@/hooks/useDebounce';
+import type { User } from '@/types';
 import { formatDate } from '@/lib/utils';
+import { STALE_15M } from '@/lib/constants';
 import GlassCard from '@/components/ui/GlassCard';
 import type { DelegateMember } from '@/types';
 
 export default function AdminDelegates() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { data: mandates, isLoading } = useQuery({ queryKey: ['admin-mandates'], queryFn: getAllMandates });
-  const { data: sections } = useQuery({ queryKey: ['sections'], queryFn: getSections });
 
   const [showForm, setShowForm] = useState(false);
-  const [userId, setUserId] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userQuery, setUserQuery] = useState('');
+  const debouncedUserQuery = useDebounce(userQuery, 300);
   const [sectionId, setSectionId] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endingId, setEndingId] = useState<number | null>(null);
   const [endDateVal, setEndDateVal] = useState(new Date().toISOString().split('T')[0]);
+  const [editing, setEditing] = useState<DelegateMember | null>(null);
+  const [editStart, setEditStart] = useState('');
+  const [editEnd, setEditEnd] = useState('');
+  const [editReopen, setEditReopen] = useState(false);
+  const [editError, setEditError] = useState('');
+
+  const { data: mandates, isLoading } = useQuery({ queryKey: ['admin-mandates'], queryFn: getAllMandates });
+  const { data: sections } = useQuery({ queryKey: ['sections'], queryFn: getSections, staleTime: STALE_15M });
+  const { data: userOptions } = useQuery({
+    queryKey: ['admin-users-search', debouncedUserQuery],
+    queryFn: () => adminSearchUsers(debouncedUserQuery, 20),
+    enabled: showForm,
+  });
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['admin-mandates'] });
@@ -40,12 +63,15 @@ export default function AdminDelegates() {
   };
 
   const assignMut = useMutation({
-    mutationFn: () =>
-      assignDelegate({ userId: Number(userId), sectionId: Number(sectionId), startDate }),
+    mutationFn: () => {
+      if (!selectedUser) throw new Error('User required');
+      return assignDelegate({ userId: selectedUser.id, sectionId: Number(sectionId), startDate });
+    },
     onSuccess: () => {
       invalidate();
       setShowForm(false);
-      setUserId('');
+      setSelectedUser(null);
+      setUserQuery('');
       setSectionId('');
     },
   });
@@ -62,6 +88,36 @@ export default function AdminDelegates() {
     mutationFn: (id: number) => deleteMandate(id),
     onSuccess: invalidate,
   });
+
+  const editMut = useMutation({
+    mutationFn: () => {
+      if (!editing) throw new Error('no target');
+      return updateMandate(editing.id, {
+        startDate: editStart || undefined,
+        endDate: editReopen ? null : (editEnd || undefined),
+        clearEndDate: editReopen,
+      });
+    },
+    onSuccess: () => {
+      invalidate();
+      setEditing(null);
+      setEditError('');
+    },
+    onError: (e: unknown) => {
+      const msg = typeof e === 'object' && e !== null
+        ? ((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? '')
+        : '';
+      setEditError(msg || t('common.error'));
+    },
+  });
+
+  const openEdit = (m: DelegateMember) => {
+    setEditing(m);
+    setEditStart(m.startDate);
+    setEditEnd(m.endDate ?? '');
+    setEditReopen(false);
+    setEditError('');
+  };
 
   const active = mandates?.filter((m) => !m.endDate) ?? [];
   const past = mandates?.filter((m) => m.endDate) ?? [];
@@ -97,13 +153,43 @@ export default function AdminDelegates() {
           )}
 
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <TextField
-              label={t('admin.delegates.userId')}
-              type="number"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
+            <Autocomplete<User, false, false, false>
               size="small"
-              sx={{ width: 120 }}
+              sx={{ minWidth: 240, flex: 1 }}
+              options={userOptions ?? []}
+              value={selectedUser}
+              onChange={(_, v) => setSelectedUser(v)}
+              onInputChange={(_, v) => setUserQuery(v)}
+              getOptionLabel={(u) => u.displayName}
+              isOptionEqualToValue={(a, b) => a.id === b.id}
+              filterOptions={(opts) => opts}
+              noOptionsText={t('admin.delegates.userSearchEmpty')}
+              renderInput={(params) => (
+                <TextField {...params} label={t('admin.delegates.user')} placeholder={t('admin.delegates.userSearchPlaceholder')} />
+              )}
+              renderOption={(props, u) => {
+                const role = (u.role as string | null) ?? 'USER';
+                const tags: string[] = [];
+                if (u.verified) tags.push(t('admin.delegates.tagVerified'));
+                if (u.supporter) tags.push(t('admin.delegates.tagSupporter'));
+                return (
+                  <li {...props} key={u.id}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {u.displayName}
+                        {u.displayName !== u.username && (
+                          <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+                            @{u.username}
+                          </Typography>
+                        )}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {role}{tags.length > 0 ? ` · ${tags.join(' · ')}` : ''}
+                      </Typography>
+                    </Box>
+                  </li>
+                );
+              }}
             />
             <FormControl size="small" sx={{ minWidth: 180 }}>
               <InputLabel>{t('admin.delegates.section')}</InputLabel>
@@ -128,7 +214,7 @@ export default function AdminDelegates() {
             <Button
               variant="contained"
               onClick={() => assignMut.mutate()}
-              disabled={!userId || !sectionId || assignMut.isPending}
+              disabled={!selectedUser || !sectionId || assignMut.isPending}
               size="small"
             >
               {assignMut.isPending ? t('common.loading') : t('admin.delegates.confirm')}
@@ -163,6 +249,7 @@ export default function AdminDelegates() {
               onConfirmEnd={() => endMut.mutate(m.id)}
               onCancelEnd={() => setEndingId(null)}
               onDelete={() => deleteMut.mutate(m.id)}
+              onEdit={() => openEdit(m)}
               isPending={endMut.isPending}
               t={t}
             />
@@ -188,6 +275,7 @@ export default function AdminDelegates() {
                 onConfirmEnd={() => {}}
                 onCancelEnd={() => {}}
                 onDelete={() => deleteMut.mutate(m.id)}
+                onEdit={() => openEdit(m)}
                 isPending={false}
                 t={t}
               />
@@ -195,6 +283,45 @@ export default function AdminDelegates() {
           </Box>
         </GlassCard>
       )}
+
+      <Dialog open={Boolean(editing)} onClose={() => setEditing(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>{t('admin.delegates.editTitle')}</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+          {editing && (
+            <Typography variant="body2" color="text.secondary">
+              {editing.username}
+            </Typography>
+          )}
+          {editError && <Alert severity="error" onClose={() => setEditError('')}>{editError}</Alert>}
+          <TextField
+            label={t('admin.delegates.startDate')}
+            type="date"
+            value={editStart}
+            onChange={(e) => setEditStart(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+          <TextField
+            label={t('admin.delegates.endDateOptional')}
+            type="date"
+            value={editReopen ? '' : editEnd}
+            onChange={(e) => setEditEnd(e.target.value)}
+            disabled={editReopen}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+          {editing?.endDate && (
+            <FormControlLabel
+              control={<Switch checked={editReopen} onChange={(e) => setEditReopen(e.target.checked)} />}
+              label={t('admin.delegates.reopen')}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditing(null)}>{t('common.cancel')}</Button>
+          <Button variant="contained" onClick={() => editMut.mutate()} disabled={editMut.isPending}>
+            {t('common.save')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
@@ -208,6 +335,7 @@ interface MandateRowProps {
   onConfirmEnd: () => void;
   onCancelEnd: () => void;
   onDelete: () => void;
+  onEdit: () => void;
   isPending: boolean;
   t: (key: string) => string;
 }
@@ -221,6 +349,7 @@ function MandateRow({
   onConfirmEnd,
   onCancelEnd,
   onDelete,
+  onEdit,
   isPending,
   t,
 }: MandateRowProps) {
@@ -261,6 +390,13 @@ function MandateRow({
           <Tooltip title={t('admin.delegates.end')}>
             <IconButton size="small" onClick={onStartEnding} color="warning">
               <EventBusy fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+        {!isEnding && (
+          <Tooltip title={t('admin.delegates.edit')}>
+            <IconButton size="small" onClick={onEdit}>
+              <Edit fontSize="small" />
             </IconButton>
           </Tooltip>
         )}

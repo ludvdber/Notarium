@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Avatar, IconButton, useMediaQuery } from '@mui/material';
+import { Box, Typography, IconButton, useMediaQuery } from '@mui/material';
 import { GitHub, LinkedIn, Close, Pause, PlayArrow } from '@mui/icons-material';
 import { Coffee } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +9,7 @@ import { getFeaturedProfiles } from '@/api/endpoints';
 import type { ProfileCardResponse } from '@/types';
 import { useAuthStore } from '@/stores/useAuthStore';
 import GlassCard from '@/components/ui/GlassCard';
-import Badge from '@/components/ui/Badge';
+import UserAvatar from '@/components/common/UserAvatar';
 import { TOKENS } from '@/theme/tokens';
 import * as s from './CommunityCarousel.styles';
 
@@ -55,12 +55,12 @@ export default function CommunityCarousel() {
     <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
       <Box sx={s.section}>
         <Typography variant="h5" sx={s.title}>
-          <span role="img" aria-label="">🌍</span> {t('community.carousel')}
+          <span aria-hidden="true">🌍</span> {t('community.carousel')}
         </Typography>
 
         {!hasProfiles && (
           <GlassCard sx={s.emptyCard}>
-            <Typography sx={s.emptyIcon} role="img" aria-label="">👥</Typography>
+            <Typography sx={s.emptyIcon} aria-hidden="true">👥</Typography>
             <Typography variant="body1" color="text.secondary" sx={s.emptyText}>
               {t('community.empty')}
             </Typography>
@@ -91,21 +91,14 @@ export default function CommunityCarousel() {
                   sx={s.profileWrapper}
                 >
                   <GlassCard sx={s.profileCard}>
-                    <Avatar sx={s.profileAvatar}>{profile.username.charAt(0).toUpperCase()}</Avatar>
+                    <UserAvatar username={profile.username} url={profile.avatarUrl} size={48} sx={s.profileAvatar} />
                     <Typography variant="body2" sx={s.profileName}>
-                      {profile.username}
+                      {profile.displayName}
                     </Typography>
                     <Box sx={s.profileMeta}>
                       {profile.supporter && <Coffee size={14} color={TOKENS.rating.main} aria-label={t('document.supporter')} />}
                       {profile.discord && <Box sx={s.discordPill}>{t('profile.socialDiscord')}</Box>}
                     </Box>
-                    {profile.badges.length > 0 && (
-                      <Box sx={s.profileBadges}>
-                        {profile.badges.slice(0, 2).map((b) => (
-                          <Badge key={b} label={b} />
-                        ))}
-                      </Box>
-                    )}
                   </GlassCard>
                 </Box>
               ))}
@@ -141,9 +134,9 @@ export default function CommunityCarousel() {
                 </IconButton>
 
                 <Box sx={s.popupBody}>
-                  <Avatar sx={s.popupAvatar}>{selected.username.charAt(0).toUpperCase()}</Avatar>
+                  <UserAvatar username={selected.username} url={selected.avatarUrl} size={72} sx={s.popupAvatar} />
                   <Typography variant="h6" sx={s.popupName}>
-                    {selected.username}
+                    {selected.displayName}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {selected.role}
@@ -179,13 +172,6 @@ export default function CommunityCarousel() {
                     </Box>
                   )}
 
-                  {selected.badges.length > 0 && (
-                    <Box sx={s.popupBadges}>
-                      {selected.badges.map((b) => (
-                        <Badge key={b} label={b} />
-                      ))}
-                    </Box>
-                  )}
                 </Box>
               </GlassCard>
             </motion.div>

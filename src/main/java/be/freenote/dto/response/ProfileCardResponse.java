@@ -1,13 +1,12 @@
 package be.freenote.dto.response;
 
-import java.util.List;
-
 public record ProfileCardResponse(
         String username,
+        String displayName,
         String role,
         String discord,
         String github,
         String linkedin,
-        List<String> badges,
-        boolean supporter
+        boolean supporter,
+        String avatarUrl
 ) {}

@@ -5,7 +5,6 @@ import be.freenote.dto.response.PageResponse;
 import be.freenote.entity.Document;
 import be.freenote.entity.Favorite;
 import be.freenote.entity.User;
-import be.freenote.exception.ResourceNotFoundException;
 import be.freenote.mapper.DocumentMapper;
 import be.freenote.repository.*;
 import be.freenote.service.FavoriteService;
@@ -30,10 +29,8 @@ public class FavoriteServiceImpl implements FavoriteService {
     @Override
     @Transactional
     public boolean toggle(Long userId, Long documentId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+        User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
+        Document document = Repositories.findByIdOrThrow(documentRepository, documentId, "Document");
 
         if (favoriteRepository.existsByUserIdAndDocumentId(userId, documentId)) {
             favoriteRepository.deleteByUserIdAndDocumentId(userId, documentId);
@@ -46,6 +43,11 @@ public class FavoriteServiceImpl implements FavoriteService {
             favoriteRepository.save(favorite);
             return true;
         }
+    }
+
+    @Override
+    public boolean isFavorite(Long userId, Long documentId) {
+        return favoriteRepository.existsByUserIdAndDocumentId(userId, documentId);
     }
 
     @Override

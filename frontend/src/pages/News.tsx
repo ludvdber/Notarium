@@ -3,12 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { getNews } from '@/api/endpoints';
+import { STALE_15M } from '@/lib/constants';
 import PageWrapper from '@/components/layout/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
+import AdSlot from '@/components/ui/AdSlot';
 
 export default function News() {
   const { t } = useTranslation();
-  const { data: news } = useQuery({ queryKey: ['news'], queryFn: getNews });
+  const { data: news } = useQuery({ queryKey: ['news'], queryFn: getNews, staleTime: STALE_15M });
 
   return (
     <PageWrapper>
@@ -26,6 +28,7 @@ export default function News() {
           ))}
         </List>
       </GlassCard>
+      <AdSlot width={728} height={90} sx={{ mt: 4 }} />
     </PageWrapper>
   );
 }

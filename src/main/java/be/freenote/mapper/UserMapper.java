@@ -3,36 +3,44 @@ package be.freenote.mapper;
 import be.freenote.dto.response.LeaderboardEntry;
 import be.freenote.dto.response.ProfileCardResponse;
 import be.freenote.dto.response.UserResponse;
-import be.freenote.entity.Badge;
 import be.freenote.entity.User;
 import be.freenote.entity.UserProfile;
+import be.freenote.enums.AvatarSource;
 import org.mapstruct.*;
 
-import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
-/**
- * Pure mapper — no repository injection, no queries.
- * The calling service is responsible for providing computed values like documentCount.
- */
 @Mapper(componentModel = "spring")
 public abstract class UserMapper {
 
+    private static final String DICEBEAR_BASE = "https://api.dicebear.com/9.x/notionists/svg?seed=";
+
     public UserResponse toResponse(User user, long documentCount) {
         UserProfile p = user.getProfile();
+        AvatarSource source = p != null && p.getAvatarSource() != null ? p.getAvatarSource() : AvatarSource.AUTO;
         return new UserResponse(
                 user.getId(),
                 user.getUsername(),
+                user.getRole(),
+                user.isVerified(),
                 user.getXp(),
                 p != null ? p.getBio() : null,
                 p != null ? p.getWebsite() : null,
                 p != null ? p.getGithub() : null,
                 p != null ? p.getLinkedin() : null,
                 p != null ? p.getDiscord() : null,
-                mapBadges(user.getBadges()),
                 documentCount,
                 p != null && p.isProfilePublic(),
+                p != null && p.isShowInCarousel(),
                 p != null && p.isAdFree(),
-                p != null && p.getTermsAcceptedAt() != null
+                p != null && p.getTermsAcceptedAt() != null,
+                resolveAvatarUrl(p, user.getUsername()),
+                source.name(),
+                resolveDisplayName(p, user.getUsername()),
+                p != null ? p.getFirstName() : null,
+                p != null ? p.getLastName() : null,
+                p != null && p.isDisplayRealName()
         );
     }
 
@@ -41,16 +49,25 @@ public abstract class UserMapper {
         if (p != null && p.isProfilePublic()) {
             return toResponse(user, documentCount);
         }
+        AvatarSource source = p != null && p.getAvatarSource() != null ? p.getAvatarSource() : AvatarSource.AUTO;
         return new UserResponse(
                 user.getId(),
                 user.getUsername(),
+                null,
+                false,
                 user.getXp(),
                 null, null, null, null, null,
-                mapBadges(user.getBadges()),
                 documentCount,
                 false,
+                false,
                 p != null && p.isAdFree(),
-                p != null && p.getTermsAcceptedAt() != null
+                p != null && p.getTermsAcceptedAt() != null,
+                resolveAvatarUrl(p, user.getUsername()),
+                source.name(),
+                resolveDisplayName(p, user.getUsername()),
+                null,
+                null,
+                false
         );
     }
 
@@ -60,10 +77,11 @@ public abstract class UserMapper {
                 user.getId(),
                 rank,
                 user.getUsername(),
+                resolveDisplayName(p, user.getUsername()),
                 user.getXp(),
                 documentCount,
-                mapBadges(user.getBadges()),
-                p != null && p.isAdFree()
+                p != null && p.isAdFree(),
+                resolveAvatarUrl(p, user.getUsername())
         );
     }
 
@@ -71,19 +89,36 @@ public abstract class UserMapper {
         UserProfile p = user.getProfile();
         return new ProfileCardResponse(
                 user.getUsername(),
+                resolveDisplayName(p, user.getUsername()),
                 user.getRole(),
                 p != null ? p.getDiscord() : null,
                 p != null ? p.getGithub() : null,
                 p != null ? p.getLinkedin() : null,
-                mapBadges(user.getBadges()),
-                p != null && p.isAdFree()
+                p != null && p.isAdFree(),
+                resolveAvatarUrl(p, user.getUsername())
         );
     }
 
-    protected List<String> mapBadges(List<Badge> badges) {
-        if (badges == null) {
-            return List.of();
-        }
-        return badges.stream().map(Badge::getBadgeType).toList();
+    protected String resolveDisplayName(UserProfile p, String username) {
+        if (p == null || !p.isDisplayRealName()) return username;
+        String first = p.getFirstName() == null ? "" : p.getFirstName().trim();
+        String last = p.getLastName() == null ? "" : p.getLastName().trim();
+        if (first.isEmpty() && last.isEmpty()) return username;
+        String full = (first + " " + last).trim();
+        return full.isEmpty() ? username : full;
+    }
+
+    protected String resolveAvatarUrl(UserProfile p, String username) {
+        if (p == null) return null;
+        AvatarSource source = p.getAvatarSource() != null ? p.getAvatarSource() : AvatarSource.AUTO;
+        return switch (source) {
+            case LETTER, AUTO -> null;
+            case DICEBEAR -> dicebearUrl(username);
+        };
+    }
+
+    private static String dicebearUrl(String username) {
+        if (username == null || username.isBlank()) return null;
+        return DICEBEAR_BASE + URLEncoder.encode(username, StandardCharsets.UTF_8);
     }
 }

@@ -31,6 +31,9 @@ public class DevAuthController {
     @Value("${app.jwt.expiration-ms}")
     private long jwtExpirationMs;
 
+    @Value("${app.cookie.secure:true}")
+    private boolean cookieSecure;
+
     @PostMapping("/login/{username}")
     @Operation(summary = "Dev login", description = "Logs in as any user by username. Sets the JWT cookie. Dev profile only.")
     public ResponseEntity<Map<String, String>> devLogin(@PathVariable String username,
@@ -39,7 +42,7 @@ public class DevAuthController {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
 
         String jwt = jwtTokenProvider.generateToken(user);
-        OAuth2LoginSuccessHandler.addJwtCookie(response, jwt, jwtExpirationMs);
+        OAuth2LoginSuccessHandler.addJwtCookie(response, jwt, jwtExpirationMs, cookieSecure);
 
         return ResponseEntity.ok(Map.of(
                 "username", user.getUsername(),

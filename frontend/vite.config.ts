@@ -1,10 +1,25 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { visualizer } from 'rollup-plugin-visualizer'
 import path from 'path'
 
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    react(),
+    // Writes build/stats.html with a treemap of the production bundle.
+    // Trigger with `npm run analyze`. Disabled by default so dev/prod builds stay fast.
+    ...(mode === 'analyze'
+      ? [
+          visualizer({
+            filename: 'build/stats.html',
+            gzipSize: true,
+            brotliSize: true,
+            open: false,
+          }),
+        ]
+      : []),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
@@ -35,4 +50,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

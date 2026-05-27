@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Button, IconButton, Box, Avatar, Menu, MenuItem, Tooltip } from '@mui/material';
-import { DarkMode, LightMode, Language } from '@mui/icons-material';
+import { AppBar, Toolbar, Typography, Button, IconButton, Box, Menu, MenuItem, Tooltip, useMediaQuery } from '@mui/material';
+import { DarkMode, LightMode } from '@mui/icons-material';
+import DiscordIcon from '@/components/icons/DiscordIcon';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useAuthPromptStore } from '@/stores/useAuthPromptStore';
 import { useThemeStore } from '@/stores/useThemeStore';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { DISCORD_OAUTH_URL, DISCORD_INVITE_URL } from '@/lib/constants';
 import DevLoginButton from '@/components/common/DevLoginButton';
+import UserAvatar from '@/components/common/UserAvatar';
+import { useLogout } from '@/hooks/useLogout';
 import NotificationBell from './NotificationBell';
 import MobileMenu from './MobileMenu';
 import { NAV_LINKS } from './Navbar.data';
@@ -15,16 +18,14 @@ import * as s from './Navbar.styles';
 
 export default function Navbar() {
   const { t, i18n } = useTranslation();
-  const { user, token, logout } = useAuthStore();
+  const { user, token, isAdmin } = useAuthStore();
+  const logout = useLogout();
+  const promptLogin = useAuthPromptStore((s) => s.show);
   const { theme, toggle } = useThemeStore();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const navigate = useNavigate();
   const location = useLocation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-  const toggleLang = () => {
-    i18n.changeLanguage(i18n.language === 'fr' ? 'en' : 'fr');
-  };
 
   return (
     <AppBar position="sticky" component="nav" aria-label="Main navigation" sx={s.appBar}>
@@ -39,14 +40,22 @@ export default function Navbar() {
           <Box sx={s.actionsRow}>
             {NAV_LINKS.map((link) => {
               const active = location.pathname === link.to;
+              const gated = link.protected && !token;
               return (
                 <Button
                   key={link.key}
                   component={Link}
                   to={link.to}
+                  onClick={(e) => {
+                    if (gated) {
+                      e.preventDefault();
+                      promptLogin();
+                    }
+                  }}
                   color="inherit"
                   size="small"
                   aria-current={active ? 'page' : undefined}
+                  aria-disabled={gated || undefined}
                   sx={s.navButton(active)}
                 >
                   {t(`nav.${link.key}`)}
@@ -60,30 +69,38 @@ export default function Navbar() {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={t('nav.toggleLanguage')}>
-              <IconButton onClick={toggleLang} size="small" color="inherit" aria-label={t('nav.toggleLanguage')}>
-                <Language fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            <Box sx={s.langToggle}>
+              <Box
+                component="button"
+                onClick={() => i18n.changeLanguage('fr')}
+                sx={s.langOption(i18n.language === 'fr')}
+              >
+                FR
+              </Box>
+              <Box
+                component="button"
+                onClick={() => i18n.changeLanguage('en')}
+                sx={s.langOption(i18n.language === 'en')}
+              >
+                EN
+              </Box>
+            </Box>
 
             {token && <NotificationBell />}
 
-            {token && (
-              <Tooltip title="Discord ISFCE">
-                <IconButton
-                  component="a"
-                  href={DISCORD_INVITE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  size="small"
-                  color="inherit"
-                  aria-label="Discord ISFCE"
-                  sx={{ fontSize: 16 }}
-                >
-                  💬
-                </IconButton>
-              </Tooltip>
-            )}
+            <Tooltip title="Discord ISFCE">
+              <IconButton
+                component="a"
+                href={DISCORD_INVITE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                size="small"
+                color="inherit"
+                aria-label="Discord ISFCE"
+              >
+                <DiscordIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
 
             {token ? (
               <>
@@ -94,7 +111,7 @@ export default function Navbar() {
                   aria-expanded={Boolean(anchorEl)}
                   aria-haspopup="menu"
                 >
-                  <Avatar sx={s.avatar}>{user?.username?.charAt(0).toUpperCase() ?? '?'}</Avatar>
+                  <UserAvatar username={user?.username ?? '?'} url={user?.avatarUrl} size={40} />
                 </IconButton>
                 <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
                   <MenuItem
@@ -113,6 +130,17 @@ export default function Navbar() {
                   >
                     {t('nav.upload')}
                   </MenuItem>
+                  {isAdmin && (
+                    <MenuItem
+                      onClick={() => {
+                        setAnchorEl(null);
+                        navigate('/admin');
+                      }}
+                      sx={{ color: 'warning.main', fontWeight: 600 }}
+                    >
+                      {t('nav.admin')}
+                    </MenuItem>
+                  )}
                   <MenuItem
                     onClick={() => {
                       setAnchorEl(null);

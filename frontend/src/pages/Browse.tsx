@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { searchDocuments, getSections, getCourses } from '@/api/endpoints';
 import { useDebounce } from '@/hooks/useDebounce';
-import { CATEGORIES } from '@/lib/constants';
+import { CATEGORIES, STALE_15M } from '@/lib/constants';
 import PageWrapper from '@/components/layout/PageWrapper';
 import SearchBar from '@/components/ui/SearchBar';
 import DocumentCard from '@/components/common/DocumentCard';
 import Shimmer from '@/components/ui/Shimmer';
-import AdBanner from '@/components/ui/AdBanner';
+import AdSlot from '@/components/ui/AdSlot';
 import * as s from './Browse.styles';
 
 export default function Browse() {
@@ -22,7 +22,7 @@ export default function Browse() {
   const [page, setPage] = useState(0);
   const debouncedQuery = useDebounce(query, 400);
 
-  const { data: sections } = useQuery({ queryKey: ['sections'], queryFn: getSections });
+  const { data: sections } = useQuery({ queryKey: ['sections'], queryFn: getSections, staleTime: STALE_15M });
   const { data: courses } = useQuery({
     queryKey: ['courses', sectionId],
     queryFn: () => getCourses(sectionId as number),
@@ -30,10 +30,11 @@ export default function Browse() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['search', debouncedQuery, courseId, category, page],
+    queryKey: ['search', debouncedQuery, sectionId, courseId, category, page],
     queryFn: () =>
       searchDocuments({
         q: debouncedQuery || undefined,
+        sectionId: sectionId || undefined,
         courseId: courseId || undefined,
         category: category || undefined,
         page,
@@ -119,9 +120,7 @@ export default function Browse() {
         </FormControl>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-        <AdBanner width={728} height={90} />
-      </Box>
+      <AdSlot width={728} height={90} sx={{ mb: 3 }} />
 
       {isLoading ? (
         <Shimmer count={6} />

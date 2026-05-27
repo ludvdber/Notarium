@@ -59,9 +59,6 @@ public class Document {
     @Builder.Default
     private boolean aiGenerated = false;
 
-    @Column(length = 2000)
-    private String summaryAi;
-
     private String year;
 
     @ManyToOne(fetch = FetchType.LAZY)

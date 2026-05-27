@@ -2,6 +2,9 @@ package be.freenote.controller;
 
 import be.freenote.dto.request.ConfirmCodeRequest;
 import be.freenote.dto.request.VerifyEmailRequest;
+import be.freenote.dto.response.LinkedProviderResponse;
+import be.freenote.security.JwtRevocationService;
+import be.freenote.security.JwtTokenProvider;
 import be.freenote.security.OAuth2LoginSuccessHandler;
 import be.freenote.security.ratelimit.RateLimit;
 import be.freenote.service.AuthService;
@@ -13,18 +16,27 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Validated
 @Tag(name = "Authentication", description = "OAuth2 login and email verification")
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtRevocationService jwtRevocationService;
 
     @Value("${app.jwt.expiration-ms}")
     private long jwtExpirationMs;
+
+    @Value("${app.cookie.secure:true}")
+    private boolean cookieSecure;
 
     @PostMapping("/request-verification")
     @RateLimit(max = 3, window = 3600)
@@ -46,14 +58,55 @@ public class AuthController {
                                                      HttpServletResponse response) {
         Long userId = (Long) authentication.getPrincipal();
         String jwt = authService.confirmVerification(userId, request.getCode());
-        OAuth2LoginSuccessHandler.addJwtCookie(response, jwt, jwtExpirationMs);
+        OAuth2LoginSuccessHandler.addJwtCookie(response, jwt, jwtExpirationMs, cookieSecure);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/linked-providers")
+    @Operation(summary = "List linked OAuth providers",
+               description = "Returns every (provider, linkedAt) pair attached to the current user.")
+    public ResponseEntity<List<LinkedProviderResponse>> listLinkedProviders(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        return ResponseEntity.ok(authService.getLinkedProviders(userId));
+    }
+
+    @DeleteMapping("/linked-providers/{provider}")
+    @Operation(summary = "Unlink an OAuth provider",
+               description = "Detaches the given provider from the current user. Fails if it would leave the user with no way to sign in.")
+    public ResponseEntity<Void> unlinkProvider(Authentication authentication,
+                                                @PathVariable
+                                                @jakarta.validation.constraints.Pattern(
+                                                    regexp = "^(?i)DISCORD$",
+                                                    message = "Provider must be DISCORD")
+                                                String provider) {
+        Long userId = (Long) authentication.getPrincipal();
+        authService.unlinkProvider(userId, provider);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "Logout", description = "Clears the JWT cookie.")
-    public ResponseEntity<Void> logout(HttpServletResponse response) {
-        OAuth2LoginSuccessHandler.clearJwtCookie(response);
+    @Operation(summary = "Logout",
+               description = "Revokes the current JWT server-side and clears the HttpOnly cookie.")
+    public ResponseEntity<Void> logout(jakarta.servlet.http.HttpServletRequest request,
+                                        HttpServletResponse response) {
+        String jwt = extractJwtCookie(request);
+        if (jwt != null && jwtTokenProvider.validateToken(jwt)) {
+            jwtRevocationService.revoke(
+                    jwtTokenProvider.getJti(jwt),
+                    jwtTokenProvider.getExpiration(jwt));
+        }
+        OAuth2LoginSuccessHandler.clearJwtCookie(response, cookieSecure);
         return ResponseEntity.noContent().build();
+    }
+
+    private static String extractJwtCookie(jakarta.servlet.http.HttpServletRequest request) {
+        var cookies = request.getCookies();
+        if (cookies == null) return null;
+        for (var c : cookies) {
+            if ("jwt".equals(c.getName()) && c.getValue() != null && !c.getValue().isBlank()) {
+                return c.getValue();
+            }
+        }
+        return null;
     }
 }

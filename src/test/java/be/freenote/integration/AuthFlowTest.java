@@ -33,7 +33,6 @@ class AuthFlowTest extends AbstractIntegrationTest {
     void setUp() {
         ratingRepository.deleteAll();
         favoriteRepository.deleteAll();
-        badgeRepository.deleteAll();
         donationRepository.deleteAll();
         documentRepository.deleteAll();
         courseRepository.deleteAll();
@@ -67,15 +66,14 @@ class AuthFlowTest extends AbstractIntegrationTest {
         String code = redisValue.split(":")[0];
         assertThat(code).hasSize(6);
 
-        // Step 2: Confirm with the correct code
+        // Step 2: Confirm with the correct code — returns 204 No Content and refreshes JWT cookie
         mockMvc.perform(post("/api/auth/confirm-verification")
                         .header("Authorization", "Bearer " + jwt)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"code": "%s"}
                                 """.formatted(code)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").isNotEmpty());
+                .andExpect(status().isNoContent());
 
         // Verify user is now verified in DB
         User refreshed = userRepository.findById(unverifiedUser.getId()).orElseThrow();
@@ -131,7 +129,7 @@ class AuthFlowTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldRejectDuplicateEmailVerification() throws Exception {
+    void shouldSilentlyAcceptDuplicateEmailVerification() throws Exception {
         // Create another user already verified with the same email hash
         User existing = createUser("already-verified", true, "USER");
         // Manually set the email hash that "dup@isfce.be" would produce
@@ -139,13 +137,17 @@ class AuthFlowTest extends AbstractIntegrationTest {
         existing.setEmailHash(emailHash);
         userRepository.save(existing);
 
-        // Now try to verify with the same email
+        // Anti-enumeration: return 202 silently instead of 409, no code stored, no mail sent
         mockMvc.perform(post("/api/auth/request-verification")
                         .header("Authorization", "Bearer " + jwt)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email": "dup@isfce.be"}
                                 """))
-                .andExpect(status().isConflict());
+                .andExpect(status().isAccepted());
+
+        // Verify no code was stored in Redis for this user
+        String redisValue = redisTemplate.opsForValue().get("verify:" + unverifiedUser.getId());
+        assertThat(redisValue).isNull();
     }
 }

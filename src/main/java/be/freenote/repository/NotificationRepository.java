@@ -1,0 +1,26 @@
+package be.freenote.repository;
+
+import be.freenote.entity.Notification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDateTime;
+
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
+
+    Page<Notification> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
+    long countByUserIdAndReadAtIsNull(Long userId);
+
+    @Modifying
+    @Query("UPDATE Notification n SET n.readAt = :now WHERE n.user.id = :userId AND n.readAt IS NULL")
+    int markAllReadForUser(@Param("userId") Long userId, @Param("now") LocalDateTime now);
+
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.createdAt < :threshold")
+    int deleteOlderThan(@Param("threshold") LocalDateTime threshold);
+}

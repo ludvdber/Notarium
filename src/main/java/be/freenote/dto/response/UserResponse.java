@@ -1,19 +1,25 @@
 package be.freenote.dto.response;
 
-import java.util.List;
-
 public record UserResponse(
         Long id,
         String username,
+        String role,
+        boolean verified,
         int xp,
         String bio,
         String website,
         String github,
         String linkedin,
         String discord,
-        List<String> badges,
         long documentCount,
         boolean profilePublic,
+        boolean showInCarousel,
         boolean supporter,
-        boolean termsAccepted
+        boolean termsAccepted,
+        String avatarUrl,
+        String avatarSource,
+        String displayName,
+        String firstName,
+        String lastName,
+        boolean displayRealName
 ) {}

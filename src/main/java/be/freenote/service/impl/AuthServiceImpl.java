@@ -1,12 +1,16 @@
 package be.freenote.service.impl;
 
+import be.freenote.dto.response.LinkedProviderResponse;
 import be.freenote.entity.User;
+import be.freenote.entity.UserOauthLink;
 import be.freenote.entity.UserProfile;
 import be.freenote.exception.DuplicateResourceException;
 import be.freenote.exception.RateLimitExceededException;
 import be.freenote.exception.ResourceNotFoundException;
 import be.freenote.exception.ServiceUnavailableException;
 import be.freenote.exception.UnauthorizedException;
+import be.freenote.repository.Repositories;
+import be.freenote.repository.UserOauthLinkRepository;
 import be.freenote.repository.UserRepository;
 import be.freenote.security.JwtTokenProvider;
 import be.freenote.service.AuthService;
@@ -17,6 +21,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +31,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -36,6 +43,7 @@ public class AuthServiceImpl implements AuthService {
             Pattern.compile("^[a-zA-Z0-9._%+-]+@isfce\\.be$", Pattern.CASE_INSENSITIVE);
 
     private final UserRepository userRepository;
+    private final UserOauthLinkRepository oauthLinkRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final StringRedisTemplate redisTemplate;
     private final JavaMailSender mailSender;
@@ -51,28 +59,99 @@ public class AuthServiceImpl implements AuthService {
         String provider = registrationId.toUpperCase();
         String oauthId = oAuth2User.getName();
 
-        User user = userRepository.findByOauthProviderAndOauthId(provider, oauthId)
-                .orElseGet(() -> {
-                    String displayName = oAuth2User.getAttribute("name");
-                    if (displayName == null) {
-                        displayName = oAuth2User.getAttribute("username");
-                    }
-                    if (displayName == null) {
-                        displayName = oauthId;
-                    }
+        Boolean emailVerified = oAuth2User.getAttribute("email_verified");
+        if (Boolean.FALSE.equals(emailVerified)) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("unverified_email", "OAuth provider email is not verified", null));
+        }
 
-                    User newUser = User.builder()
-                            .oauthProvider(provider)
-                            .oauthId(oauthId)
-                            .username(displayName)
-                            .build();
-                    User saved = userRepository.save(newUser);
-                    UserProfile profile = UserProfile.builder().user(saved).build();
-                    saved.setProfile(profile);
-                    return userRepository.save(saved);
-                });
+        User user = oauthLinkRepository.findByProviderAndOauthId(provider, oauthId)
+                .map(UserOauthLink::getUser)
+                .orElseGet(() -> createUserFromOAuth(oAuth2User, provider, oauthId));
 
         return jwtTokenProvider.generateToken(user);
+    }
+
+    /** Adds a (provider, oauthId) link to an already-authenticated user. */
+    @Override
+    @Transactional
+    public void linkProvider(Long currentUserId, OAuth2User oAuth2User, String registrationId) {
+        String provider = registrationId.toUpperCase();
+        String oauthId = oAuth2User.getName();
+
+        oauthLinkRepository.findByProviderAndOauthId(provider, oauthId).ifPresent(existing -> {
+            if (!existing.getUser().getId().equals(currentUserId)) {
+                // Refuse to silently transfer the link from another user — that would let an attacker
+                // who controls a victim's OAuth account hijack their Freenote account.
+                throw new DuplicateResourceException(
+                        "Ce compte " + provider + " est déjà lié à un autre utilisateur Freenote");
+            }
+        });
+
+        // Idempotent: if already linked to the same user, just refresh the avatar.
+        UserOauthLink link = oauthLinkRepository.findByUserIdAndProvider(currentUserId, provider)
+                .orElseGet(() -> {
+                    User user = Repositories.findByIdOrThrow(userRepository, currentUserId, "User");
+                    UserOauthLink fresh = UserOauthLink.builder()
+                            .user(user)
+                            .provider(provider)
+                            .oauthId(oauthId)
+                            .build();
+                    return oauthLinkRepository.save(fresh);
+                });
+        // If the provider returns a different oauthId (re-link after deleting at provider), update it.
+        link.setOauthId(oauthId);
+
+        log.info("Linked provider {} to userId={}", provider, currentUserId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LinkedProviderResponse> getLinkedProviders(Long userId) {
+        return oauthLinkRepository.findByUserId(userId).stream()
+                .map(l -> new LinkedProviderResponse(l.getProvider(), l.getLinkedAt()))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void unlinkProvider(Long userId, String provider) {
+        String up = provider.toUpperCase();
+        UserOauthLink link = oauthLinkRepository.findByUserIdAndProvider(userId, up)
+                .orElseThrow(() -> new ResourceNotFoundException("OAuth link", "provider", up));
+        if (oauthLinkRepository.countByUserId(userId) <= 1) {
+            // Removing the last provider would lock the user out — refuse.
+            throw new DuplicateResourceException(
+                    "Tu ne peux pas délier ton dernier moyen de connexion");
+        }
+        oauthLinkRepository.delete(link);
+        log.info("Unlinked provider {} from userId={}", up, userId);
+    }
+
+    private User createUserFromOAuth(OAuth2User oAuth2User, String provider, String oauthId) {
+        String displayName = oAuth2User.getAttribute("name");
+        if (displayName == null) {
+            displayName = oAuth2User.getAttribute("username");
+        }
+        if (displayName == null) {
+            displayName = oauthId;
+        }
+
+        User newUser = User.builder()
+                .username(displayName)
+                .build();
+        User saved = userRepository.save(newUser);
+        UserProfile profile = UserProfile.builder().user(saved).build();
+        saved.setProfile(profile);
+
+        UserOauthLink link = UserOauthLink.builder()
+                .user(saved)
+                .provider(provider)
+                .oauthId(oauthId)
+                .build();
+        oauthLinkRepository.save(link);
+
+        return userRepository.save(saved);
     }
 
     @Override
@@ -84,8 +163,11 @@ public class AuthServiceImpl implements AuthService {
 
         String emailHash = HashUtil.hashEmail(email, emailHashSalt);
 
+        // Silently no-op if this email is already claimed by another account.
+        // Returning a distinct error would let an attacker enumerate registered @isfce.be emails.
         if (userRepository.findByEmailHash(emailHash).isPresent()) {
-            throw new DuplicateResourceException("This email is already verified by another account");
+            log.info("Verification request for an already-claimed email (userId={}). Silently ignored.", userId);
+            return;
         }
 
         String code = generateCode();
@@ -124,8 +206,7 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Invalid verification code");
         }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
 
         user.setEmailHash(emailHash);
         user.setVerified(true);

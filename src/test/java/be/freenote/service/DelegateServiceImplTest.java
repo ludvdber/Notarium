@@ -2,6 +2,7 @@ package be.freenote.service;
 
 import be.freenote.dto.request.AssignDelegateRequest;
 import be.freenote.dto.request.EndDelegateRequest;
+import be.freenote.dto.request.UpdateDelegateRequest;
 import be.freenote.dto.response.DelegateMember;
 import be.freenote.dto.response.DelegateHistoryResponse;
 import be.freenote.dto.response.DelegateResponse;
@@ -253,5 +254,92 @@ class DelegateServiceImplTest {
         List<DelegateResponse> result = delegateService.getActiveDelegates();
 
         assertThat(result).hasSize(2);
+    }
+
+    // ---- updateMandate ----
+
+    @Test
+    void updateMandate_shouldChangeStartDate() {
+        User user = User.builder().id(1L).username("alice").build();
+        Section section = Section.builder().id(10L).name("IT").build();
+        DelegateHistory dh = DelegateHistory.builder()
+                .id(1L).user(user).section(section)
+                .startDate(LocalDate.of(2026, 1, 1))
+                .build();
+        when(delegateHistoryRepository.findById(1L)).thenReturn(Optional.of(dh));
+        when(delegateHistoryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(delegateMapper.toMember(any())).thenReturn(new DelegateMember(1L, 1L, null, "alice", null, LocalDate.of(2026, 1, 1), null));
+
+        UpdateDelegateRequest req = new UpdateDelegateRequest();
+        req.setStartDate(LocalDate.of(2026, 2, 1));
+
+        delegateService.updateMandate(1L, req);
+
+        assertThat(dh.getStartDate()).isEqualTo(LocalDate.of(2026, 2, 1));
+    }
+
+    @Test
+    void updateMandate_shouldRejectEndBeforeStart() {
+        User user = User.builder().id(1L).username("alice").build();
+        Section section = Section.builder().id(10L).name("IT").build();
+        DelegateHistory dh = DelegateHistory.builder()
+                .id(1L).user(user).section(section)
+                .startDate(LocalDate.of(2026, 3, 1))
+                .build();
+        when(delegateHistoryRepository.findById(1L)).thenReturn(Optional.of(dh));
+
+        UpdateDelegateRequest req = new UpdateDelegateRequest();
+        req.setEndDate(LocalDate.of(2026, 1, 1));
+
+        assertThatThrownBy(() -> delegateService.updateMandate(1L, req))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("End date");
+    }
+
+    @Test
+    void updateMandate_shouldReopenWhenClearEndDateTrue() {
+        User user = User.builder().id(1L).username("alice").build();
+        Section section = Section.builder().id(10L).name("IT").build();
+        DelegateHistory dh = DelegateHistory.builder()
+                .id(1L).user(user).section(section)
+                .startDate(LocalDate.of(2025, 1, 1))
+                .endDate(LocalDate.of(2025, 12, 1))
+                .build();
+        when(delegateHistoryRepository.findById(1L)).thenReturn(Optional.of(dh));
+        when(delegateHistoryRepository.findByUserIdAndEndDateIsNull(1L)).thenReturn(Optional.empty());
+        when(delegateHistoryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(delegateMapper.toMember(any())).thenReturn(new DelegateMember(1L, 1L, null, "alice", null, LocalDate.of(2025, 1, 1), null));
+
+        UpdateDelegateRequest req = new UpdateDelegateRequest();
+        req.setClearEndDate(true);
+
+        delegateService.updateMandate(1L, req);
+
+        assertThat(dh.getEndDate()).isNull();
+    }
+
+    @Test
+    void updateMandate_shouldRefuseReopenIfUserActiveElsewhere() {
+        User user = User.builder().id(1L).username("alice").build();
+        Section section = Section.builder().id(10L).name("IT").build();
+        DelegateHistory dh = DelegateHistory.builder()
+                .id(1L).user(user).section(section)
+                .startDate(LocalDate.of(2025, 1, 1))
+                .endDate(LocalDate.of(2025, 12, 1))
+                .build();
+        Section otherSection = Section.builder().id(11L).name("Math").build();
+        DelegateHistory active = DelegateHistory.builder()
+                .id(2L).user(user).section(otherSection)
+                .startDate(LocalDate.of(2026, 1, 1))
+                .build();
+        when(delegateHistoryRepository.findById(1L)).thenReturn(Optional.of(dh));
+        when(delegateHistoryRepository.findByUserIdAndEndDateIsNull(1L)).thenReturn(Optional.of(active));
+
+        UpdateDelegateRequest req = new UpdateDelegateRequest();
+        req.setClearEndDate(true);
+
+        assertThatThrownBy(() -> delegateService.updateMandate(1L, req))
+                .isInstanceOf(DuplicateResourceException.class)
+                .hasMessageContaining("Math");
     }
 }

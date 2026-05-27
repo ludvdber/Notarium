@@ -20,4 +20,15 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
         GROUP BY c
         """)
     List<Object[]> findApprovedBySectionIdWithDocCount(@Param("sectionId") Long sectionId);
+
+    @Query("""
+        SELECT c, COUNT(d.id)
+        FROM Course c
+        LEFT JOIN c.documents d
+        GROUP BY c, c.section.name
+        ORDER BY c.section.name, c.name
+        """)
+    List<Object[]> findAllWithDocCount();
+
+    boolean existsBySectionIdAndNameIgnoreCase(Long sectionId, String name);
 }

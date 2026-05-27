@@ -28,14 +28,14 @@ export interface SecondaryLink {
 export const MAIN_LINKS: MainLink[] = [
   { key: 'moodle', icon: <School />, color: '#f59e0b', url: 'https://moodle.isfce.be' },
   { key: 'bulletin', icon: <Description />, color: '#3b82f6', url: 'https://www.isfce.org/Utilitaire/Resu/' },
-  { key: 'mail', icon: <Email />, color: '#00d2ff', url: 'https://outlook.office.com' },
+  { key: 'mail', icon: <Email />, color: '#00d2ff', url: 'https://webmail.isfce.be/' },
 ];
 
 export const SECONDARY_LINKS: SecondaryLink[] = [
   { key: 'horaires', icon: <Schedule />, url: 'https://www.isfce.org/index.php?pg=horaires' },
   { key: 'tfe', icon: <Assignment />, url: 'https://www.isfce.org/Utilitaire/SujetMemoire/' },
-  { key: 'stages', icon: <Work />, url: 'https://form.jotform.com/210834447621049' },
-  { key: 'emplois', icon: <BusinessCenter />, url: 'https://form.jotform.com/220244612573348' },
-  { key: 'bibliotheque', icon: <MenuBook />, url: 'https://www.isfce.org/Utilitaire/Bibliothèque/' },
+  { key: 'stages', icon: <Work />, url: 'https://www.isfce.org/index.php?pg=offres_stages' },
+  { key: 'emplois', icon: <BusinessCenter />, url: 'https://www.isfce.org/index.php?pg=offres_emplois' },
+  { key: 'anciensTfe', icon: <MenuBook />, url: 'https://www.isfce.org/Utilitaire/Bibliothèque/' },
   { key: 'aideReussite', icon: <Lightbulb />, url: 'https://form.jotform.com/lisfce/retourlisteateliers' },
 ];

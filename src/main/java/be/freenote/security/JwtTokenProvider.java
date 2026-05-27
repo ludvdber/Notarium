@@ -8,7 +8,9 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtTokenProvider {
@@ -32,6 +34,7 @@ public class JwtTokenProvider {
         Date expiry = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(String.valueOf(user.getId()))
                 .claim("username", user.getUsername())
                 .claim("verified", user.isVerified())
@@ -55,6 +58,15 @@ public class JwtTokenProvider {
     public String getRole(String token) {
         Claims claims = parseToken(token);
         return claims.get("role", String.class);
+    }
+
+    public String getJti(String token) {
+        return parseToken(token).getId();
+    }
+
+    public Instant getExpiration(String token) {
+        Date exp = parseToken(token).getExpiration();
+        return exp != null ? exp.toInstant() : null;
     }
 
     public boolean validateToken(String token) {

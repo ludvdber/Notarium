@@ -15,16 +15,27 @@ import java.util.List;
 
 @Repository
 public interface DocumentRepository extends JpaRepository<Document, Long> {
-    Page<Document> findByCourseIdAndCategory(Long courseId, Category category, Pageable pageable);
-    List<Document> findTop10ByOrderByCreatedAtDesc();
-    List<Document> findTop10ByVerifiedTrueOrderByCreatedAtDesc();
     List<Document> findTop10ByVerifiedTrueOrderByDownloadCountDesc();
     Page<Document> findByVerifiedTrueAndCourseIdAndCategory(Long courseId, Category category, Pageable pageable);
     Page<Document> findByVerifiedTrueAndCourseId(Long courseId, Pageable pageable);
     Page<Document> findByVerifiedTrueAndCategory(Category category, Pageable pageable);
     Page<Document> findByVerifiedTrue(Pageable pageable);
+
+    /** Flexible filter: any combination of section / course / category. NULL params mean "no constraint".
+     *  Used by Browse when only a section is selected (no course-level filter exists in derived queries). */
+    @Query("""
+        SELECT d FROM Document d
+        WHERE d.verified = true
+          AND (:sectionId IS NULL OR d.course.section.id = :sectionId)
+          AND (:courseId IS NULL OR d.course.id = :courseId)
+          AND (:category IS NULL OR d.category = :category)
+        """)
+    Page<Document> findVerifiedFiltered(
+            @Param("sectionId") Long sectionId,
+            @Param("courseId") Long courseId,
+            @Param("category") Category category,
+            Pageable pageable);
     long countByCreatedAtAfter(LocalDateTime dateTime);
-    Page<Document> findByUserId(Long userId, Pageable pageable);
     List<Document> findByVerifiedFalse();
     long countByUserId(Long userId);
     long countByCourseId(Long courseId);
@@ -41,8 +52,6 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     @Modifying
     @Query("UPDATE Document d SET d.anonymous = true, d.user = null WHERE d.user.id = :userId")
     void anonymizeByUserId(@Param("userId") Long userId);
-
-    List<Document> findTop10ByOrderByDownloadCountDesc();
 
     @Modifying
     @Query("UPDATE Document d SET d.downloadCount = d.downloadCount + :increment WHERE d.id = :docId")

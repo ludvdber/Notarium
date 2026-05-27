@@ -116,6 +116,18 @@ export const darkTheme = createTheme({
         },
       },
     },
+    MuiAutocomplete: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: 'rgba(18, 22, 36, 0.98) !important',
+          backgroundImage: 'none !important',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5)',
+        },
+      },
+    },
   },
 });
 
@@ -175,6 +187,18 @@ export const lightTheme = createTheme({
       styleOverrides: {
         paper: {
           backgroundColor: 'rgba(255, 255, 255, 0.98) !important',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(0, 0, 0, 0.08)',
+          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.15)',
+        },
+      },
+    },
+    MuiAutocomplete: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: 'rgba(255, 255, 255, 0.98) !important',
+          backgroundImage: 'none !important',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
           border: '1px solid rgba(0, 0, 0, 0.08)',

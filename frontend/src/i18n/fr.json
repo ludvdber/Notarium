@@ -33,11 +33,6 @@
     "courses": "Cours",
     "weekUploads": "docs ajoutés cette semaine"
   },
-  "sections": {
-    "title": "Sections",
-    "viewAll": "Voir tout",
-    "docsCount": "docs"
-  },
   "popular": {
     "title": "Documents populaires",
     "viewAll": "Voir tout",
@@ -49,9 +44,10 @@
     "username": "Utilisateur",
     "xp": "XP",
     "docs": "Documents",
-    "badges": "Badges",
     "viewAll": "Voir tout",
-    "empty": "Le podium est libre. À toi de jouer."
+    "empty": "Le podium est libre. À toi de jouer.",
+    "you": "Toi",
+    "yourRank": "Ta position"
   },
   "delegates": {
     "title": "Délégués",
@@ -74,16 +70,9 @@
     "discordRoles": "Crée un compte sur le site pour obtenir le rôle Vérifié sur Discord et accéder aux discussions des cours. Les autres rôles sont attribués selon ton XP.",
     "discordRolesShort": "Rôles Discord liés à ton XP"
   },
-  "signup": {
-    "title": "Rejoins ta promo en 30 secondes.",
-    "subtitle": "Login Discord ou Google, vérification @isfce.be, c'est bon.",
-    "cta": "Créer mon compte",
-    "stickyLabel": "Prêt à rejoindre ta promo ?",
-    "discordISFCE": "Discord ISFCE",
-    "discordLink": "💬 Discord ISFCE →"
-  },
   "ad": {
-    "disclaimer": "Pub — soutiens Freenote sur Ko-fi pour la cacher."
+    "disclaimer": "Pub — soutiens Freenote pour la cacher.",
+    "loginHint": "Connecte-toi pour que ton don désactive les pubs."
   },
   "links": {
     "title": "Liens utiles",
@@ -94,7 +83,7 @@
     "tfe": "TFE",
     "stages": "Stages",
     "emplois": "Emplois",
-    "bibliotheque": "Bibliothèque",
+    "anciensTfe": "Anciens TFE",
     "aideReussite": "Aide à la réussite"
   },
   "document": {
@@ -111,6 +100,7 @@
     "professor": "Professeur",
     "rating": "Note",
     "downloads": "Téléchargements",
+    "publishedAt": "Publié le",
     "tags": "Tags",
     "summary": "Résumé IA",
     "upload": "Partager un document",
@@ -120,6 +110,7 @@
     "noResults": "Aucun document trouvé — essaie avec d'autres mots-clés.",
     "favorite": "Favori",
     "addFavorite": "Ajouter aux favoris",
+    "removeFavorite": "Retirer des favoris",
     "reportPlaceholder": "Raison...",
     "courseDocuments": "Documents du cours",
     "aiShort": "IA",
@@ -128,24 +119,58 @@
   "admin": {
     "tabs": {
       "documents": "Documents",
+      "sections": "Sections",
       "courses": "Cours",
       "professors": "Professeurs",
       "reports": "Signalements",
-      "delegates": "Délégués"
+      "delegates": "Délégués",
+      "users": "Utilisateurs",
+      "donations": "Dons"
     },
-    "placeholder": "Panneau d'administration — à implémenter dans les prochaines phases.",
     "docs": {
       "pending": "Documents en attente",
       "noPending": "Aucun document en attente de vérification.",
       "verify": "Vérifier",
+      "view": "Voir le document",
       "all": "Tous les documents",
       "edit": "Modifier",
       "deleteConfirm": "Supprimer définitivement ce document et son fichier ? Cette action est irréversible."
     },
+    "sections": {
+      "title": "Sections",
+      "name": "Nom",
+      "icon": "Icône",
+      "create": "Créer",
+      "rename": "Renommer",
+      "renameTitle": "Renommer la section",
+      "delete": "Supprimer",
+      "deleteTitle": "Supprimer la section",
+      "deleteConfirm": "Supprimer « {{name}} » et {{count}} document(s) associés ? Les fichiers seront définitivement perdus.",
+      "approve": "Approuver",
+      "pending": "En attente",
+      "docCount_one": "{{count}} document",
+      "docCount_other": "{{count}} documents"
+    },
     "courses": {
-      "pending": "Cours en attente",
+      "title": "Cours",
+      "name": "Nom",
+      "section": "Section",
+      "create": "Créer",
+      "rename": "Renommer",
+      "renameTitle": "Renommer le cours",
+      "delete": "Supprimer",
+      "deleteTitle": "Supprimer le cours",
+      "deleteConfirm": "Supprimer « {{name}} » et {{count}} document(s) associés ? Les fichiers seront définitivement perdus.",
+      "pending": "En attente",
+      "approved": "Approuvés",
+      "all": "Tous",
+      "approve": "Approuver",
+      "filterSection": "Filtrer par section",
+      "filterStatus": "Statut",
+      "allSections": "Toutes les sections",
       "noPending": "Aucun cours en attente d'approbation.",
-      "approve": "Approuver"
+      "docCount_one": "{{count}} document",
+      "docCount_other": "{{count}} documents"
     },
     "profs": {
       "pending": "Professeurs en attente",
@@ -162,7 +187,9 @@
       "title": "Gestion des délégués",
       "assign": "Assigner",
       "assignTitle": "Nouveau mandat",
-      "userId": "ID utilisateur",
+      "user": "Utilisateur",
+      "userSearchPlaceholder": "Tape les premières lettres du pseudo…",
+      "userSearchEmpty": "Aucun utilisateur trouvé",
       "section": "Section",
       "startDate": "Date de début",
       "confirm": "Confirmer",
@@ -172,19 +199,59 @@
       "end": "Clôturer le mandat",
       "delete": "Supprimer",
       "activeChip": "Actif",
-      "endedChip": "Terminé"
+      "endedChip": "Terminé",
+      "edit": "Modifier",
+      "editTitle": "Modifier le mandat",
+      "endDateOptional": "Date de fin (optionnel)",
+      "reopen": "Réouvrir ce mandat (efface la date de fin)",
+      "tagVerified": "vérifié",
+      "tagSupporter": "supporter"
+    },
+    "users": {
+      "title": "Utilisateurs",
+      "searchPlaceholder": "Rechercher par pseudo…",
+      "empty": "Aucun utilisateur trouvé.",
+      "verified": "Vérifié",
+      "unverified": "Non vérifié",
+      "verify": "Vérifier manuellement",
+      "unverify": "Retirer la vérification",
+      "role": "Rôle",
+      "xp": "{{xp}} XP",
+      "delete": "Supprimer ce compte",
+      "deleteTitle": "Supprimer le compte",
+      "deleteConfirm": "Supprimer définitivement le compte de « {{username}} » ? Ses documents resteront en ligne mais seront affichés comme « Anonyme ». Action irréversible."
+    },
+    "donations": {
+      "title": "Dons & sans-pub",
+      "grantTitle": "Accorder du sans-pub manuellement",
+      "grantHelp": "À utiliser si un don Ko-fi n'a pas matché un compte, ou pour offrir une période sans pub. La durée s'ajoute à toute période active existante.",
+      "user": "Utilisateur",
+      "days": "Jours",
+      "grant": "Accorder",
+      "granted": "{{username}} a sans-pub jusqu'au {{until}}",
+      "totalCount": "Total dons",
+      "totalAmount": "Montant cumulé",
+      "empty": "Aucun don pour le moment.",
+      "unmatched": "Donateur non rattaché",
+      "manualGrant": "Don manuel",
+      "active": "Actif",
+      "adFreeUntil": "Sans-pub jusqu'au",
+      "userSummary": "{{kofi}} don(s) Ko-fi · {{manual}} grant(s) manuel(s) · {{amount}} €"
     }
   },
   "upload": {
     "title": "Partager un document",
     "dragDrop": "Glisse-dépose un PDF ici ou clique pour choisir",
     "maxSize": "Taille maximale : 10 Mo",
+    "compressSuggestion": "Ton PDF fait plus de 5 Mo — pense à le compresser (ex : ilovepdf.com/compress_pdf) avant l'upload pour économiser de la bande passante.",
     "submit": "Partager",
     "success": "Doc partagé — merci pour ta promo !",
     "successMessage": "Ton document est en ligne ! Il sera vérifié par un modérateur sous 24-48h. Tu recevras tes XP et badges après validation.",
     "pdfOnly": "PDF uniquement pour l'instant — convertis ton fichier et réessaie.",
     "tagsHelper": "Sépare les tags par des virgules (ex: java, algo, s3)",
-    "titleCounter": "{{count}}/{{max}}"
+    "titleCounter": "{{count}}/{{max}}",
+    "anonymousHelp": "Masque ton pseudo sur la page du document — les autres élèves verront « Anonyme » comme auteur. Tu reçois quand même XP, badges et contributions sur ton profil.",
+    "aiGeneratedHelp": "Coche si le contenu a été rédigé ou fortement généré par une IA (ChatGPT, Claude, etc.). Un badge « IA » sera affiché sur le document."
   },
   "profile": {
     "title": "Mon profil",
@@ -194,28 +261,80 @@
     "socialGithub": "GitHub",
     "socialLinkedin": "LinkedIn",
     "socialDiscord": "Discord",
-    "badges": "Badges",
     "documents": "Mes documents",
-    "favorites": "Mes favoris",
     "settings": "Paramètres",
     "theme": "Thème",
     "deleteAccount": "Supprimer mon compte",
     "deleteConfirm": "C'est définitif. Tes docs restent en ligne, mais ton compte disparaît. Tu confirmes ?",
     "save": "Enregistrer",
+    "saved": "Modifications enregistrées",
+    "viewPublic": "Voir mon profil public",
     "public": "Profil public",
-    "carousel": "Apparaître dans le carrousel"
+    "publicHelp": "Rend ta page publique visible aux autres utilisateurs connectés.",
+    "carousel": "Apparaître dans le carrousel",
+    "carouselHelp": "Affiche ton avatar dans le carrousel communautaire de la page d'accueil.",
+    "carouselLocked": "Réservé aux utilisateurs vérifiés. Vérifie ton email @isfce.be pour débloquer.",
+    "aboutSection": "À propos",
+    "linksSection": "Réseaux",
+    "preferencesSection": "Préférences",
+    "statsSection": "Statistiques",
+    "delegationSection": "Mandats de délégué",
+    "dangerZone": "Zone de danger",
+    "dangerZoneHelp": "Cette action est irréversible. Tes documents resteront en ligne mais seront affichés comme « Anonyme ».",
+    "memberSince": "Membre depuis",
+    "documentsPublished": "Documents publiés",
+    "supporter": "Supporter",
+    "verified": "Vérifié",
+    "favoritesTitle": "Mes favoris ({{count}})",
+    "noFavorites": "Tu n'as pas encore de favoris.",
+    "avatar": {
+      "title": "Avatar",
+      "help": "Choisis comment ton avatar est affiché. Pas d'upload — soit la lettre de ton pseudo, soit un avatar généré.",
+      "source": {
+        "AUTO": "Automatique",
+        "LETTER": "Lettre",
+        "DICEBEAR": "Généré"
+      }
+    },
+    "identitySection": "Identité",
+    "identityHelp": "Optionnel. Ton pseudo reste ton identifiant ; ces champs ne servent qu'à l'affichage.",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "displayRealName": "Afficher mon vrai nom",
+    "displayRealNameHelp": "Quand activé, les autres voient « Prénom Nom » au lieu de ton pseudo.",
+    "linkedAccounts": {
+      "title": "Comptes liés",
+      "help": "Lie plusieurs providers à ton compte pour pouvoir te connecter avec n'importe lequel.",
+      "linked": "Lié",
+      "link": "Lier",
+      "unlink": "Délier",
+      "cannotUnlinkLast": "Tu ne peux pas délier ton seul moyen de connexion",
+      "linkSuccess": "Compte {{provider}} lié avec succès"
+    }
   },
   "auth": {
-    "verifyEmail": "Vérifier ton email ISFCE",
-    "enterEmail": "Entre ton email @isfce.be",
-    "sendCode": "Envoyer le code",
-    "enterCode": "Entre le code reçu par email",
     "confirm": "Confirmer",
-    "verified": "Email vérifié !",
-    "codeExpired": "Code incorrect ou expiré — redemandes-en un nouveau.",
     "verificationRequired": "Vérification requise",
     "verifyEmailMessage": "Vérifie ton email @isfce.be pour débloquer cette fonctionnalité.",
-    "loginRequired": "Connecte-toi pour accéder à ce contenu"
+    "loginRequired": "Connecte-toi pour accéder à ce contenu",
+    "adminRequired": "Accès réservé aux administrateurs"
+  },
+  "home": {
+    "recent": {
+      "title": "Reprise de lecture",
+      "empty": "Ouvre un document pour qu'il apparaisse ici la prochaine fois."
+    },
+    "shortcuts": {
+      "title": "Accès rapide",
+      "items": {
+        "share": "Partager un doc",
+        "favorites": "Mes favoris",
+        "mySection": "Explorer",
+        "leaderboard": "Classement",
+        "bug": "Signaler un bug",
+        "kofi": "Offrir un café"
+      }
+    }
   },
   "search": {
     "placeholder": "Rechercher des documents...",
@@ -230,14 +349,14 @@
     "error": "Une erreur est survenue — réessaie dans un instant.",
     "errorTitle": "Oups",
     "errorRetry": "Retour à l'accueil",
-    "retry": "Réessayer",
     "cancel": "Annuler",
     "save": "Enregistrer",
     "confirm": "Confirmer",
-    "back": "Retour",
     "seeAll": "Voir tout",
     "copyLink": "Copier le lien",
-    "linkCopied": "Lien copié !"
+    "linkCopied": "Lien copié !",
+    "share": "Partager",
+    "shared": "Partagé !"
   },
   "footer": {
     "tagline": "Hub des documents de l'ISFCE",
@@ -304,6 +423,21 @@
       "output": "Résultat",
       "invalid": "Base64 invalide",
       "placeholder": "Entre du texte à encoder/décoder…"
+    },
+    "jwt": {
+      "tab": "JWT",
+      "help": "Colle un JSON Web Token ci-dessous. Tout reste local — le token n'est jamais envoyé au serveur.",
+      "tokenLabel": "Token JWT",
+      "header": "En-tête",
+      "payload": "Contenu",
+      "signature": "Signature",
+      "signatureNote": "La signature n'est pas vérifiée côté navigateur (il faudrait la clé publique de l'émetteur).",
+      "invalidFormat": "Un JWT valide contient trois segments séparés par des points.",
+      "invalidContent": "Impossible de décoder l'un des segments en JSON.",
+      "valid": "Encore valide",
+      "expired": "Expiré",
+      "issuedAt": "Émis le",
+      "expiresAt": "Expire le"
     }
   },
   "notifications": {
@@ -314,27 +448,21 @@
     "xpEarned": "+{{xp}} XP gagnés"
   },
   "userPublic": {
-    "notFound": "Utilisateur introuvable."
+    "notFound": "Utilisateur introuvable.",
+    "editProfile": "Modifier mon profil"
   },
   "notFound": {
     "title": "Page introuvable",
     "subtitle": "Cette page n'existe pas ou a été déplacée.",
     "cta": "Retour à l'accueil"
   },
-  "badges": {
-    "FIRST_UPLOAD": "Premier partage",
-    "CONTRIBUTOR_10": "10 contributions",
-    "CONTRIBUTOR_50": "50 contributions",
-    "CONTRIBUTOR_100": "100 contributions",
-    "XP_100": "100 XP",
-    "XP_500": "500 XP",
-    "XP_1000": "1000 XP"
-  },
   "categories": {
     "SYNTHESE": "Synthèse",
     "EXAMEN": "Examen",
     "NOTES": "Notes",
     "EXERCICES": "Exercices",
+    "COURS": "Cours",
+    "TFE": "TFE",
     "DIVERS": "Divers"
   }
 }

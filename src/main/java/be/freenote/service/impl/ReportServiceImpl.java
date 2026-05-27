@@ -7,9 +7,9 @@ import be.freenote.entity.Document;
 import be.freenote.entity.Report;
 import be.freenote.entity.User;
 import be.freenote.enums.ReportStatus;
-import be.freenote.exception.ResourceNotFoundException;
 import be.freenote.mapper.ReportMapper;
 import be.freenote.repository.DocumentRepository;
+import be.freenote.repository.Repositories;
 import be.freenote.repository.ReportRepository;
 import be.freenote.repository.UserRepository;
 import be.freenote.service.ReportService;
@@ -33,10 +33,8 @@ public class ReportServiceImpl implements ReportService {
     @Override
     @Transactional
     public void create(Long userId, Long documentId, ReportRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Document", "id", documentId));
+        User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
+        Document document = Repositories.findByIdOrThrow(documentRepository, documentId, "Document");
 
         Report report = Report.builder()
                 .document(document)
@@ -61,8 +59,7 @@ public class ReportServiceImpl implements ReportService {
     @Override
     @Transactional
     public void resolve(Long reportId) {
-        Report report = reportRepository.findById(reportId)
-                .orElseThrow(() -> new ResourceNotFoundException("Report", "id", reportId));
+        Report report = Repositories.findByIdOrThrow(reportRepository, reportId, "Report");
         report.setStatus(ReportStatus.RESOLVED);
         reportRepository.save(report);
     }
@@ -70,8 +67,7 @@ public class ReportServiceImpl implements ReportService {
     @Override
     @Transactional
     public void dismiss(Long reportId) {
-        Report report = reportRepository.findById(reportId)
-                .orElseThrow(() -> new ResourceNotFoundException("Report", "id", reportId));
+        Report report = Repositories.findByIdOrThrow(reportRepository, reportId, "Report");
         report.setStatus(ReportStatus.DISMISSED);
         reportRepository.save(report);
     }

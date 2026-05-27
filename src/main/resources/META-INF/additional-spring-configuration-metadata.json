@@ -2,6 +2,7 @@
   "properties": [
     { "name": "app.jwt.secret", "type": "java.lang.String", "description": "HMAC-SHA512 secret for JWT signing (min 64 bytes)" },
     { "name": "app.jwt.expiration-ms", "type": "java.lang.Long", "description": "JWT expiration in milliseconds" },
+    { "name": "app.cookie.secure", "type": "java.lang.Boolean", "description": "Emit cookies with the Secure flag (HTTPS-only). Set to false only for local HTTP dev.", "defaultValue": true },
     { "name": "app.minio.endpoint", "type": "java.lang.String", "description": "MinIO server endpoint URL" },
     { "name": "app.minio.access-key", "type": "java.lang.String", "description": "MinIO access key" },
     { "name": "app.minio.secret-key", "type": "java.lang.String", "description": "MinIO secret key" },

@@ -33,7 +33,6 @@ public class DataSeeder implements CommandLineRunner {
     private final DocumentRepository documentRepository;
     private final RatingRepository ratingRepository;
     private final FavoriteRepository favoriteRepository;
-    private final BadgeRepository badgeRepository;
     private final DonationRepository donationRepository;
     private final DelegateHistoryRepository delegateHistoryRepository;
     private final ReportRepository reportRepository;
@@ -89,15 +88,14 @@ public class DataSeeder implements CommandLineRunner {
         var documents = seedDocuments(courses, users, professors);
         int ratingsCount = seedRatings(documents, users);
         int favoritesCount = seedFavorites(documents, users);
-        int badgesCount = seedBadges(users, documents);
         int donationsCount = seedDonations(users);
         int delegatesCount = seedDelegates(users, sections);
         int reportsCount = seedReports(documents, users);
 
         log.info("Seeded: {} users, {} sections, {} courses, {} professors, {} documents, " +
-                        "{} ratings, {} favorites, {} badges, {} donations, {} delegates, {} reports",
+                        "{} ratings, {} favorites, {} donations, {} delegates, {} reports",
                 users.size(), sections.size(), courses.size(), professors.size(), documents.size(),
-                ratingsCount, favoritesCount, badgesCount, donationsCount, delegatesCount, reportsCount);
+                ratingsCount, favoritesCount, donationsCount, delegatesCount, reportsCount);
     }
 
     // ==================== USERS ====================
@@ -111,40 +109,40 @@ public class DataSeeder implements CommandLineRunner {
                 "freenote-admin", null, null, null));
 
         // 5 active verified users
-        users.add(createUser("Sophie_M", "Sophie Martin", "GOOGLE", "goog-101", true, "USER", 280,
+        users.add(createUser("Sophie_M", "Sophie Martin", "DISCORD", "disc-g101", true, "USER", 280,
                 "Etudiante en informatique a l'ISFCE, passionnee de dev web et Java.",
                 true, true, "sophie-dev", "https://linkedin.com/in/sophie-m", null, null));
         users.add(createUser("Karim_B", "Karim Boulanger", "DISCORD", "disc-102", true, "USER", 195,
                 "3eme annee comptabilite. J'aime partager mes syntheses !",
                 true, true, null, "https://linkedin.com/in/karim-b", "Karim#4521", null));
-        users.add(createUser("Julie_V", "Julie Vandenberghe", "GOOGLE", "goog-103", true, "USER", 150,
+        users.add(createUser("Julie_V", "Julie Vandenberghe", "DISCORD", "disc-g103", true, "USER", 150,
                 "Assistante de direction ISFCE. Notes de cours et examens corriges.",
                 true, false, "juliev-notes", null, null, null));
         users.add(createUser("Mehdi_A", "Mehdi Amrani", "DISCORD", "disc-104", true, "USER", 120,
                 "Futur developpeur full-stack. Je partage tout ce que je peux.",
                 false, false, "mehdi-dev", null, "Mehdi#7890", null));
-        users.add(createUser("Clara_D", "Clara Dupont", "GOOGLE", "goog-105", true, "USER", 85,
+        users.add(createUser("Clara_D", "Clara Dupont", "DISCORD", "disc-g105", true, "USER", 85,
                 "Marketing digital a l'ISFCE. Mes resumes sont toujours colores.",
                 false, false, null, "https://linkedin.com/in/clara-d", null, null));
 
         // 5 users with some contributions
         users.add(createUser("Thomas_R", "Thomas Renard", "DISCORD", "disc-201", true, "USER", 45,
                 "Etudiant en fiscalite", false, false, null, null, null, null));
-        users.add(createUser("Amira_S", "Amira Saidi", "GOOGLE", "goog-202", true, "USER", 35,
+        users.add(createUser("Amira_S", "Amira Saidi", "DISCORD", "disc-g202", true, "USER", 35,
                 null, false, false, null, null, null, null));
         users.add(createUser("Lucas_P", "Lucas Petit", "DISCORD", "disc-203", true, "USER", 28,
                 "Fan de reseaux et cybersecurite", true, false, null, null, "Lucas#1234", null));
-        users.add(createUser("Emma_L", "Emma Lambert", "GOOGLE", "goog-204", true, "USER", 15,
+        users.add(createUser("Emma_L", "Emma Lambert", "DISCORD", "disc-g204", true, "USER", 15,
                 null, false, false, null, null, null, null));
         users.add(createUser("Youssef_K", "Youssef Kaddouri", "DISCORD", "disc-205", true, "USER", 12,
                 null, false, false, null, null, null, null));
 
         // 4 unverified users
-        users.add(createUser("Lea_F", "Lea Fontaine", "GOOGLE", "goog-301", false, "USER", 0,
+        users.add(createUser("Lea_F", "Lea Fontaine", "DISCORD", "disc-g301", false, "USER", 0,
                 null, false, false, null, null, null, null));
         users.add(createUser("Nathan_G", "Nathan Garcia", "DISCORD", "disc-302", false, "USER", 0,
                 null, false, false, null, null, null, null));
-        users.add(createUser("Ines_H", "Ines Hadj", "GOOGLE", "goog-303", false, "USER", 0,
+        users.add(createUser("Ines_H", "Ines Hadj", "DISCORD", "disc-g303", false, "USER", 0,
                 null, false, false, null, null, null, null));
         users.add(createUser("Axel_J", "Axel Janssens", "DISCORD", "disc-304", false, "USER", 0,
                 null, false, false, null, null, null, null));
@@ -159,8 +157,6 @@ public class DataSeeder implements CommandLineRunner {
         String emailHash = verified ? sha256Hex(username.toLowerCase() + "@isfce.be") : null;
 
         User user = User.builder()
-                .oauthProvider(provider)
-                .oauthId(oauthId)
                 .username(username)
                 .emailHash(emailHash)
                 .verified(verified)
@@ -178,12 +174,19 @@ public class DataSeeder implements CommandLineRunner {
                 .discord(discord)
                 .profilePublic(profilePublic)
                 .showInCarousel(showInCarousel)
-                .themePref("dark")
                 .adFree(false)
                 .termsAcceptedAt(verified ? LocalDateTime.now() : null)
                 .build();
 
         user.setProfile(profile);
+
+        // Cascade through user.oauthLinks (CascadeType.ALL) persists the link with the user.
+        be.freenote.entity.UserOauthLink link = be.freenote.entity.UserOauthLink.builder()
+                .user(user)
+                .provider(provider)
+                .oauthId(oauthId)
+                .build();
+        user.getOauthLinks().add(link);
         return user;
     }
 
@@ -497,42 +500,6 @@ public class DataSeeder implements CommandLineRunner {
         return favoriteRepository.saveAll(favorites).size();
     }
 
-    // ==================== BADGES ====================
-
-    private int seedBadges(Map<String, User> users, List<Document> documents) {
-        List<Badge> badges = new ArrayList<>();
-
-        // Count docs per user
-        Map<Long, Long> docCounts = new HashMap<>();
-        for (Document doc : documents) {
-            if (doc.getUser() != null) {
-                docCounts.merge(doc.getUser().getId(), 1L, Long::sum);
-            }
-        }
-
-        for (User user : users.values()) {
-            if (user.getXp() == 0) continue;
-
-            long docCount = docCounts.getOrDefault(user.getId(), 0L);
-
-            if (docCount > 0) {
-                badges.add(Badge.builder().user(user).badgeType("FIRST_UPLOAD").build());
-            }
-            if (docCount >= 10) {
-                badges.add(Badge.builder().user(user).badgeType("CONTRIBUTOR_10").build());
-            }
-            if (user.getXp() >= 100) {
-                badges.add(Badge.builder().user(user).badgeType("XP_100").build());
-            }
-        }
-
-        // SUPPORTER badges for Sophie_M and Karim_B
-        badges.add(Badge.builder().user(users.get("Sophie_M")).badgeType("SUPPORTER").build());
-        badges.add(Badge.builder().user(users.get("Karim_B")).badgeType("SUPPORTER").build());
-
-        return badgeRepository.saveAll(badges).size();
-    }
-
     // ==================== DONATIONS ====================
 
     private int seedDonations(Map<String, User> users) {
@@ -648,7 +615,7 @@ public class DataSeeder implements CommandLineRunner {
             byte[] hash = digest.digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(hash);
         } catch (java.security.NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException("SHA-256 algorithm unavailable", e);
         }
     }
 }

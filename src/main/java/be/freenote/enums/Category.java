@@ -5,5 +5,7 @@ public enum Category {
     EXAMEN,
     NOTES,
     EXERCICES,
+    COURS,
+    TFE,
     DIVERS
 }

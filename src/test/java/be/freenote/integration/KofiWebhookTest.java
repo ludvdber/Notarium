@@ -37,7 +37,6 @@ class KofiWebhookTest extends AbstractIntegrationTest {
         donationRepository.deleteAll();
         ratingRepository.deleteAll();
         favoriteRepository.deleteAll();
-        badgeRepository.deleteAll();
         documentRepository.deleteAll();
         courseRepository.deleteAll();
         sectionRepository.deleteAll();

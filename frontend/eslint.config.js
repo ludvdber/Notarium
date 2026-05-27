@@ -20,4 +20,12 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Test files mock external libs (framer-motion, etc.) where `any` on spread props is
+    // idiomatic and typing it precisely adds noise without value.
+    files: ['**/*.test.{ts,tsx}', '**/__tests__/**', 'tests/**'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 ])

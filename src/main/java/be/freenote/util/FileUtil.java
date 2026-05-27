@@ -11,11 +11,4 @@ public final class FileUtil {
         }
         return fileName.replaceAll("[^a-zA-Z0-9.\\-_]", "_");
     }
-
-    public static String getFileExtension(String fileName) {
-        if (fileName == null || !fileName.contains(".")) {
-            return "";
-        }
-        return fileName.substring(fileName.lastIndexOf('.') + 1);
-    }
 }

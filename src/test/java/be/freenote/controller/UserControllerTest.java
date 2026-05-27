@@ -2,6 +2,9 @@ package be.freenote.controller;
 
 import be.freenote.dto.response.UserResponse;
 import be.freenote.security.JwtAuthFilter;
+import be.freenote.security.JwtRevocationService;
+import be.freenote.security.JwtTokenProvider;
+import be.freenote.service.RecentDocsService;
 import be.freenote.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,12 +28,16 @@ class UserControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private UserService userService;
+    @MockitoBean private RecentDocsService recentDocsService;
     @MockitoBean private JwtAuthFilter jwtAuthFilter;
+    @MockitoBean private JwtTokenProvider jwtTokenProvider;
+    @MockitoBean private JwtRevocationService jwtRevocationService;
+    @MockitoBean private be.freenote.security.AdminRoleVerificationFilter adminRoleVerificationFilter;
 
     @Test
     void getUserById_shouldReturnFilteredProfile() throws Exception {
-        var response = new UserResponse(1L, "alice", 100, null, null, null, null, null,
-                List.of("FIRST_UPLOAD"), 5, false, false, true);
+        var response = new UserResponse(1L, "alice", null, false, 100, null, null, null, null, null,
+                5L, false, false, false, true, null, "AUTO", "alice", null, null, false);
         when(userService.getPublicProfile(1L)).thenReturn(response);
 
         mockMvc.perform(get("/api/users/1"))

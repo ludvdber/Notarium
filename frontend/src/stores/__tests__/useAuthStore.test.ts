@@ -8,17 +8,25 @@ vi.stubGlobal('fetch', vi.fn(() => Promise.resolve()));
 const mockUser: User = {
   id: 1,
   username: 'testuser',
+  role: 'USER',
+  verified: true,
   xp: 100,
   bio: null,
   website: null,
   github: null,
   linkedin: null,
   discord: null,
-  badges: [],
   documentCount: 5,
   profilePublic: true,
+  showInCarousel: false,
   supporter: false,
   termsAccepted: true,
+  avatarUrl: null,
+  avatarSource: 'AUTO',
+  displayName: 'testuser',
+  firstName: null,
+  lastName: null,
+  displayRealName: false,
 };
 
 describe('useAuthStore', () => {

@@ -3,8 +3,10 @@ package be.freenote.controller;
 import be.freenote.dto.response.DocumentResponse;
 import be.freenote.dto.response.PageResponse;
 import be.freenote.exception.ResourceNotFoundException;
+import be.freenote.security.AdminRoleVerificationFilter;
 import be.freenote.security.JwtAuthFilter;
 import be.freenote.service.DocumentService;
+import be.freenote.service.TagService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
@@ -29,13 +31,14 @@ class DocumentControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private DocumentService documentService;
-    @MockitoBean private be.freenote.repository.TagRepository tagRepository;
+    @MockitoBean private TagService tagService;
     @MockitoBean private JwtAuthFilter jwtAuthFilter;
+    @MockitoBean private AdminRoleVerificationFilter adminRoleVerificationFilter;
 
     private static final DocumentResponse DOC = new DocumentResponse(
-            1L, "Test Doc", "Java", "Info", "SYNTHESE", "Alice",
+            1L, "Test Doc", 1L, "Java", "Info", "SYNTHESE", "Alice",
             true, false, "FR", "2025", null, 4.5, 10,
-            List.of("java"), null, LocalDateTime.now()
+            List.of("java"), LocalDateTime.now()
     );
 
     @Test
@@ -50,7 +53,7 @@ class DocumentControllerTest {
 
     @Test
     void search_shouldReturnPagedResults() throws Exception {
-        when(documentService.search(any(), any(), any(), any(), any()))
+        when(documentService.search(any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageResponse<>(List.of(DOC), 0, 20, 1, 1));
 
         mockMvc.perform(get("/api/documents/search").param("q", "java"))

@@ -1,9 +1,10 @@
 package be.freenote.service;
 
 import be.freenote.entity.User;
-import be.freenote.exception.DuplicateResourceException;
+import be.freenote.entity.UserOauthLink;
 import be.freenote.exception.RateLimitExceededException;
 import be.freenote.exception.UnauthorizedException;
+import be.freenote.repository.UserOauthLinkRepository;
 import be.freenote.repository.UserRepository;
 import be.freenote.security.JwtTokenProvider;
 import be.freenote.service.impl.AuthServiceImpl;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.*;
 class AuthServiceImplTest {
 
     @Mock private UserRepository userRepository;
+    @Mock private UserOauthLinkRepository oauthLinkRepository;
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private StringRedisTemplate redisTemplate;
     @Mock private JavaMailSender mailSender;
@@ -53,10 +55,11 @@ class AuthServiceImplTest {
         OAuth2User oAuth2User = mock(OAuth2User.class);
         when(oAuth2User.getName()).thenReturn("oauth-id-123");
 
-        User existingUser = User.builder().id(1L).oauthProvider("GOOGLE").oauthId("oauth-id-123")
-                .username("test").build();
-        when(userRepository.findByOauthProviderAndOauthId("GOOGLE", "oauth-id-123"))
-                .thenReturn(Optional.of(existingUser));
+        User existingUser = User.builder().id(1L).username("test").build();
+        UserOauthLink link = UserOauthLink.builder()
+                .user(existingUser).provider("DISCORD").oauthId("oauth-id-123").build();
+        when(oauthLinkRepository.findByProviderAndOauthId("DISCORD", "oauth-id-123"))
+                .thenReturn(Optional.of(link));
         when(jwtTokenProvider.generateToken(existingUser)).thenReturn("jwt-token");
 
         String jwt = authService.processOAuth2Login(oAuth2User, "google");
@@ -69,13 +72,14 @@ class AuthServiceImplTest {
     void shouldCreateUserAndReturnJwtWhenOAuth2LoginWithNewUser() {
         OAuth2User oAuth2User = mock(OAuth2User.class);
         when(oAuth2User.getName()).thenReturn("new-id");
+        lenient().when(oAuth2User.getAttribute("email_verified")).thenReturn(null);
         when(oAuth2User.getAttribute("name")).thenReturn("John Doe");
 
-        when(userRepository.findByOauthProviderAndOauthId("DISCORD", "new-id"))
+        when(oauthLinkRepository.findByProviderAndOauthId("DISCORD", "new-id"))
                 .thenReturn(Optional.empty());
-        User savedUser = User.builder().id(2L).oauthProvider("DISCORD").oauthId("new-id")
-                .username("John Doe").build();
+        User savedUser = User.builder().id(2L).username("John Doe").build();
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
+        when(oauthLinkRepository.save(any(UserOauthLink.class))).thenAnswer(inv -> inv.getArgument(0));
         when(jwtTokenProvider.generateToken(any(User.class))).thenReturn("new-jwt");
 
         String jwt = authService.processOAuth2Login(oAuth2User, "discord");
@@ -88,12 +92,14 @@ class AuthServiceImplTest {
     void shouldFallbackToUsernameAttributeWhenNameIsNull() {
         OAuth2User oAuth2User = mock(OAuth2User.class);
         when(oAuth2User.getName()).thenReturn("oid");
+        lenient().when(oAuth2User.getAttribute("email_verified")).thenReturn(null);
         when(oAuth2User.getAttribute("name")).thenReturn(null);
         when(oAuth2User.getAttribute("username")).thenReturn("discord_user");
 
-        when(userRepository.findByOauthProviderAndOauthId("DISCORD", "oid")).thenReturn(Optional.empty());
+        when(oauthLinkRepository.findByProviderAndOauthId("DISCORD", "oid")).thenReturn(Optional.empty());
         User saved = User.builder().id(3L).username("discord_user").build();
         when(userRepository.save(any(User.class))).thenReturn(saved);
+        lenient().when(oauthLinkRepository.save(any(UserOauthLink.class))).thenAnswer(inv -> inv.getArgument(0));
         when(jwtTokenProvider.generateToken(any())).thenReturn("jwt");
 
         authService.processOAuth2Login(oAuth2User, "discord");
@@ -107,11 +113,14 @@ class AuthServiceImplTest {
     void shouldFallbackToOauthIdWhenAllAttributesNull() {
         OAuth2User oAuth2User = mock(OAuth2User.class);
         when(oAuth2User.getName()).thenReturn("fallback-id");
+        lenient().when(oAuth2User.getAttribute("email_verified")).thenReturn(null);
+        lenient().when(oAuth2User.getAttribute("picture")).thenReturn(null);
         when(oAuth2User.getAttribute("name")).thenReturn(null);
         when(oAuth2User.getAttribute("username")).thenReturn(null);
 
-        when(userRepository.findByOauthProviderAndOauthId("GOOGLE", "fallback-id")).thenReturn(Optional.empty());
+        when(oauthLinkRepository.findByProviderAndOauthId("DISCORD", "fallback-id")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(oauthLinkRepository.save(any(UserOauthLink.class))).thenAnswer(inv -> inv.getArgument(0));
         when(jwtTokenProvider.generateToken(any())).thenReturn("jwt");
 
         authService.processOAuth2Login(oAuth2User, "google");
@@ -127,13 +136,14 @@ class AuthServiceImplTest {
         when(oAuth2User.getName()).thenReturn("id1");
 
         User user = User.builder().id(1L).username("u").build();
-        when(userRepository.findByOauthProviderAndOauthId("GOOGLE", "id1"))
-                .thenReturn(Optional.of(user));
+        UserOauthLink link = UserOauthLink.builder().user(user).provider("DISCORD").oauthId("id1").build();
+        when(oauthLinkRepository.findByProviderAndOauthId("DISCORD", "id1"))
+                .thenReturn(Optional.of(link));
         when(jwtTokenProvider.generateToken(user)).thenReturn("jwt");
 
         authService.processOAuth2Login(oAuth2User, "Google");
 
-        verify(userRepository).findByOauthProviderAndOauthId("GOOGLE", "id1");
+        verify(oauthLinkRepository).findByProviderAndOauthId("DISCORD", "id1");
     }
 
     // ---- requestVerification ----
@@ -192,13 +202,16 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void shouldThrowDuplicateWhenEmailHashAlreadyExists() {
+    void shouldSilentlyNoopWhenEmailHashAlreadyExists() {
+        // Returning a distinct error would leak which emails are already registered (enumeration attack).
+        // The service should silently return without sending an email or storing a verification code.
         User existing = User.builder().id(99L).build();
         when(userRepository.findByEmailHash(anyString())).thenReturn(Optional.of(existing));
 
-        assertThatThrownBy(() -> authService.requestVerification(1L, "student@isfce.be"))
-                .isInstanceOf(DuplicateResourceException.class)
-                .hasMessageContaining("already verified");
+        authService.requestVerification(1L, "student@isfce.be");
+
+        verifyNoInteractions(mailSender);
+        verifyNoInteractions(redisTemplate);
     }
 
     // ---- confirmVerification ----
