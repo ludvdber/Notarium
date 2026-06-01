@@ -18,6 +18,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { categoryColor, formatDate, shareOrCopy } from '@/lib/utils';
 import PageWrapper from '@/components/layout/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
+import UploaderCard from '@/components/common/UploaderCard';
 import StarRating from '@/components/ui/StarRating';
 import Shimmer from '@/components/ui/Shimmer';
 import AdSlot from '@/components/ui/AdSlot';
@@ -214,6 +215,8 @@ export default function DocumentView() {
           </Grid>
         </Grid>
       </GlassCard>
+
+      {doc.authorId && <UploaderCard authorId={doc.authorId} />}
 
       {doc.tags.length > 0 && (
         <Box sx={s.tagsRow}>

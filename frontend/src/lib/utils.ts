@@ -41,6 +41,18 @@ export function categoryColor(category: string): string {
 }
 
 /**
+ * Pulls the backend ErrorResponse `message` out of an Axios error, falling back to
+ * `fallback` when the shape doesn't match (network error, non-JSON body, etc.).
+ */
+export function extractApiError(e: unknown, fallback = 'Error'): string {
+  if (typeof e === 'object' && e !== null) {
+    const err = e as { response?: { data?: { message?: string } } };
+    return err.response?.data?.message ?? fallback;
+  }
+  return fallback;
+}
+
+/**
  * Uses the Web Share API when available (mobile, installed PWAs, some desktop browsers),
  * otherwise falls back to writing the URL to the clipboard.
  * Returns 'shared' / 'copied' / 'error' so the caller can display the right toast.

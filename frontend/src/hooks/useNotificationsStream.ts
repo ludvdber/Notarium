@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useNotificationStore } from '@/stores/useNotificationStore';
+import { getNotificationsUnreadCount } from '@/api/endpoints';
 
 interface ServerNotification {
   id: number;
@@ -25,11 +26,7 @@ export function useNotificationsStream() {
   // Unread count — polled as a safety net in case SSE drops for a long time.
   useQuery({
     queryKey: ['notifications', 'unread-count'],
-    queryFn: async () => {
-      const res = await fetch('/api/notifications/unread-count', { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to fetch unread count');
-      return (await res.json()) as number;
-    },
+    queryFn: getNotificationsUnreadCount,
     enabled: !!token,
     refetchInterval: 60_000, // 60s safety poll; SSE is the primary channel
   });
@@ -54,8 +51,9 @@ export function useNotificationsStream() {
     });
 
     source.onerror = () => {
-      // EventSource auto-reconnects; we just log once so dev tools show the break.
-      // Silent in prod (browser retries under the hood).
+      // EventSource auto-reconnects under the hood. Refresh the unread count so a long
+      // drop (events missed while disconnected) can't leave the badge stale.
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     };
 
     return () => source.close();

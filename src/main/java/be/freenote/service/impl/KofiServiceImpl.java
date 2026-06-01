@@ -55,6 +55,14 @@ public class KofiServiceImpl implements KofiService {
             return;
         }
 
+        // Idempotency: Ko-fi retries on any non-200, and network glitches can replay a webhook.
+        // Processing the same transaction twice would double the donation row and the ad-free grant.
+        String txId = payload.getKofiTransactionId();
+        if (txId != null && donationRepository.existsByKofiTransactionId(txId)) {
+            log.info("Ko-fi webhook ignored: transaction {} already processed", txId);
+            return;
+        }
+
         // Try to match user by email hash
         Optional<User> userOpt = Optional.empty();
         if (payload.getEmail() != null && !payload.getEmail().isBlank()) {
@@ -68,31 +76,31 @@ public class KofiServiceImpl implements KofiService {
         }
 
         User user = userOpt.orElse(null);
+        LocalDateTime now = LocalDateTime.now();
 
-        LocalDateTime adFreeUntil = LocalDateTime.now().plusDays(AD_FREE_DAYS_PER_DONATION);
+        // Compute the (cumulative) ad-free expiry first so the donation audit row records the real
+        // expiry the donor ends up with, not a flat now+30 that understates cumulative gifts.
+        LocalDateTime adFreeUntil;
+        if (user != null && user.getProfile() != null) {
+            UserProfile profile = user.getProfile();
+            LocalDateTime base = profile.getAdFreeUntil() != null && profile.getAdFreeUntil().isAfter(now)
+                    ? profile.getAdFreeUntil()
+                    : now;
+            adFreeUntil = base.plusDays(AD_FREE_DAYS_PER_DONATION);
+            profile.setAdFreeUntil(adFreeUntil);
+            log.info("Ko-fi donation processed: user={}, amount={}, ad-free until {}",
+                    user.getUsername(), amount, adFreeUntil);
+        } else {
+            adFreeUntil = now.plusDays(AD_FREE_DAYS_PER_DONATION);
+            log.info("Ko-fi donation processed: unmatched donor '{}', amount={}, transaction={}",
+                    payload.getFromName(), amount, payload.getKofiTransactionId());
+        }
 
-        Donation donation = Donation.builder()
+        donationRepository.save(Donation.builder()
                 .user(user)
                 .amount(amount)
                 .kofiTransactionId(payload.getKofiTransactionId())
                 .adFreeUntil(adFreeUntil)
-                .build();
-        donationRepository.save(donation);
-
-        if (user != null && user.getProfile() != null) {
-            UserProfile profile = user.getProfile();
-            // Extend ad-free period: max of current expiry or new grant
-            if (profile.getAdFreeUntil() != null && profile.getAdFreeUntil().isAfter(LocalDateTime.now())) {
-                profile.setAdFreeUntil(profile.getAdFreeUntil().plusDays(AD_FREE_DAYS_PER_DONATION));
-            } else {
-                profile.setAdFreeUntil(adFreeUntil);
-            }
-            profile.setAdFree(true);
-            log.info("Ko-fi donation processed: user={}, amount={}, ad-free until {}",
-                    user.getUsername(), amount, profile.getAdFreeUntil());
-        } else {
-            log.info("Ko-fi donation processed: unmatched donor '{}', amount={}, transaction={}",
-                    payload.getFromName(), amount, payload.getKofiTransactionId());
-        }
+                .build());
     }
 }

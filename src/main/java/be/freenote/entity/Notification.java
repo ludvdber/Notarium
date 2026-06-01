@@ -27,12 +27,12 @@ public class Notification {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    /** Free-form key (e.g. "document.verified", "badge.awarded"). Kept as String
+    /** Free-form key (e.g. "document.verified"). Kept as String
      *  instead of an enum so adding a new type is zero-migration. */
     @Column(nullable = false, length = 64)
     private String type;
 
-    /** JSON payload — type-specific fields (documentId, badgeName, etc.). */
+    /** JSON payload — type-specific fields (documentId, etc.). */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
     @Builder.Default

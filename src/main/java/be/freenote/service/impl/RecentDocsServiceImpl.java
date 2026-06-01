@@ -63,11 +63,11 @@ public class RecentDocsServiceImpl implements RecentDocsService {
                 .toList();
         if (ids.isEmpty()) return List.of();
 
-        // Only surface verified docs — an unverified doc that the user opened once
-        // shouldn't keep haunting the "reprise de lecture" slot.
+        // Both verified and unverified docs surface here (verification is a visual aid only);
+        // recency order from Redis is preserved.
         Map<Long, Document> byId = new HashMap<>();
         for (Document d : documentRepository.findAllById(ids)) {
-            if (d.isVerified()) byId.put(d.getId(), d);
+            byId.put(d.getId(), d);
         }
         return ids.stream()
                 .map(byId::get)

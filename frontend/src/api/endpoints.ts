@@ -46,8 +46,8 @@ export const searchDocuments = (params: {
 }) =>
   api.get<PageResponse<DocumentResponse>>('/documents/search', { params }).then((r) => r.data);
 
-export const getPopularDocuments = () =>
-  api.get<DocumentResponse[]>('/documents/popular').then((r) => r.data);
+export const getPopularDocuments = (sectionId?: number) =>
+  api.get<DocumentResponse[]>('/documents/popular', { params: sectionId ? { sectionId } : undefined }).then((r) => r.data);
 
 export const getTagSuggestions = () =>
   api.get<string[]>('/documents/tags').then((r) => r.data);
@@ -112,8 +112,17 @@ export const getCurrentUser = () =>
 export const updateProfile = (data: UpdateProfileRequest) =>
   api.put<User>('/users/me', data).then((r) => r.data);
 
+export const setUsername = (username: string) =>
+  api.put<User>('/users/me/username', { username }).then((r) => r.data);
+
+export const setSection = (sectionId: number | null) =>
+  api.put<User>('/users/me/section', { sectionId }).then((r) => r.data);
+
 export const getUserById = (id: number) =>
   api.get<User>(`/users/${id}`).then((r) => r.data);
+
+export const getUserRank = (id: number) =>
+  api.get<number>(`/users/${id}/rank`).then((r) => r.data);
 
 export const getFeaturedProfiles = () =>
   api.get<ProfileCardResponse[]>('/users/featured').then((r) => r.data);
@@ -131,8 +140,10 @@ export const deleteAccount = () =>
   api.delete('/users/me');
 
 // --- Leaderboard ---
-export const getLeaderboard = (size?: number) =>
-  api.get<LeaderboardEntry[]>('/leaderboard', { params: size ? { size } : undefined }).then((r) => r.data);
+export const getLeaderboard = (size?: number, sectionId?: number) =>
+  api.get<LeaderboardEntry[]>('/leaderboard', {
+    params: { ...(size ? { size } : {}), ...(sectionId ? { sectionId } : {}) },
+  }).then((r) => r.data);
 
 // --- Delegates ---
 export const getDelegates = () =>
@@ -205,8 +216,11 @@ export const adminDeleteCourse = (id: number) =>
   api.delete(`/admin/courses/${id}`);
 
 // --- Admin: Users ---
-export const adminSearchUsers = (q = '', limit = 30) =>
-  api.get<User[]>('/admin/users', { params: { q, limit } }).then((r) => r.data);
+export const adminSearchUsers = (q = '', limit = 30, sectionId?: number) =>
+  api.get<User[]>('/admin/users', { params: { q, limit, ...(sectionId ? { sectionId } : {}) } }).then((r) => r.data);
+
+export const adminBanUser = (id: number, reason?: string) =>
+  api.post(`/admin/users/${id}/ban`, null, { params: reason ? { reason } : undefined });
 
 export const adminVerifyUser = (id: number) =>
   api.put<User>(`/admin/users/${id}/verify`).then((r) => r.data);
@@ -223,6 +237,9 @@ export const adminDeleteUser = (id: number) =>
 // --- Admin: Professors ---
 export const getPendingProfessors = () =>
   api.get<Professor[]>('/admin/professors/pending').then((r) => r.data);
+
+export const adminCreateProfessor = (name: string) =>
+  api.post<Professor>('/admin/professors', { name }).then((r) => r.data);
 
 export const approveProfessor = (id: number) =>
   api.put<Professor>(`/admin/professors/${id}/approve`).then((r) => r.data);
@@ -243,6 +260,10 @@ export const getAdminDonations = (page = 0, size = 30) =>
 
 export const adminGrantAdFree = (userId: number, days: number) =>
   api.post<DonationResponse>(`/admin/users/${userId}/grant-ad-free`, null, { params: { days } }).then((r) => r.data);
+
+// --- Notifications ---
+export const getNotificationsUnreadCount = () =>
+  api.get<number>('/notifications/unread-count').then((r) => r.data);
 
 // --- News ---
 export const getNews = () =>

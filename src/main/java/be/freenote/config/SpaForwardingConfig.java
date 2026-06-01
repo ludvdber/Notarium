@@ -26,10 +26,7 @@ public class SpaForwardingConfig implements WebMvcConfigurer {
             "api/",
             "oauth2/",
             "login/",
-            "actuator/",
-            "v3/",
-            "swagger-ui",
-            "webjars/"
+            "actuator/"
     );
 
     @Override

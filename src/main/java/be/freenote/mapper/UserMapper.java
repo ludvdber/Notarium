@@ -10,6 +10,7 @@ import org.mapstruct.*;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 
 @Mapper(componentModel = "spring")
 public abstract class UserMapper {
@@ -33,14 +34,17 @@ public abstract class UserMapper {
                 documentCount,
                 p != null && p.isProfilePublic(),
                 p != null && p.isShowInCarousel(),
-                p != null && p.isAdFree(),
+                isSupporter(p),
                 p != null && p.getTermsAcceptedAt() != null,
                 resolveAvatarUrl(p, user.getUsername()),
                 source.name(),
                 resolveDisplayName(p, user.getUsername()),
                 p != null ? p.getFirstName() : null,
                 p != null ? p.getLastName() : null,
-                p != null && p.isDisplayRealName()
+                p != null && p.isDisplayRealName(),
+                p != null && p.getSection() != null ? p.getSection().getId() : null,
+                p != null && p.getSection() != null ? p.getSection().getName() : null,
+                user.isUsernameChosen()
         );
     }
 
@@ -60,13 +64,16 @@ public abstract class UserMapper {
                 documentCount,
                 false,
                 false,
-                p != null && p.isAdFree(),
+                isSupporter(p),
                 p != null && p.getTermsAcceptedAt() != null,
                 resolveAvatarUrl(p, user.getUsername()),
                 source.name(),
                 resolveDisplayName(p, user.getUsername()),
                 null,
                 null,
+                false,
+                p != null && p.getSection() != null ? p.getSection().getId() : null,
+                p != null && p.getSection() != null ? p.getSection().getName() : null,
                 false
         );
     }
@@ -80,7 +87,7 @@ public abstract class UserMapper {
                 resolveDisplayName(p, user.getUsername()),
                 user.getXp(),
                 documentCount,
-                p != null && p.isAdFree(),
+                isSupporter(p),
                 resolveAvatarUrl(p, user.getUsername())
         );
     }
@@ -94,12 +101,18 @@ public abstract class UserMapper {
                 p != null ? p.getDiscord() : null,
                 p != null ? p.getGithub() : null,
                 p != null ? p.getLinkedin() : null,
-                p != null && p.isAdFree(),
+                isSupporter(p),
                 resolveAvatarUrl(p, user.getUsername())
         );
     }
 
-    protected String resolveDisplayName(UserProfile p, String username) {
+    /** Ad-free is a time-limited entitlement: derive it from the expiry timestamp, never from a
+     *  stored boolean (which would never flip back off once a donation set it). */
+    private static boolean isSupporter(UserProfile p) {
+        return p != null && p.getAdFreeUntil() != null && p.getAdFreeUntil().isAfter(LocalDateTime.now());
+    }
+
+    public static String resolveDisplayName(UserProfile p, String username) {
         if (p == null || !p.isDisplayRealName()) return username;
         String first = p.getFirstName() == null ? "" : p.getFirstName().trim();
         String last = p.getLastName() == null ? "" : p.getLastName().trim();
@@ -114,6 +127,7 @@ public abstract class UserMapper {
         return switch (source) {
             case LETTER, AUTO -> null;
             case DICEBEAR -> dicebearUrl(username);
+            case DISCORD -> p.getDiscordAvatarUrl();
         };
     }
 

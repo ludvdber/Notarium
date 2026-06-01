@@ -69,7 +69,7 @@ class DocumentServiceImplTest {
 
     private DocumentResponse dummyResponse() {
         return new DocumentResponse(100L, "Test Doc", 1L, "Java", "IT", "SYNTHESE",
-                "author", false, false, "FR", null, null, 0.0, 0,
+                "author", null, false, false, "FR", null, null, 0.0, 0,
                 List.of(), LocalDateTime.now());
     }
 

@@ -9,7 +9,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { formatDate } from '@/lib/utils';
 import type { DelegateMember } from '@/types';
 import GlassCard from '@/components/ui/GlassCard';
-import AdBanner from '@/components/ui/AdBanner';
+import AdSlot from '@/components/ui/AdSlot';
 import * as s from './DelegatesDiscord.styles';
 
 export default function DelegatesDiscord() {
@@ -124,7 +124,7 @@ export default function DelegatesDiscord() {
           </Box>
 
           <Box sx={s.adCol}>
-            <AdBanner width={300} height={250} />
+            <AdSlot width={300} height={250} />
           </Box>
         </Box>
       </Box>

@@ -15,22 +15,29 @@ import java.util.List;
 
 @Repository
 public interface DocumentRepository extends JpaRepository<Document, Long> {
-    List<Document> findTop10ByVerifiedTrueOrderByDownloadCountDesc();
-    Page<Document> findByVerifiedTrueAndCourseIdAndCategory(Long courseId, Category category, Pageable pageable);
-    Page<Document> findByVerifiedTrueAndCourseId(Long courseId, Pageable pageable);
-    Page<Document> findByVerifiedTrueAndCategory(Category category, Pageable pageable);
-    Page<Document> findByVerifiedTrue(Pageable pageable);
+    /** Popular docs for the home page: verified ones first (admin-reviewed), then unverified,
+     *  each group ordered by download count. Both are visible — verification is a visual aid only. */
+    List<Document> findTop10ByOrderByVerifiedDescDownloadCountDesc();
 
-    /** Flexible filter: any combination of section / course / category. NULL params mean "no constraint".
-     *  Used by Browse when only a section is selected (no course-level filter exists in derived queries). */
+    /** Popular docs with the user's own section floated to the top (without hiding other sections). */
     @Query("""
         SELECT d FROM Document d
-        WHERE d.verified = true
-          AND (:sectionId IS NULL OR d.course.section.id = :sectionId)
+        ORDER BY CASE WHEN d.course.section.id = :sectionId THEN 0 ELSE 1 END,
+                 d.verified DESC, d.downloadCount DESC
+        """)
+    List<Document> findPopularPrioritizingSection(@Param("sectionId") Long sectionId, Pageable pageable);
+
+    /** Flexible filter: any combination of section / course / category. NULL params mean "no constraint".
+     *  Returns BOTH verified and unverified documents (verification is a visual aid, not access control),
+     *  ordered verified-first then newest-first. */
+    @Query("""
+        SELECT d FROM Document d
+        WHERE (:sectionId IS NULL OR d.course.section.id = :sectionId)
           AND (:courseId IS NULL OR d.course.id = :courseId)
           AND (:category IS NULL OR d.category = :category)
+        ORDER BY d.verified DESC, d.createdAt DESC
         """)
-    Page<Document> findVerifiedFiltered(
+    Page<Document> findFiltered(
             @Param("sectionId") Long sectionId,
             @Param("courseId") Long courseId,
             @Param("category") Category category,
@@ -56,6 +63,17 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     @Modifying
     @Query("UPDATE Document d SET d.downloadCount = d.downloadCount + :increment WHERE d.id = :docId")
     void incrementDownloadCount(@Param("docId") Long docId, @Param("increment") int increment);
+
+    /** Recompute the denormalized rating counters from the ratings table in a single atomic
+     *  statement — exact (no rounding drift) and safe under concurrent votes. */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+        UPDATE Document d
+        SET d.ratingCount = (SELECT COUNT(r) FROM Rating r WHERE r.document = d),
+            d.averageRating = (SELECT COALESCE(AVG(r.score), 0) FROM Rating r WHERE r.document = d)
+        WHERE d.id = :docId
+        """)
+    void recalcRatingStats(@Param("docId") Long docId);
 
     @Query("SELECT COALESCE(SUM(d.downloadCount), 0) FROM Document d")
     long sumDownloadCount();

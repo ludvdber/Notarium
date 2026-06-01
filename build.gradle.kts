@@ -58,9 +58,6 @@ dependencies {
     implementation("org.mapstruct:mapstruct:$mapstructVersion")
     annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
 
-    // SpringDoc OpenAPI (Swagger) — v3.x for Spring Boot 4
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
-
     // Lombok
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")

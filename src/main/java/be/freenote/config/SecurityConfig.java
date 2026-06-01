@@ -3,6 +3,7 @@ package be.freenote.config;
 import be.freenote.security.AdminRoleVerificationFilter;
 import be.freenote.security.JwtAuthFilter;
 import be.freenote.security.CustomOAuth2UserService;
+import be.freenote.security.OAuth2LoginFailureHandler;
 import be.freenote.security.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +30,7 @@ public class SecurityConfig {
     private final AdminRoleVerificationFilter adminRoleVerificationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -76,7 +78,7 @@ public class SecurityConfig {
                         "script-src 'self'; " +
                         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                         "font-src 'self' https://fonts.gstatic.com; " +
-                        "img-src 'self' data: blob: https://api.dicebear.com; " +
+                        "img-src 'self' data: blob: https://api.dicebear.com https://cdn.discordapp.com; " +
                         "connect-src 'self'; " +
                         "frame-src 'self'; " +
                         "frame-ancestors 'self'; " +
@@ -99,8 +101,9 @@ public class SecurityConfig {
                 // Politique appliquée : seules la home, Tools, les pages légales et le flux RSS école sont exposés sans login.
                 .requestMatchers("/api/auth/logout").permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                // All other actuator endpoints (metrics, info, …) are admin-only — never public.
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/news").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/webhooks/kofi").permitAll()
 
@@ -122,14 +125,20 @@ public class SecurityConfig {
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                // Verified-only endpoints
-                .requestMatchers(HttpMethod.POST, "/api/documents").hasRole("VERIFIED")
-                .requestMatchers(HttpMethod.GET, "/api/documents/{id}/file").hasRole("VERIFIED")
-                .requestMatchers(HttpMethod.POST, "/api/documents/{docId}/ratings").hasRole("VERIFIED")
-                .requestMatchers(HttpMethod.POST, "/api/documents/{documentId}/reports").hasRole("VERIFIED")
+                // Provisional accounts (logged in via Discord, ISFCE email NOT yet verified) may only
+                // reach the onboarding endpoints: read their own profile, pick a username/section,
+                // accept the terms, request/confirm email verification, and list sections for the picker.
+                // Everything else (all documents, courses, profiles, leaderboard…) requires a verified
+                // ISFCE email — no pedagogical content is visible without it.
+                .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/users/me/username").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/users/me/section").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/users/me/accept-terms").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/sections").authenticated()
+                .requestMatchers("/api/auth/**").authenticated()
 
-                // All other endpoints require authentication
-                .anyRequest().authenticated()
+                // Everything else requires a verified ISFCE email.
+                .anyRequest().hasRole("VERIFIED")
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
@@ -150,6 +159,7 @@ public class SecurityConfig {
                     .userService(customOAuth2UserService)
                 )
                 .successHandler(oAuth2LoginSuccessHandler)
+                .failureHandler(oAuth2LoginFailureHandler)
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterAfter(adminRoleVerificationFilter, JwtAuthFilter.class);

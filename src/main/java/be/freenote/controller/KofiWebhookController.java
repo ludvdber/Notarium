@@ -3,8 +3,6 @@ package be.freenote.controller;
 import be.freenote.dto.request.KofiWebhookPayload;
 import be.freenote.security.ratelimit.RateLimit;
 import be.freenote.service.KofiService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +13,6 @@ import tools.jackson.databind.ObjectMapper;
 @RestController
 @RequestMapping("/api/webhooks")
 @RequiredArgsConstructor
-@Tag(name = "Webhooks", description = "External service webhooks")
 public class KofiWebhookController {
 
     private final KofiService kofiService;
@@ -23,8 +20,6 @@ public class KofiWebhookController {
 
     @PostMapping("/kofi")
     @RateLimit(max = 30, window = 60)
-    @Operation(summary = "Ko-fi webhook",
-               description = "Receives donation notifications from Ko-fi. Public endpoint, verified by token.")
     public ResponseEntity<Void> handleKofiWebhook(@RequestParam(value = "data", required = false) String data) {
         if (data != null && !data.isBlank()) {
             try {

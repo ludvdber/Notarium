@@ -13,6 +13,7 @@ import {
   DialogContentText,
   DialogActions,
   Grid,
+  MenuItem,
 } from '@mui/material';
 import {
   Person,
@@ -36,13 +37,15 @@ import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import {
   getCurrentUser,
   updateProfile,
+  setSection as apiSetSection,
+  getSections,
   deleteAccount,
   getDelegateHistory,
   getFavorites,
   getLinkedProviders,
   unlinkProvider,
 } from '@/api/endpoints';
-import { formatDate } from '@/lib/utils';
+import { formatDate, extractApiError } from '@/lib/utils';
 import GlassCard from '@/components/ui/GlassCard';
 import { useAuthStore } from '@/stores/useAuthStore';
 import PageWrapper from '@/components/layout/PageWrapper';
@@ -77,6 +80,7 @@ export default function Profile() {
     queryFn: getLinkedProviders,
     enabled: !!user?.id,
   });
+  const { data: sections = [] } = useQuery({ queryKey: ['sections'], queryFn: getSections });
 
   const [bio, setBio] = useState('');
   const [website, setWebsite] = useState('');
@@ -89,6 +93,7 @@ export default function Profile() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [displayRealName, setDisplayRealName] = useState(false);
+  const [sectionId, setSectionId] = useState<number | ''>('');
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -113,6 +118,7 @@ export default function Profile() {
     setFirstName(user.firstName ?? '');
     setLastName(user.lastName ?? '');
     setDisplayRealName(user.displayRealName);
+    setSectionId(user.sectionId ?? '');
   }
 
   // Reacting to the ?linked=PROVIDER query param (set after an OAuth-link round-trip) is a
@@ -141,12 +147,13 @@ export default function Profile() {
     avatarSource !== user.avatarSource ||
     firstName !== (user.firstName ?? '') ||
     lastName !== (user.lastName ?? '') ||
-    displayRealName !== user.displayRealName
+    displayRealName !== user.displayRealName ||
+    (sectionId === '' ? null : sectionId) !== (user.sectionId ?? null)
   );
 
   const saveMutation = useMutation({
-    mutationFn: () =>
-      updateProfile({
+    mutationFn: async () => {
+      const updated = await updateProfile({
         bio,
         website,
         github,
@@ -158,7 +165,14 @@ export default function Profile() {
         firstName,
         lastName,
         displayRealName,
-      }),
+      });
+      const norm = sectionId === '' ? null : sectionId;
+      // Section lives behind a dedicated endpoint; only call it when it actually changed.
+      if (norm !== (user?.sectionId ?? null)) {
+        return apiSetSection(norm);
+      }
+      return updated;
+    },
     onSuccess: (u) => {
       queryClient.setQueryData(['me'], u);
       setUser(u);
@@ -166,13 +180,7 @@ export default function Profile() {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     },
-    onError: (e: unknown) => {
-      const msg =
-        typeof e === 'object' && e !== null
-          ? ((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? '')
-          : '';
-      setSaveError(msg || t('common.error'));
-    },
+    onError: (e: unknown) => setSaveError(extractApiError(e, t('common.error'))),
   });
 
   const deleteMutation = useMutation({
@@ -186,13 +194,7 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ['linked-providers'] });
       queryClient.invalidateQueries({ queryKey: ['me'] });
     },
-    onError: (e: unknown) => {
-      const msg =
-        typeof e === 'object' && e !== null
-          ? ((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? '')
-          : '';
-      setSaveError(msg || t('common.error'));
-    },
+    onError: (e: unknown) => setSaveError(extractApiError(e, t('common.error'))),
   });
 
   const startLink = (provider: string) => {
@@ -212,6 +214,7 @@ export default function Profile() {
       case 'LETTER': return null;
       case 'DICEBEAR': return DICEBEAR_URL(user.username);
       case 'AUTO': return null;
+      case 'DISCORD': return user.avatarSource === 'DISCORD' ? user.avatarUrl : null;
     }
   };
 
@@ -219,6 +222,7 @@ export default function Profile() {
     { source: 'AUTO', available: true },
     { source: 'LETTER', available: true },
     { source: 'DICEBEAR', available: true },
+    { source: 'DISCORD', available: true },
   ];
 
   return (
@@ -361,6 +365,19 @@ export default function Profile() {
                   {t('profile.displayRealNameHelp')}
                 </Typography>
               </Box>
+              <TextField
+                select
+                label={t('onboarding.sectionLabel')}
+                helperText={t('onboarding.sectionHelp')}
+                value={sectionId}
+                onChange={(e) => setSectionId(e.target.value === '' ? '' : Number(e.target.value))}
+                sx={{ maxWidth: 360 }}
+              >
+                <MenuItem value="">{t('onboarding.sectionNone')}</MenuItem>
+                {sections.map((sec) => (
+                  <MenuItem key={sec.id} value={sec.id}>{sec.name}</MenuItem>
+                ))}
+              </TextField>
             </Box>
           </GlassCard>
 

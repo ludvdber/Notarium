@@ -97,7 +97,7 @@ public class DocumentServiceImpl implements DocumentService {
 
         if (request.getTags() != null && !request.getTags().isEmpty()) {
             request.getTags().forEach(label -> {
-                Tag tag = Tag.builder().document(saved).label(HtmlSanitizer.escape(label.strip().toLowerCase())).build();
+                Tag tag = Tag.builder().document(saved).label(HtmlSanitizer.escape(label.toLowerCase())).build();
                 saved.getTags().add(tag);
             });
             documentRepository.save(saved);
@@ -123,29 +123,26 @@ public class DocumentServiceImpl implements DocumentService {
     public PageResponse<DocumentResponse> search(String query, Long sectionId, Long courseId, String category,
                                                    String sort, Pageable pageable) {
         if (query != null && !query.isBlank()) {
-            List<Long> ids = meilisearchService.search(query, courseId, category, sort, pageable);
+            MeilisearchService.SearchResult result = meilisearchService.search(query, sectionId, courseId, category, sort, pageable);
+            List<Long> ids = result.ids();
             if (ids.isEmpty()) {
                 return new PageResponse<>(List.of(), pageable.getPageNumber(), pageable.getPageSize(), 0, 0);
             }
             // Preserve Meilisearch relevance/sort ordering — findAllById returns rows in DB order.
-            // Section is post-filtered in Java because it's not a Meilisearch filterable attribute today.
             Map<Long, Document> byId = documentRepository.findAllById(ids).stream()
-                    .filter(d -> sectionId == null
-                            || (d.getCourse() != null
-                                && d.getCourse().getSection() != null
-                                && sectionId.equals(d.getCourse().getSection().getId())))
                     .collect(Collectors.toMap(Document::getId, d -> d));
-            List<DocumentResponse> results = ids.stream()
+            List<DocumentResponse> content = ids.stream()
                     .map(byId::get)
                     .filter(java.util.Objects::nonNull)
                     .map(documentMapper::toResponse)
                     .toList();
-            return new PageResponse<>(results, pageable.getPageNumber(), pageable.getPageSize(),
-                    results.size(), 1);
+            long total = result.total();
+            int totalPages = (int) Math.ceil((double) total / pageable.getPageSize());
+            return new PageResponse<>(content, pageable.getPageNumber(), pageable.getPageSize(), total, totalPages);
         }
 
         Category cat = category != null ? Category.valueOf(category) : null;
-        Page<Document> page = documentRepository.findVerifiedFiltered(sectionId, courseId, cat, pageable);
+        Page<Document> page = documentRepository.findFiltered(sectionId, courseId, cat, pageable);
 
         List<DocumentResponse> content = page.getContent().stream()
                 .map(documentMapper::toResponse)
@@ -173,8 +170,11 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
-    public List<DocumentResponse> getPopular() {
-        return documentRepository.findTop10ByVerifiedTrueOrderByDownloadCountDesc().stream()
+    public List<DocumentResponse> getPopular(Long sectionId) {
+        List<Document> docs = sectionId == null
+                ? documentRepository.findTop10ByOrderByVerifiedDescDownloadCountDesc()
+                : documentRepository.findPopularPrioritizingSection(sectionId, org.springframework.data.domain.PageRequest.of(0, 10));
+        return docs.stream()
                 .map(documentMapper::toResponse)
                 .toList();
     }
@@ -235,7 +235,7 @@ public class DocumentServiceImpl implements DocumentService {
             request.getTags().forEach(label -> {
                 Tag tag = Tag.builder()
                         .document(document)
-                        .label(HtmlSanitizer.escape(label.strip().toLowerCase()))
+                        .label(HtmlSanitizer.escape(label.toLowerCase()))
                         .build();
                 document.getTags().add(tag);
             });

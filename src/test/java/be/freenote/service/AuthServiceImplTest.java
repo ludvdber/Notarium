@@ -4,6 +4,7 @@ import be.freenote.entity.User;
 import be.freenote.entity.UserOauthLink;
 import be.freenote.exception.RateLimitExceededException;
 import be.freenote.exception.UnauthorizedException;
+import be.freenote.repository.BanRepository;
 import be.freenote.repository.UserOauthLinkRepository;
 import be.freenote.repository.UserRepository;
 import be.freenote.security.JwtTokenProvider;
@@ -35,6 +36,7 @@ class AuthServiceImplTest {
 
     @Mock private UserRepository userRepository;
     @Mock private UserOauthLinkRepository oauthLinkRepository;
+    @Mock private BanRepository banRepository;
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private StringRedisTemplate redisTemplate;
     @Mock private JavaMailSender mailSender;
@@ -51,7 +53,7 @@ class AuthServiceImplTest {
     // ---- processOAuth2Login ----
 
     @Test
-    void shouldReturnJwtWhenOAuth2LoginWithExistingUser() {
+    void shouldReuseExistingUserOnOAuth2Login() {
         OAuth2User oAuth2User = mock(OAuth2User.class);
         when(oAuth2User.getName()).thenReturn("oauth-id-123");
 
@@ -60,73 +62,45 @@ class AuthServiceImplTest {
                 .user(existingUser).provider("DISCORD").oauthId("oauth-id-123").build();
         when(oauthLinkRepository.findByProviderAndOauthId("DISCORD", "oauth-id-123"))
                 .thenReturn(Optional.of(link));
-        when(jwtTokenProvider.generateToken(existingUser)).thenReturn("jwt-token");
 
-        String jwt = authService.processOAuth2Login(oAuth2User, "discord");
+        authService.processOAuth2Login(oAuth2User, "discord");
 
-        assertThat(jwt).isEqualTo("jwt-token");
         verify(userRepository, never()).save(any());
     }
 
     @Test
-    void shouldCreateUserAndReturnJwtWhenOAuth2LoginWithNewUser() {
+    void shouldCreateProvisionalUserOnOAuth2LoginWithNewUser() {
         OAuth2User oAuth2User = mock(OAuth2User.class);
         when(oAuth2User.getName()).thenReturn("new-id");
         lenient().when(oAuth2User.getAttribute("email_verified")).thenReturn(null);
-        when(oAuth2User.getAttribute("name")).thenReturn("John Doe");
 
         when(oauthLinkRepository.findByProviderAndOauthId("DISCORD", "new-id"))
                 .thenReturn(Optional.empty());
-        User savedUser = User.builder().id(2L).username("John Doe").build();
-        when(userRepository.save(any(User.class))).thenReturn(savedUser);
-        when(oauthLinkRepository.save(any(UserOauthLink.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(jwtTokenProvider.generateToken(any(User.class))).thenReturn("new-jwt");
-
-        String jwt = authService.processOAuth2Login(oAuth2User, "discord");
-
-        assertThat(jwt).isEqualTo("new-jwt");
-        verify(userRepository, times(2)).save(any(User.class));
-    }
-
-    @Test
-    void shouldFallbackToUsernameAttributeWhenNameIsNull() {
-        OAuth2User oAuth2User = mock(OAuth2User.class);
-        when(oAuth2User.getName()).thenReturn("oid");
-        lenient().when(oAuth2User.getAttribute("email_verified")).thenReturn(null);
-        when(oAuth2User.getAttribute("name")).thenReturn(null);
-        when(oAuth2User.getAttribute("username")).thenReturn("discord_user");
-
-        when(oauthLinkRepository.findByProviderAndOauthId("DISCORD", "oid")).thenReturn(Optional.empty());
-        User saved = User.builder().id(3L).username("discord_user").build();
-        when(userRepository.save(any(User.class))).thenReturn(saved);
-        lenient().when(oauthLinkRepository.save(any(UserOauthLink.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(jwtTokenProvider.generateToken(any())).thenReturn("jwt");
-
-        authService.processOAuth2Login(oAuth2User, "discord");
-
-        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository, atLeastOnce()).save(captor.capture());
-        assertThat(captor.getAllValues().getFirst().getUsername()).isEqualTo("discord_user");
-    }
-
-    @Test
-    void shouldFallbackToOauthIdWhenAllAttributesNull() {
-        OAuth2User oAuth2User = mock(OAuth2User.class);
-        when(oAuth2User.getName()).thenReturn("fallback-id");
-        lenient().when(oAuth2User.getAttribute("email_verified")).thenReturn(null);
-        when(oAuth2User.getAttribute("name")).thenReturn(null);
-        when(oAuth2User.getAttribute("username")).thenReturn(null);
-
-        when(oauthLinkRepository.findByProviderAndOauthId("DISCORD", "fallback-id")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
-        lenient().when(oauthLinkRepository.save(any(UserOauthLink.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(jwtTokenProvider.generateToken(any())).thenReturn("jwt");
+        when(oauthLinkRepository.save(any(UserOauthLink.class))).thenAnswer(inv -> inv.getArgument(0));
 
         authService.processOAuth2Login(oAuth2User, "discord");
 
+        // Username is NOT derived from Discord — a provisional placeholder is created and the account
+        // is flagged as not-yet-chosen so onboarding forces the user to pick a real pseudo.
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userRepository, atLeastOnce()).save(captor.capture());
-        assertThat(captor.getAllValues().getFirst().getUsername()).isEqualTo("fallback-id");
+        User created = captor.getAllValues().getFirst();
+        assertThat(created.isUsernameChosen()).isFalse();
+        assertThat(created.getUsername()).startsWith("membre-");
+    }
+
+    @Test
+    void shouldRejectBannedDiscordIdentity() {
+        OAuth2User oAuth2User = mock(OAuth2User.class);
+        when(oAuth2User.getName()).thenReturn("banned-id");
+        lenient().when(oAuth2User.getAttribute("email_verified")).thenReturn(null);
+        when(banRepository.existsByOauthProviderAndOauthId("DISCORD", "banned-id")).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.processOAuth2Login(oAuth2User, "discord"))
+                .isInstanceOf(org.springframework.security.oauth2.core.OAuth2AuthenticationException.class);
+
+        verify(userRepository, never()).save(any());
     }
 
     @Test
@@ -138,7 +112,6 @@ class AuthServiceImplTest {
         UserOauthLink link = UserOauthLink.builder().user(user).provider("DISCORD").oauthId("id1").build();
         when(oauthLinkRepository.findByProviderAndOauthId("DISCORD", "id1"))
                 .thenReturn(Optional.of(link));
-        when(jwtTokenProvider.generateToken(user)).thenReturn("jwt");
 
         authService.processOAuth2Login(oAuth2User, "Discord");
 
@@ -175,6 +148,20 @@ class AuthServiceImplTest {
         String[] parts = storedValue.split(":", 2);
         assertThat(parts[0]).matches("\\d{6}"); // 6-digit code
         assertThat(parts[1]).isEqualTo(HashUtil.hashEmail("test@isfce.be", "test-salt"));
+    }
+
+    @Test
+    void shouldThrowServiceUnavailableWhenSmtpFails() {
+        // JavaMailSender.send throws a MailException (unchecked) when SMTP is unreachable.
+        // It must be caught and surfaced as a clean 503, not bubble up as a raw 500.
+        when(redisTemplate.opsForValue()).thenReturn(valueOps);
+        when(userRepository.findByEmailHash(anyString())).thenReturn(Optional.empty());
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        doThrow(new org.springframework.mail.MailSendException("SMTP down"))
+                .when(mailSender).send(any(MimeMessage.class));
+
+        assertThatThrownBy(() -> authService.requestVerification(1L, "student@isfce.be"))
+                .isInstanceOf(be.freenote.exception.ServiceUnavailableException.class);
     }
 
     @Test

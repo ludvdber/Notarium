@@ -13,7 +13,7 @@ public interface DelegateMapper {
         String username = dh.getUser() != null ? dh.getUser().getUsername() : "Inconnu";
         UserProfile profile = dh.getUser() != null ? dh.getUser().getProfile() : null;
         String discord = profile != null ? profile.getDiscord() : null;
-        String displayName = profile != null ? profile.getDisplayName() : null;
+        String displayName = UserMapper.resolveDisplayName(profile, username);
         Long userId = dh.getUser() != null ? dh.getUser().getId() : null;
         return new DelegateMember(
                 dh.getId(),

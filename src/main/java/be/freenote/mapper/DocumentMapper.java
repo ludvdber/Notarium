@@ -15,6 +15,7 @@ public interface DocumentMapper {
     @Mapping(target = "sectionName", source = "course.section.name")
     @Mapping(target = "category", source = "category")
     @Mapping(target = "authorName", expression = "java(mapAuthorName(document))")
+    @Mapping(target = "authorId", expression = "java(mapAuthorId(document))")
     @Mapping(target = "professorName", source = "professor.name")
     @Mapping(target = "tags", source = "tags")
     @Mapping(target = "averageRating", expression = "java(document.getAverageRating().doubleValue())")
@@ -26,6 +27,14 @@ public interface DocumentMapper {
             return "Anonyme";
         }
         return document.getUser().getUsername();
+    }
+
+    /** Null for anonymous docs (or no author) so the frontend can't link to the uploader's profile. */
+    default Long mapAuthorId(Document document) {
+        if (document.isAnonymous() || document.getUser() == null) {
+            return null;
+        }
+        return document.getUser().getId();
     }
 
     default List<String> mapTags(List<Tag> tags) {

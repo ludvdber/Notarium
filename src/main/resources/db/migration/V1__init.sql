@@ -1,30 +1,48 @@
 -- ============================================================
 -- V1 — Schéma initial consolidé
 -- ============================================================
--- Fusion des anciennes V1..V16 après le grand nettoyage du 2026-05-27.
 -- Reflète l'état réel attendu par les entités JPA (ddl-auto=validate).
+-- Consolidation 2026-06-01 des anciennes V1..V7 (elles-mêmes issues de la fusion
+-- V1..V16 du 2026-05-27) en un seul fichier, avant le premier déploiement (pas de
+-- prod existante à préserver). Toute modif ULTÉRIEURE = nouveau fichier V2, V3, …
+--
+-- Tables ordonnées selon leurs dépendances de clés étrangères :
+--   users → sections → user_profiles → user_oauth_links → professors → courses
+--   → documents → tags → ratings → favorites → reports → donations
+--   → delegate_history → notifications → bans
 
 -- ----------------------------------------------------------------
 -- USERS — identité technique
 -- ----------------------------------------------------------------
 CREATE TABLE users (
-    id            BIGSERIAL    PRIMARY KEY,
-    username      VARCHAR(255) NOT NULL UNIQUE,
-    email_hash    VARCHAR(255) UNIQUE,
-    verified      BOOLEAN      NOT NULL DEFAULT FALSE,
-    role          VARCHAR(20)  NOT NULL DEFAULT 'USER',
-    xp            INTEGER      NOT NULL DEFAULT 0 CHECK (xp >= 0),
-    created_at    TIMESTAMP    NOT NULL DEFAULT NOW()
+    id              BIGSERIAL    PRIMARY KEY,
+    username        VARCHAR(255) NOT NULL UNIQUE,
+    -- FALSE pour un compte OAuth fraîchement provisionné qui n'a pas encore choisi son pseudo.
+    username_chosen BOOLEAN      NOT NULL DEFAULT TRUE,
+    email_hash      VARCHAR(255) UNIQUE,
+    verified        BOOLEAN      NOT NULL DEFAULT FALSE,
+    role            VARCHAR(20)  NOT NULL DEFAULT 'USER',
+    xp              INTEGER      NOT NULL DEFAULT 0 CHECK (xp >= 0),
+    created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_users_xp ON users(xp DESC);
+
+-- ----------------------------------------------------------------
+-- SECTIONS — référencées par user_profiles, courses, delegate_history
+-- ----------------------------------------------------------------
+CREATE TABLE sections (
+    id          BIGSERIAL    PRIMARY KEY,
+    name        VARCHAR(255) NOT NULL UNIQUE,
+    icon        VARCHAR(255),
+    approved    BOOLEAN      NOT NULL DEFAULT FALSE
+);
 
 -- ----------------------------------------------------------------
 -- USER_PROFILES — données profil (1:1 avec users via shared PK)
 -- ----------------------------------------------------------------
 CREATE TABLE user_profiles (
     user_id              BIGINT       PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    display_name         VARCHAR(100),
     first_name           VARCHAR(50),
     last_name            VARCHAR(50),
     display_real_name    BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -33,14 +51,20 @@ CREATE TABLE user_profiles (
     github               VARCHAR(255),
     linkedin             VARCHAR(255),
     discord              VARCHAR(255),
-    profile_public       BOOLEAN      NOT NULL DEFAULT FALSE,
-    show_in_carousel     BOOLEAN      NOT NULL DEFAULT FALSE,
+    -- Photo de profil Discord, capturée à la connexion. Affichée si avatar_source = 'DISCORD'.
+    discord_avatar_url   VARCHAR(512),
+    -- Section académique auto-déclarée (optionnelle). SET NULL si la section est supprimée.
+    section_id           BIGINT       REFERENCES sections(id) ON DELETE SET NULL,
+    profile_public       BOOLEAN      NOT NULL DEFAULT TRUE,
+    show_in_carousel     BOOLEAN      NOT NULL DEFAULT TRUE,
     avatar_source        VARCHAR(20)  NOT NULL DEFAULT 'AUTO'
-                            CHECK (avatar_source IN ('AUTO', 'LETTER', 'DICEBEAR')),
-    ad_free              BOOLEAN      NOT NULL DEFAULT FALSE,
+                            CHECK (avatar_source IN ('AUTO', 'LETTER', 'DICEBEAR', 'DISCORD')),
+    -- Entitlement ad-free = ad_free_until > now() (aucun booléen miroir : il ne s'éteindrait jamais).
     ad_free_until        TIMESTAMP,
     terms_accepted_at    TIMESTAMP
 );
+
+CREATE INDEX idx_user_profiles_section ON user_profiles(section_id);
 
 -- ----------------------------------------------------------------
 -- USER_OAUTH_LINKS — N:1 OAuth providers liés (Discord seulement)
@@ -57,15 +81,17 @@ CREATE TABLE user_oauth_links (
 CREATE INDEX idx_user_oauth_links_user ON user_oauth_links(user_id);
 
 -- ----------------------------------------------------------------
--- SECTIONS / COURSES / PROFESSORS
+-- PROFESSORS
 -- ----------------------------------------------------------------
-CREATE TABLE sections (
+CREATE TABLE professors (
     id          BIGSERIAL    PRIMARY KEY,
-    name        VARCHAR(255) NOT NULL UNIQUE,
-    icon        VARCHAR(255),
+    name        VARCHAR(255) NOT NULL,
     approved    BOOLEAN      NOT NULL DEFAULT FALSE
 );
 
+-- ----------------------------------------------------------------
+-- COURSES
+-- ----------------------------------------------------------------
 CREATE TABLE courses (
     id          BIGSERIAL    PRIMARY KEY,
     section_id  BIGINT       NOT NULL REFERENCES sections(id) ON DELETE CASCADE,
@@ -75,12 +101,6 @@ CREATE TABLE courses (
 );
 
 CREATE INDEX idx_courses_section_approved ON courses(section_id, approved);
-
-CREATE TABLE professors (
-    id          BIGSERIAL    PRIMARY KEY,
-    name        VARCHAR(255) NOT NULL,
-    approved    BOOLEAN      NOT NULL DEFAULT FALSE
-);
 
 -- ----------------------------------------------------------------
 -- DOCUMENTS — métadonnées + compteurs dénormalisés
@@ -110,7 +130,8 @@ CREATE INDEX idx_documents_user                    ON documents(user_id);
 CREATE INDEX idx_documents_created_at              ON documents(created_at);
 CREATE INDEX idx_documents_download_count          ON documents(download_count DESC);
 CREATE INDEX idx_documents_course_verified_created ON documents(course_id, verified, created_at DESC);
-CREATE INDEX idx_documents_verified_true           ON documents(id) WHERE verified = true;
+-- File de modération admin (findByVerifiedFalse) : index partiel sur le sous-ensemble en attente.
+CREATE INDEX idx_documents_unverified              ON documents(created_at DESC) WHERE verified = false;
 
 -- ----------------------------------------------------------------
 -- TAGS — N:1 documents, dédupliqué par (document, label)
@@ -170,17 +191,22 @@ CREATE INDEX idx_reports_pending  ON reports(id) WHERE status = 'PENDING';
 -- ----------------------------------------------------------------
 -- DONATIONS — Ko-fi + grants admin manuels
 -- ----------------------------------------------------------------
+-- kofi_transaction_id unique : empêche le double-traitement d'un webhook (retry/rejeu Ko-fi).
+-- Ko-fi fournit un id de transaction unique ; les grants manuels utilisent "MANUAL-{adminId}-{ts}".
 CREATE TABLE donations (
     id                    BIGSERIAL       PRIMARY KEY,
     user_id               BIGINT          REFERENCES users(id) ON DELETE SET NULL,
     amount                NUMERIC(10, 2)  NOT NULL,
     kofi_transaction_id   VARCHAR(255)    NOT NULL,
-    ad_free_until         TIMESTAMP
+    ad_free_until         TIMESTAMP,
+    CONSTRAINT uq_donations_kofi_tx UNIQUE (kofi_transaction_id)
 );
 
 -- ----------------------------------------------------------------
 -- DELEGATE_HISTORY — mandats des délégués de section
 -- ----------------------------------------------------------------
+-- Plusieurs délégués actifs par section autorisés (pas d'index unique partiel) ;
+-- la règle « une section par user » est appliquée en logique service.
 CREATE TABLE delegate_history (
     id              BIGSERIAL    PRIMARY KEY,
     user_id         BIGINT       REFERENCES users(id) ON DELETE SET NULL,
@@ -207,3 +233,24 @@ CREATE TABLE notifications (
 
 CREATE INDEX idx_notifications_user_unread ON notifications(user_id, created_at DESC) WHERE read_at IS NULL;
 CREATE INDEX idx_notifications_created_at  ON notifications(created_at);
+
+-- ----------------------------------------------------------------
+-- BANS — liste de bannissement permanente (survit à la suppression du compte)
+-- ----------------------------------------------------------------
+-- Un ban est créé depuis le hash de l'email ISFCE vérifié ET le(s) lien(s) Discord :
+-- re-connexion avec le même Discord bloquée, re-vérif du même @isfce.be bloquée.
+-- Retour possible seulement avec un nouveau Discord ET une nouvelle adresse ISFCE.
+CREATE TABLE bans (
+    id              BIGSERIAL    PRIMARY KEY,
+    email_hash      VARCHAR(255),
+    oauth_provider  VARCHAR(20),
+    oauth_id        VARCHAR(255),
+    reason          VARCHAR(500),
+    banned_by       BIGINT       REFERENCES users(id) ON DELETE SET NULL,
+    created_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_ban_has_identity
+        CHECK (email_hash IS NOT NULL OR (oauth_provider IS NOT NULL AND oauth_id IS NOT NULL))
+);
+
+CREATE INDEX idx_bans_email_hash ON bans(email_hash);
+CREATE INDEX idx_bans_oauth      ON bans(oauth_provider, oauth_id);

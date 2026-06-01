@@ -1,8 +1,7 @@
 # Deploy — Proxmox LXC
 
 Target: one "app" LXC running the Freenote fat jar + systemd, with sibling LXCs for Postgres,
-Redis, MinIO and Meilisearch. An optional future LXC will host a local LLM (Ollama) to
-generate PDF summaries — the app calls it via HTTP, no code changes needed here.
+Redis, MinIO and Meilisearch.
 
 ## Build the deployable
 
@@ -13,20 +12,18 @@ generate PDF summaries — the app calls it via HTTP, no code changes needed her
 
 The jar is ~99 MB. Everything needed to run (backend + frontend) is inside. No nginx is
 strictly required to serve the SPA — the jar can do it alone — but in a Proxmox setup you
-will want nginx in front for TLS termination, gzip on static assets, HSTS/security headers,
-and to front a second LXC (AI summariser, admin tools…) later.
+will want nginx in front for TLS termination, gzip on static assets, HSTS/security headers.
 
 ## LXC layout
 
 ```
 proxmox host
 ├── lxc-freenote-app        (this jar, systemd, ports 8080 internal)
-├── lxc-postgres            (Postgres 17 + pgvector, port 5432)
+├── lxc-postgres            (Postgres 17, port 5432)
 ├── lxc-redis               (Redis 7, port 6379)
 ├── lxc-minio               (MinIO, ports 9000 + 9001)
 ├── lxc-meilisearch         (Meilisearch, port 7700)
-├── lxc-nginx               (nginx reverse proxy, 80/443 exposed)
-└── lxc-ai  (optional)      (Ollama, port 11434)
+└── lxc-nginx               (nginx reverse proxy, 80/443 exposed)
 ```
 
 Keep them on a private bridge (e.g. `vmbr1`) so only the nginx LXC has a routable IP.
@@ -73,7 +70,8 @@ ssh root@lxc-freenote-app '
 '
 ```
 
-Flyway picks up new migrations (V13+) at startup.
+Flyway applies any new migrations at startup (`ddl-auto=validate`, so the schema must match
+the entities exactly — never edit a shipped migration, always add the next `V*` file).
 
 ## Backups
 
@@ -106,12 +104,16 @@ pg_restore --clean --if-exists --no-owner --dbname=freenote_restore postgres.dum
 
 Use `deploy/nginx.conf.example` on `lxc-nginx`. It terminates TLS with certbot, forwards
 `/` to the app LXC, and adds the security headers that the Spring CSP doesn't cover
-(HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy).
+(HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy). It also has a dedicated
+`location /api/notifications/stream` block with `proxy_buffering off` so the SSE notification
+feed flushes in real time.
 
-## AI summariser LXC (future)
+### Behind Cloudflare (Cloudflare → nginx → backend)
 
-When you add `lxc-ai` with Ollama, expose only the private bridge IP and call it from the
-backend via `http://ai.freenote.lan:11434/api/generate`. Add one config property
-(`app.ai.endpoint` + `app.ai.enabled=false` by default) and a `SummaryService` — no
-breaking change, no migration. pgvector is already installed in the Postgres LXC, so
-storing embeddings for semantic search is just a `V13__add_document_embeddings.sql`.
+If Cloudflare sits in front, uncomment the `real_ip` block at the top of `nginx.conf.example`:
+Cloudflare connects from its own IPs, so without `real_ip_header CF-Connecting-IP` +
+`set_real_ip_from <Cloudflare CIDRs>`, every request appears to come from ~20 Cloudflare IPs —
+the backend's per-IP rate limiting becomes useless and access logs are wrong. Keep the CIDR list
+synced with <https://www.cloudflare.com/ips/>. Set Cloudflare SSL/TLS mode to **Full (strict)**
+so the edge→origin hop is HTTPS too, and keep `TRUSTED_PROXIES` (backend env) pointing at the
+nginx LXC IP — the backend only ever sees nginx as its immediate proxy, never Cloudflare.

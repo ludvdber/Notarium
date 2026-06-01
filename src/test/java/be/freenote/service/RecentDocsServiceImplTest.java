@@ -74,7 +74,8 @@ class RecentDocsServiceImplTest {
     }
 
     @Test
-    void getRecent_shouldPreserveOrderAndDropUnverified() {
+    void getRecent_shouldPreserveOrderAndKeepUnverified() {
+        // Verification is a visual aid, not access control — unverified docs the user opened still show.
         when(listOps.range(eq(KEY), eq(0L), eq(4L))).thenReturn(List.of("10", "11", "12"));
         Document verified10 = Document.builder().id(10L).verified(true).build();
         Document unverified11 = Document.builder().id(11L).verified(false).build();
@@ -83,13 +84,15 @@ class RecentDocsServiceImplTest {
                 .thenReturn(List.of(verified10, unverified11, verified12));
 
         DocumentResponse resp10 = stubDoc(10L);
+        DocumentResponse resp11 = stubDoc(11L);
         DocumentResponse resp12 = stubDoc(12L);
         when(documentMapper.toResponse(verified10)).thenReturn(resp10);
+        when(documentMapper.toResponse(unverified11)).thenReturn(resp11);
         when(documentMapper.toResponse(verified12)).thenReturn(resp12);
 
         List<DocumentResponse> result = service.getRecent(42L, 5);
 
-        assertThat(result).containsExactly(resp10, resp12);
+        assertThat(result).containsExactly(resp10, resp11, resp12);
     }
 
     @Test
@@ -108,7 +111,7 @@ class RecentDocsServiceImplTest {
     private static DocumentResponse stubDoc(Long id) {
         return new DocumentResponse(
                 id, "title", 1L, "course", "section", "NOTES",
-                "author", true, false, "FR", null, null,
+                "author", null, true, false, "FR", null, null,
                 0.0, 0, List.of(), null);
     }
 }

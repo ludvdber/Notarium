@@ -4,14 +4,21 @@ import be.freenote.dto.request.UpdateProfileRequest;
 import be.freenote.dto.response.LeaderboardEntry;
 import be.freenote.dto.response.ProfileCardResponse;
 import be.freenote.dto.response.UserResponse;
+import be.freenote.entity.Ban;
+import be.freenote.entity.Section;
 import be.freenote.entity.User;
+import be.freenote.entity.UserOauthLink;
 import be.freenote.entity.UserProfile;
 import be.freenote.enums.AvatarSource;
+import be.freenote.exception.DuplicateResourceException;
 import be.freenote.exception.ResourceNotFoundException;
 import be.freenote.mapper.UserMapper;
+import be.freenote.repository.BanRepository;
 import be.freenote.repository.DocumentRepository;
 import be.freenote.repository.Repositories;
 import be.freenote.repository.ReportRepository;
+import be.freenote.repository.SectionRepository;
+import be.freenote.repository.UserOauthLinkRepository;
 import be.freenote.repository.UserRepository;
 import be.freenote.service.UserService;
 import be.freenote.util.HtmlSanitizer;
@@ -35,6 +42,9 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final DocumentRepository documentRepository;
     private final ReportRepository reportRepository;
+    private final SectionRepository sectionRepository;
+    private final UserOauthLinkRepository oauthLinkRepository;
+    private final BanRepository banRepository;
     private final UserMapper userMapper;
 
     @Override
@@ -86,8 +96,45 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<LeaderboardEntry> getLeaderboard(int size) {
-        List<User> users = userRepository.findAllByOrderByXpDesc(PageRequest.of(0, size));
+    @Transactional
+    public UserResponse setUsername(Long userId, String username) {
+        User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
+        String trimmed = username.trim();
+        if (!user.getUsername().equals(trimmed) && userRepository.existsByUsername(trimmed)) {
+            throw new DuplicateResourceException("Ce pseudo est déjà pris");
+        }
+        user.setUsername(trimmed);
+        user.setUsernameChosen(true);
+        User saved = userRepository.save(user);
+        long docCount = documentRepository.countByUserId(userId);
+        return userMapper.toResponse(saved, docCount);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse setSection(Long userId, Long sectionId) {
+        User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
+        UserProfile profile = user.getProfile();
+        if (profile == null) {
+            profile = UserProfile.builder().user(user).build();
+            user.setProfile(profile);
+        }
+        if (sectionId == null) {
+            profile.setSection(null);
+        } else {
+            Section section = Repositories.findByIdOrThrow(sectionRepository, sectionId, "Section");
+            profile.setSection(section);
+        }
+        User saved = userRepository.save(user);
+        long docCount = documentRepository.countByUserId(userId);
+        return userMapper.toResponse(saved, docCount);
+    }
+
+    @Override
+    public List<LeaderboardEntry> getLeaderboard(int size, Long sectionId) {
+        List<User> users = sectionId == null
+                ? userRepository.findAllByOrderByXpDesc(PageRequest.of(0, size))
+                : userRepository.findBySectionOrderByXpDesc(sectionId, PageRequest.of(0, size));
 
         // Batch fetch document counts — 1 query instead of N
         Map<Long, Long> docCounts = batchDocCounts(users);
@@ -98,6 +145,12 @@ public class UserServiceImpl implements UserService {
                         user, rank.getAndIncrement(),
                         docCounts.getOrDefault(user.getId(), 0L)))
                 .toList();
+    }
+
+    @Override
+    public int getRank(Long userId) {
+        User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
+        return (int) userRepository.countByXpGreaterThan(user.getXp()) + 1;
     }
 
     @Override
@@ -119,39 +172,58 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteAccount(Long userId) {
         User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
-
-        // Detach reports so pending ones survive for admin review
-        var reports = reportRepository.findByUserId(userId);
-        for (var report : reports) {
-            report.setUser(null);
-        }
-        reportRepository.saveAll(reports);
-
-        // Anonymize documents before deletion — SET NULL via cascade handles FK,
-        // but we also mark them anonymous for display
-        documentRepository.anonymizeByUserId(userId);
-
-        userRepository.delete(user);
-
-        log.info("Account deleted: userId={}, documents anonymized, {} reports detached",
-                userId, reports.size());
+        anonymizeAndDelete(user);
+        log.info("Account deleted: userId={}, documents anonymized", userId);
     }
 
     @Override
     @Transactional
     public void adminDeleteUser(Long userId) {
-        // Same data lifecycle as a self-delete: anonymize documents, detach reports, drop the row.
-        // The caller (admin endpoint) doesn't need to revoke a JWT since it's not the admin's own session.
+        // Same data lifecycle as a self-delete. The caller (admin endpoint) doesn't need to revoke a
+        // JWT since it's not the admin's own session.
         User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
-        var reports = reportRepository.findByUserId(userId);
+        anonymizeAndDelete(user);
+        log.info("Admin deleted account: userId={}, username={}, documents anonymized", userId, user.getUsername());
+    }
+
+    @Override
+    @Transactional
+    public void banUser(Long targetUserId, String reason, Long adminId) {
+        User user = Repositories.findByIdOrThrow(userRepository, targetUserId, "User");
+        String safeReason = (reason == null || reason.isBlank()) ? null : HtmlSanitizer.escape(reason.trim());
+
+        // Blacklist the verified ISFCE email (blocks re-verification with the same address).
+        if (user.getEmailHash() != null) {
+            banRepository.save(Ban.builder()
+                    .emailHash(user.getEmailHash())
+                    .reason(safeReason)
+                    .bannedBy(adminId)
+                    .build());
+        }
+        // Blacklist every linked Discord identity (blocks re-login with the same Discord).
+        for (UserOauthLink link : oauthLinkRepository.findByUserId(targetUserId)) {
+            banRepository.save(Ban.builder()
+                    .oauthProvider(link.getProvider())
+                    .oauthId(link.getOauthId())
+                    .reason(safeReason)
+                    .bannedBy(adminId)
+                    .build());
+        }
+
+        anonymizeAndDelete(user);
+        log.warn("Admin {} banned and wiped user: id={}, username={}", adminId, targetUserId, user.getUsername());
+    }
+
+    /** Shared account-removal lifecycle: detach reports (kept for moderation), anonymize documents
+     *  (kept as 'Anonyme'), then delete the row (cascades profile + oauth links). */
+    private void anonymizeAndDelete(User user) {
+        var reports = reportRepository.findByUserId(user.getId());
         for (var report : reports) {
             report.setUser(null);
         }
         reportRepository.saveAll(reports);
-        documentRepository.anonymizeByUserId(userId);
+        documentRepository.anonymizeByUserId(user.getId());
         userRepository.delete(user);
-        log.info("Admin deleted account: userId={}, username={}, documents anonymized",
-                userId, user.getUsername());
     }
 
     @Override
@@ -169,10 +241,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserResponse> adminSearchUsers(String query, int limit) {
+    public List<UserResponse> adminSearchUsers(String query, Long sectionId, int limit) {
         int clamped = Math.min(Math.max(limit, 1), 100);
         String q = query == null ? "" : query.trim();
-        List<User> users = userRepository.searchByUsername(q, PageRequest.of(0, clamped));
+        List<User> users = sectionId == null
+                ? userRepository.searchByUsername(q, PageRequest.of(0, clamped))
+                : userRepository.searchByUsernameAndSection(q, sectionId, PageRequest.of(0, clamped));
         Map<Long, Long> docCounts = batchDocCounts(users);
         return users.stream()
                 .map(u -> userMapper.toResponse(u, docCounts.getOrDefault(u.getId(), 0L)))

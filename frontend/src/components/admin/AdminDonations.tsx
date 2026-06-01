@@ -19,7 +19,7 @@ import {
   adminSearchUsers,
 } from '@/api/endpoints';
 import { useDebounce } from '@/hooks/useDebounce';
-import { formatDate } from '@/lib/utils';
+import { formatDate, extractApiError } from '@/lib/utils';
 import GlassCard from '@/components/ui/GlassCard';
 import type { User, DonationResponse } from '@/types';
 
@@ -110,7 +110,7 @@ export default function AdminDonations() {
       setGrantQuery('');
       qc.invalidateQueries({ queryKey: ['admin-donations'] });
     },
-    onError: (e) => setError(extractError(e)),
+    onError: (e) => setError(extractApiError(e)),
   });
 
   const totalAmount = useMemo(() => {
@@ -303,12 +303,4 @@ export default function AdminDonations() {
       })}
     </Box>
   );
-}
-
-function extractError(e: unknown): string {
-  if (typeof e === 'object' && e !== null) {
-    const err = e as { response?: { data?: { message?: string } } };
-    return err.response?.data?.message ?? 'Error';
-  }
-  return 'Error';
 }

@@ -10,4 +10,7 @@ import org.springframework.stereotype.Repository;
 public interface DonationRepository extends JpaRepository<Donation, Long> {
     // Sorted by id desc — donations are append-only and id is monotonic, so newest first.
     Page<Donation> findAllByOrderByIdDesc(Pageable pageable);
+
+    /** Idempotency guard: a Ko-fi (or manual) transaction id is processed at most once. */
+    boolean existsByKofiTransactionId(String kofiTransactionId);
 }

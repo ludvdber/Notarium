@@ -16,7 +16,7 @@ export interface LegalPage {
 }
 
 // Updated when the content materially changes. Shown to users.
-export const LEGAL_UPDATED_AT = '2026-04-27';
+export const LEGAL_UPDATED_AT = '2026-05-28';
 
 // -------------------- LEGAL (mentions légales) --------------------
 
@@ -117,7 +117,7 @@ const privacyFr: LegalPage = {
     {
       heading: 'Données collectées',
       body: [
-        "Informations de compte : identifiant OAuth (Discord ou Google), nom d'utilisateur, empreinte SHA-256 de votre email ISFCE (jamais stocké en clair).",
+        "Informations de compte : identifiant OAuth (Discord), nom d'utilisateur, empreinte SHA-256 de votre email ISFCE (jamais stocké en clair).",
         "Informations de profil (optionnelles) : biographie, avatar, liens GitHub/LinkedIn/Discord, affichage public opt-in.",
         "Contenus créés : documents uploadés, votes et commentaires, favoris, historique de téléchargements (compteurs agrégés uniquement).",
         "Données techniques : jeton d'authentification JWT stocké dans un cookie HttpOnly de votre navigateur (non accessible par JavaScript), adresses IP conservées dans les journaux serveur pendant 30 jours à des fins de sécurité.",
@@ -134,7 +134,7 @@ const privacyFr: LegalPage = {
     {
       heading: 'Sous-traitants et destinataires',
       body: [
-        "Discord et Google : fournisseurs d'authentification OAuth2 (données limitées : identifiant, nom affiché, email).",
+        "Discord : fournisseur d'authentification OAuth2 (données limitées : identifiant, nom affiché, email).",
         "Brevo (ex-Sendinblue), serveurs hébergés à Paris : envoi d'emails transactionnels (vérification). Politique RGPD disponible sur brevo.com.",
         "Aucun autre sous-traitant. Les bases de données, le stockage des fichiers et l'indexation de recherche sont hébergés sur l'infrastructure personnelle de l'éditeur en Belgique.",
       ],
@@ -142,7 +142,7 @@ const privacyFr: LegalPage = {
     {
       heading: 'Transferts hors Union européenne',
       body: [
-        "Aucun transfert structurel hors UE n'est effectué. Discord et Google, en tant que fournisseurs OAuth, peuvent traiter certaines données sur leurs propres serveurs selon leur politique respective.",
+        "Aucun transfert structurel hors UE n'est effectué. Discord, en tant que fournisseur OAuth, peut traiter certaines données sur ses propres serveurs selon sa politique.",
       ],
     },
     {
@@ -184,7 +184,7 @@ const privacyEn: LegalPage = {
     {
       heading: 'Data we collect',
       body: [
-        'Account information: OAuth identifier (Discord or Google), username, SHA-256 hash of your ISFCE email (never stored in plain text).',
+        'Account information: OAuth identifier (Discord), username, SHA-256 hash of your ISFCE email (never stored in plain text).',
         'Profile information (optional): biography, avatar, GitHub/LinkedIn/Discord links, public display is opt-in.',
         'User-generated content: uploaded documents, ratings and comments, favorites, download history (aggregate counters only).',
         'Technical data: JWT authentication token stored in an HttpOnly cookie in your browser (not accessible by JavaScript), IP addresses kept in server logs for 30 days for security purposes.',
@@ -201,7 +201,7 @@ const privacyEn: LegalPage = {
     {
       heading: 'Processors and recipients',
       body: [
-        'Discord and Google: OAuth2 authentication providers (limited data: identifier, display name, email).',
+        'Discord: OAuth2 authentication provider (limited data: identifier, display name, email).',
         'Brevo (formerly Sendinblue), servers hosted in Paris: transactional email delivery (verification). GDPR policy on brevo.com.',
         "No other processor. Databases, file storage and search indexing run on the publisher's personal infrastructure in Belgium.",
       ],
@@ -209,7 +209,7 @@ const privacyEn: LegalPage = {
     {
       heading: 'Transfers outside the European Union',
       body: [
-        'No structural transfer outside the EU is performed. Discord and Google, as OAuth providers, may process some data on their own servers according to their respective policies.',
+        'No structural transfer outside the EU is performed. Discord, as an OAuth provider, may process some data on its own servers according to its policy.',
       ],
     },
     {
@@ -255,7 +255,7 @@ const termsFr: LegalPage = {
       heading: 'Accès et conditions d\'inscription',
       body: [
         "L'accès au contenu est réservé aux personnes majeures (18 ans ou plus) disposant d'une adresse email @isfce.be valide et vérifiée.",
-        "L'inscription se fait via Discord ou Google OAuth2, suivie d'une vérification de l'email ISFCE. Aucun accès au contenu sans vérification effective.",
+        "L'inscription se fait via Discord OAuth2, suivie d'une vérification de l'email ISFCE. Aucun accès au contenu sans vérification effective.",
         "Un compte vérifié est strictement personnel et non cessible. Le partage d'un compte avec un tiers est un motif de suspension.",
       ],
     },
@@ -292,7 +292,7 @@ const termsFr: LegalPage = {
     {
       heading: 'Suppression de compte',
       body: [
-        "Vous pouvez supprimer votre compte à tout moment depuis votre page profil. La suppression est définitive et entraîne la perte de votre nom d'utilisateur, badges, favoris et historique personnel.",
+        "Vous pouvez supprimer votre compte à tout moment depuis votre page profil. La suppression est définitive et entraîne la perte de votre nom d'utilisateur, favoris et historique personnel.",
         "Les documents que vous avez partagés ne sont pas supprimés mais anonymisés : l'auteur affiché devient « Anonyme ». Ils restent accessibles à la communauté pour préserver la valeur collective des partages passés.",
         "Si vous souhaitez également supprimer vos documents, faites-en explicitement la demande via le serveur Discord communautaire avant de supprimer votre compte.",
       ],
@@ -333,7 +333,7 @@ const termsEn: LegalPage = {
       heading: 'Access and sign-up conditions',
       body: [
         'Access to content is reserved to adults (18 years or older) with a valid and verified @isfce.be email address.',
-        'Sign-up is done through Discord or Google OAuth2, followed by ISFCE email verification. No access to content without successful verification.',
+        'Sign-up is done through Discord OAuth2, followed by ISFCE email verification. No access to content without successful verification.',
         'A verified account is strictly personal and non-transferable. Sharing an account with a third party is grounds for suspension.',
       ],
     },
@@ -370,7 +370,7 @@ const termsEn: LegalPage = {
     {
       heading: 'Account deletion',
       body: [
-        'You can delete your account at any time from your profile page. Deletion is permanent and results in the loss of your username, badges, favorites and personal history.',
+        'You can delete your account at any time from your profile page. Deletion is permanent and results in the loss of your username, favorites and personal history.',
         'Documents you have shared are not deleted but anonymized: the displayed author becomes "Anonymous". They remain accessible to the community to preserve the collective value of past contributions.',
         'If you also want your documents deleted, explicitly request it via the community Discord server before deleting your account.',
       ],

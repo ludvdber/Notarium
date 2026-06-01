@@ -62,6 +62,7 @@ public class MeilisearchServiceImpl implements MeilisearchService {
 
             // Configure filterable attributes
             ArrayNode filterableAttrs = objectMapper.createArrayNode();
+            filterableAttrs.add("sectionId");
             filterableAttrs.add("courseId");
             filterableAttrs.add("category");
             filterableAttrs.add("language");
@@ -94,6 +95,7 @@ public class MeilisearchServiceImpl implements MeilisearchService {
 
             // Configure sortable attributes
             ArrayNode sortableAttrs = objectMapper.createArrayNode();
+            sortableAttrs.add("verifiedRank");
             sortableAttrs.add("createdAt");
             sortableAttrs.add("downloadCount");
             sortableAttrs.add("averageRating");
@@ -171,6 +173,7 @@ public class MeilisearchServiceImpl implements MeilisearchService {
             doc.put("category", document.getCategory().name());
             doc.put("courseId", document.getCourse().getId());
             doc.put("courseName", document.getCourse().getName());
+            doc.put("sectionId", document.getCourse().getSection().getId());
             doc.put("sectionName", document.getCourse().getSection().getName());
             doc.put("language", document.getLanguage());
             doc.put("year", document.getYear());
@@ -178,6 +181,8 @@ public class MeilisearchServiceImpl implements MeilisearchService {
                 doc.put("professorName", document.getProfessor().getName());
             }
             doc.put("verified", document.isVerified());
+            // Numeric mirror of `verified` so Meilisearch can sort verified-first (booleans aren't sortable).
+            doc.put("verifiedRank", document.isVerified() ? 1 : 0);
             doc.put("downloadCount", document.getDownloadCount());
             if (document.getAverageRating() != null) {
                 doc.put("averageRating", document.getAverageRating().doubleValue());
@@ -242,7 +247,7 @@ public class MeilisearchServiceImpl implements MeilisearchService {
     }
 
     @Override
-    public List<Long> search(String query, Long courseId, String category, String sort, Pageable pageable) {
+    public SearchResult search(String query, Long sectionId, Long courseId, String category, String sort, Pageable pageable) {
         try {
             ObjectNode body = objectMapper.createObjectNode();
             body.put("q", query);
@@ -250,6 +255,9 @@ public class MeilisearchServiceImpl implements MeilisearchService {
             body.put("offset", (int) pageable.getOffset());
 
             List<String> filters = new ArrayList<>();
+            if (sectionId != null) {
+                filters.add("sectionId = " + sectionId);
+            }
             if (courseId != null) {
                 filters.add("courseId = " + courseId);
             }
@@ -259,8 +267,11 @@ public class MeilisearchServiceImpl implements MeilisearchService {
             if (!filters.isEmpty()) {
                 body.put("filter", String.join(" AND ", filters));
             }
+            // Verified documents always rank above unverified ones; the caller's sort (if any)
+            // applies within each group. Verification is a visual aid, so unverified docs stay visible.
+            ArrayNode sortArray = body.putArray("sort");
+            sortArray.add("verifiedRank:desc");
             if (sort != null) {
-                ArrayNode sortArray = body.putArray("sort");
                 sortArray.add(sort);
             }
 
@@ -281,11 +292,16 @@ public class MeilisearchServiceImpl implements MeilisearchService {
                     ids.add(hit.get("id").asLong());
                 }
             }
-            return ids;
+            // Meilisearch returns estimatedTotalHits by default; totalHits appears only with
+            // exhaustive pagination. Prefer the exact count when present.
+            long total = root.has("totalHits")
+                    ? root.path("totalHits").asLong(0)
+                    : root.path("estimatedTotalHits").asLong(0);
+            return new SearchResult(ids, total);
 
         } catch (Exception e) {
             log.error("Meilisearch search failed: {}", e.getMessage());
-            return List.of();
+            return new SearchResult(List.of(), 0);
         }
     }
 

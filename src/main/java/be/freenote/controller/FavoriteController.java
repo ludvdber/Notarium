@@ -4,8 +4,6 @@ import be.freenote.security.SecurityUtils;
 import be.freenote.dto.response.DocumentResponse;
 import be.freenote.dto.response.PageResponse;
 import be.freenote.service.FavoriteService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +15,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/favorites")
 @RequiredArgsConstructor
-@Tag(name = "Favorites", description = "User favorite documents")
 public class FavoriteController {
 
     private final FavoriteService favoriteService;
@@ -25,7 +22,6 @@ public class FavoriteController {
     // POST toggle plutôt que PUT+DELETE séparés : le frontend n'a qu'un seul bouton
     // favori, et le toggle en un seul appel simplifie la gestion d'état côté client.
     @PostMapping("/{docId}")
-    @Operation(summary = "Toggle favorite", description = "Adds or removes a document from the user's favorites. Returns whether the document is now favorited.")
     public ResponseEntity<Map<String, Boolean>> toggle(Authentication authentication,
                                                         @PathVariable Long docId) {
         Long userId = SecurityUtils.currentUserId(authentication);
@@ -34,7 +30,6 @@ public class FavoriteController {
     }
 
     @GetMapping
-    @Operation(summary = "Get favorites", description = "Returns the current user's favorite documents, paginated.")
     public ResponseEntity<PageResponse<DocumentResponse>> getFavorites(
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
@@ -44,7 +39,6 @@ public class FavoriteController {
     }
 
     @GetMapping("/{docId}")
-    @Operation(summary = "Check favorite status", description = "Returns whether the given document is in the current user's favorites.")
     public ResponseEntity<Map<String, Boolean>> status(Authentication authentication,
                                                         @PathVariable Long docId) {
         Long userId = SecurityUtils.currentUserId(authentication);

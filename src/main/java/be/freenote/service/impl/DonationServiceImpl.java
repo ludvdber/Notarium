@@ -56,7 +56,6 @@ public class DonationServiceImpl implements DonationService {
                 : now;
         LocalDateTime newExpiry = base.plusDays(days);
         profile.setAdFreeUntil(newExpiry);
-        profile.setAdFree(true);
 
         Donation audit = Donation.builder()
                 .user(user)

@@ -36,7 +36,7 @@ class DocumentControllerTest {
     @MockitoBean private AdminRoleVerificationFilter adminRoleVerificationFilter;
 
     private static final DocumentResponse DOC = new DocumentResponse(
-            1L, "Test Doc", 1L, "Java", "Info", "SYNTHESE", "Alice",
+            1L, "Test Doc", 1L, "Java", "Info", "SYNTHESE", "Alice", 7L,
             true, false, "FR", "2025", null, 4.5, 10,
             List.of("java"), LocalDateTime.now()
     );
@@ -64,7 +64,7 @@ class DocumentControllerTest {
 
     @Test
     void popular_shouldReturnList() throws Exception {
-        when(documentService.getPopular()).thenReturn(List.of(DOC));
+        when(documentService.getPopular(null)).thenReturn(List.of(DOC));
 
         mockMvc.perform(get("/api/documents/popular"))
                 .andExpect(status().isOk())

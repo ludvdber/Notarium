@@ -47,7 +47,9 @@
     "viewAll": "View all",
     "empty": "The podium is wide open. Claim it.",
     "you": "You",
-    "yourRank": "Your rank"
+    "yourRank": "Your rank",
+    "scopeAll": "All",
+    "scopeMine": "My section"
   },
   "delegates": {
     "title": "Delegates",
@@ -114,7 +116,9 @@
     "reportPlaceholder": "Reason...",
     "courseDocuments": "Course documents",
     "aiShort": "AI",
-    "supporter": "Supporter"
+    "supporter": "Supporter",
+    "uploaderTitle": "Shared by",
+    "viewProfile": "View profile"
   },
   "admin": {
     "tabs": {
@@ -175,7 +179,9 @@
     "profs": {
       "pending": "Pending professors",
       "noPending": "No professors pending approval.",
-      "approve": "Approve"
+      "approve": "Approve",
+      "createLabel": "Professor name",
+      "create": "Add"
     },
     "reports": {
       "pending": "Pending reports",
@@ -219,7 +225,12 @@
       "xp": "{{xp}} XP",
       "delete": "Delete this account",
       "deleteTitle": "Delete account",
-      "deleteConfirm": "Permanently delete the account of \"{{username}}\"? Their documents will stay online but displayed as \"Anonymous\". This cannot be undone."
+      "deleteConfirm": "Permanently delete the account of \"{{username}}\"? Their documents will stay online but displayed as \"Anonymous\". This cannot be undone.",
+      "sectionFilter": "Filter by section",
+      "sectionAll": "All sections",
+      "ban": "Ban",
+      "banTitle": "Ban user",
+      "banConfirm": "Permanently ban \"{{username}}\"? Their ISFCE email and Discord account will be blacklisted: they can't return unless they get a new @isfce.be address AND a new Discord. The account is deleted."
     },
     "donations": {
       "title": "Donations & ad-free",
@@ -289,11 +300,12 @@
     "noFavorites": "You haven't favorited any document yet.",
     "avatar": {
       "title": "Avatar",
-      "help": "Pick how your avatar is shown. No upload — either your username letter or a generated avatar.",
+      "help": "Pick how your avatar is shown. No upload — your username letter, a generated avatar, or your Discord picture.",
       "source": {
         "AUTO": "Automatic",
         "LETTER": "Letter",
-        "DICEBEAR": "Generated"
+        "DICEBEAR": "Generated",
+        "DISCORD": "Discord picture"
       }
     },
     "identitySection": "Identity",
@@ -317,7 +329,10 @@
     "verificationRequired": "Verification required",
     "verifyEmailMessage": "Verify your @isfce.be email to unlock this feature.",
     "loginRequired": "Log in to access this content",
-    "adminRequired": "Admin access required"
+    "adminRequired": "Admin access required",
+    "oauthBanned": "This account has been banned. You can no longer log in.",
+    "oauthUnverifiedEmail": "Your Discord account must have a verified email address.",
+    "oauthFailed": "Login failed. Please try again in a moment."
   },
   "home": {
     "recent": {
@@ -356,7 +371,26 @@
     "copyLink": "Copy link",
     "linkCopied": "Link copied!",
     "share": "Share",
-    "shared": "Shared!"
+    "shared": "Shared!",
+    "continue": "Continue"
+  },
+  "onboarding": {
+    "title": "Welcome to Freenote",
+    "subtitle": "Two more steps to finish your account and access the documents.",
+    "stepProfile": "Profile",
+    "stepVerify": "Verification",
+    "usernameLabel": "Choose your username",
+    "usernameHelp": "3 to 20 characters: letters, digits, - or _. Visible to other students.",
+    "sectionLabel": "Your section (optional)",
+    "sectionHelp": "To prioritise your section's documents. You can change it later in your profile.",
+    "sectionNone": "I'll choose later",
+    "verifyIntro": "Verify your @isfce.be address to become a member and access the documents.",
+    "emailLabel": "ISFCE email address",
+    "sendCode": "Send code",
+    "codeSent": "A 6-digit code has been sent. Check your inbox (and spam).",
+    "codeLabel": "6-digit code",
+    "confirm": "Verify",
+    "changeEmail": "Change address"
   },
   "footer": {
     "tagline": "ISFCE Document Hub",

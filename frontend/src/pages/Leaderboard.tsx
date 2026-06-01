@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback } from 'react';
+import { lazy, Suspense, useCallback, useState } from 'react';
 import {
   Typography,
   Table,
@@ -10,6 +10,8 @@ import {
   Box,
   Skeleton,
   Chip,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import { EmojiEvents } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -38,9 +40,12 @@ export default function Leaderboard() {
   const queryClient = useQueryClient();
   const reduceMotion = useReducedMotion();
   const currentUser = useAuthStore((st) => st.user);
+  const [scope, setScope] = useState<'all' | 'mine'>('all');
+  const mySectionId = currentUser?.sectionId ?? undefined;
+  const filterSection = scope === 'mine' ? mySectionId : undefined;
   const { data: entries } = useQuery({
-    queryKey: ['leaderboard', 100],
-    queryFn: () => getLeaderboard(100),
+    queryKey: ['leaderboard', 100, filterSection ?? null],
+    queryFn: () => getLeaderboard(100, filterSection),
   });
 
   const top3 = entries?.slice(0, 3) ?? [];
@@ -79,6 +84,19 @@ export default function Leaderboard() {
       <Typography variant="h4" sx={s.title}>
         {t('leaderboard.title')}
       </Typography>
+
+      {mySectionId && (
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          value={scope}
+          onChange={(_, v) => v && setScope(v)}
+          sx={{ mb: 3 }}
+        >
+          <ToggleButton value="all">{t('leaderboard.scopeAll')}</ToggleButton>
+          <ToggleButton value="mine">{t('leaderboard.scopeMine')}</ToggleButton>
+        </ToggleButtonGroup>
+      )}
 
       {/* PODIUM TOP 3 — order is 2-1-3 visually on desktop, 1-2-3 on mobile via CSS order */}
       {top3.length === 3 && (

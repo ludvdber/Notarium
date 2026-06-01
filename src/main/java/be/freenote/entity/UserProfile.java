@@ -25,9 +25,6 @@ public class UserProfile {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(length = 100)
-    private String displayName;
-
     @Column(length = 500)
     private String bio;
 
@@ -39,6 +36,13 @@ public class UserProfile {
 
     private String discord;
 
+    @Column(name = "discord_avatar_url", length = 512)
+    private String discordAvatarUrl;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "section_id")
+    private Section section;
+
     @Column(nullable = false)
     @Builder.Default
     private boolean profilePublic = true;
@@ -46,10 +50,6 @@ public class UserProfile {
     @Column(nullable = false)
     @Builder.Default
     private boolean showInCarousel = true;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private boolean adFree = false;
 
     private LocalDateTime adFreeUntil;
 

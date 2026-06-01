@@ -24,6 +24,8 @@ import {
   approveSection,
 } from '@/api/endpoints';
 import GlassCard from '@/components/ui/GlassCard';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
+import { extractApiError } from '@/lib/utils';
 import type { Section } from '@/types';
 
 export default function AdminSections() {
@@ -55,7 +57,7 @@ export default function AdminSections() {
       setError('');
       invalidate();
     },
-    onError: (e: unknown) => setError(extractError(e)),
+    onError: (e: unknown) => setError(extractApiError(e)),
   });
 
   const renameMut = useMutation({
@@ -65,7 +67,7 @@ export default function AdminSections() {
       setError('');
       invalidate();
     },
-    onError: (e: unknown) => setError(extractError(e)),
+    onError: (e: unknown) => setError(extractApiError(e)),
   });
 
   const deleteMut = useMutation({
@@ -182,28 +184,15 @@ export default function AdminSections() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)}>
-        <DialogTitle>{t('admin.sections.deleteTitle')}</DialogTitle>
-        <DialogContent>
-          <Typography>
-            {t('admin.sections.deleteConfirm', { name: deleteTarget?.name, count: deleteTarget?.documentCount })}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
-          <Button color="error" variant="contained" onClick={() => deleteMut.mutate()} disabled={deleteMut.isPending}>
-            {t('admin.sections.delete')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={t('admin.sections.deleteTitle')}
+        message={t('admin.sections.deleteConfirm', { name: deleteTarget?.name, count: deleteTarget?.documentCount })}
+        confirmLabel={t('admin.sections.delete')}
+        loading={deleteMut.isPending}
+        onConfirm={() => deleteMut.mutate()}
+        onClose={() => setDeleteTarget(null)}
+      />
     </Box>
   );
-}
-
-function extractError(e: unknown): string {
-  if (typeof e === 'object' && e !== null) {
-    const err = e as { response?: { data?: { message?: string } } };
-    return err.response?.data?.message ?? 'Error';
-  }
-  return 'Error';
 }

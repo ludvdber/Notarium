@@ -13,8 +13,11 @@ import * as s from './PopularDocs.styles';
 
 export default function PopularDocs() {
   const { t } = useTranslation();
-  const { token } = useAuthStore();
-  const { data: docs, isLoading } = useQuery({ queryKey: ['popular-docs'], queryFn: getPopularDocuments });
+  const { token, user } = useAuthStore();
+  const { data: docs, isLoading } = useQuery({
+    queryKey: ['popular-docs', user?.sectionId ?? null],
+    queryFn: () => getPopularDocuments(user?.sectionId ?? undefined),
+  });
   const { data: leaderboard } = useQuery({ queryKey: ['leaderboard', 5], queryFn: () => getLeaderboard(5) });
 
   const hasDocs = !isLoading && (docs?.length ?? 0) > 0;

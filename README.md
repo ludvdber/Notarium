@@ -6,7 +6,7 @@ Hub des documents des élèves de l'ISFCE. Éclaire ta promo.
 
 ```text
 be.freenote
-├── config          # SecurityConfig, CorsConfig, RedisConfig, MinioConfig, MeilisearchConfig, SwaggerConfig
+├── config          # SecurityConfig, CorsConfig, RedisConfig, MinioConfig, MeilisearchConfig
 ├── controller      # REST controllers (Auth, User, Document, Report)
 ├── dto
 │   ├── request     # Objets de requête (DocumentUploadRequest, ReportRequest, UpdateProfileRequest)
@@ -27,7 +27,7 @@ be.freenote
 - Java 25 LTS, Spring Boot 4, Gradle Kotlin DSL
 - PostgreSQL 17, Redis 7, MinIO, Meilisearch
 - OAuth2 Discord, JWT (JJWT 0.13.x)
-- MapStruct 1.6.x, Lombok, Flyway, SpringDoc OpenAPI 3.x
+- MapStruct 1.6.x, Lombok, Flyway
 - Virtual Threads activés
 
 ## Setup local
@@ -64,7 +64,6 @@ cp .env.example .env
 ```
 
 L'API est disponible sur `http://localhost:8080`.
-Swagger UI : `http://localhost:8080/swagger-ui.html`.
 
 ### Console MinIO
 

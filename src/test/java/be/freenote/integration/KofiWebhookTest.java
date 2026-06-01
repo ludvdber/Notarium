@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Important corrections vs the colleague's prompt:
  * - KofiServiceImpl does NOT parse any "luminos:{userId}" tags.
  *   It matches users by email hash OR by username == fromName.
- * - KofiServiceImpl does NOT award badges. It sets adFree + adFreeUntil on UserProfile.
+ * - KofiServiceImpl sets adFree + adFreeUntil on UserProfile.
  * - The endpoint always returns 200 (Ko-fi requirement), even on invalid tokens.
  */
 @Tag("integration")
@@ -75,7 +75,6 @@ class KofiWebhookTest extends AbstractIntegrationTest {
         // Verify ad-free was activated on UserProfile
         User refreshed = userRepository.findById(verifiedUser.getId()).orElseThrow();
         UserProfile profile = refreshed.getProfile();
-        assertThat(profile.isAdFree()).isTrue();
         assertThat(profile.getAdFreeUntil()).isAfter(LocalDateTime.now().plusDays(29));
     }
 
@@ -103,7 +102,6 @@ class KofiWebhookTest extends AbstractIntegrationTest {
     void shouldCumulateAdFreeDays() throws Exception {
         // Set existing ad-free period
         UserProfile profile = verifiedUser.getProfile();
-        profile.setAdFree(true);
         profile.setAdFreeUntil(LocalDateTime.now().plusDays(15));
         userRepository.save(verifiedUser);
 
@@ -146,7 +144,7 @@ class KofiWebhookTest extends AbstractIntegrationTest {
         assertThat(donationRepository.findAll()).isEmpty();
         // Profile unchanged
         User refreshed = userRepository.findById(verifiedUser.getId()).orElseThrow();
-        assertThat(refreshed.getProfile().isAdFree()).isFalse();
+        assertThat(refreshed.getProfile().getAdFreeUntil()).isNull();
     }
 
     @Test

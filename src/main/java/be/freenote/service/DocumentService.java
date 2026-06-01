@@ -16,7 +16,7 @@ public interface DocumentService {
     PageResponse<DocumentResponse> search(String query, Long sectionId, Long courseId, String category, String sort, Pageable pageable);
     void delete(Long documentId, Long userId);
     void adminDelete(Long documentId);
-    List<DocumentResponse> getPopular();
+    List<DocumentResponse> getPopular(Long sectionId);
     List<DocumentResponse> getUnverified();
     DocumentResponse verify(Long documentId);
     byte[] download(Long documentId, Long userId);

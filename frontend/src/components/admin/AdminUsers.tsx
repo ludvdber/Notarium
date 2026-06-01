@@ -12,13 +12,8 @@ import {
   Select,
   MenuItem,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
 } from '@mui/material';
-import { Verified, GppBad, Shield, DeleteForever } from '@mui/icons-material';
+import { Verified, GppBad, Shield, DeleteForever, Block } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
@@ -27,8 +22,12 @@ import {
   adminUnverifyUser,
   adminUpdateUserRole,
   adminDeleteUser,
+  adminBanUser,
+  getSections,
 } from '@/api/endpoints';
 import GlassCard from '@/components/ui/GlassCard';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
+import { extractApiError } from '@/lib/utils';
 import type { User } from '@/types';
 
 type Role = 'USER' | 'VERIFIED' | 'ADMIN';
@@ -38,12 +37,15 @@ export default function AdminUsers() {
   const qc = useQueryClient();
 
   const [query, setQuery] = useState('');
+  const [sectionFilter, setSectionFilter] = useState<number | ''>('');
   const [error, setError] = useState('');
   const [deleteCandidate, setDeleteCandidate] = useState<User | null>(null);
+  const [banCandidate, setBanCandidate] = useState<User | null>(null);
 
+  const { data: sections = [] } = useQuery({ queryKey: ['sections'], queryFn: getSections });
   const { data: users, isLoading } = useQuery({
-    queryKey: ['admin-users', query],
-    queryFn: () => adminSearchUsers(query, 50),
+    queryKey: ['admin-users', query, sectionFilter],
+    queryFn: () => adminSearchUsers(query, 50, sectionFilter === '' ? undefined : sectionFilter),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['admin-users'] });
@@ -51,19 +53,19 @@ export default function AdminUsers() {
   const verifyMut = useMutation({
     mutationFn: adminVerifyUser,
     onSuccess: invalidate,
-    onError: (e) => setError(extractError(e)),
+    onError: (e) => setError(extractApiError(e)),
   });
 
   const unverifyMut = useMutation({
     mutationFn: adminUnverifyUser,
     onSuccess: invalidate,
-    onError: (e) => setError(extractError(e)),
+    onError: (e) => setError(extractApiError(e)),
   });
 
   const roleMut = useMutation({
     mutationFn: ({ id, role }: { id: number; role: Role }) => adminUpdateUserRole(id, role),
     onSuccess: invalidate,
-    onError: (e) => setError(extractError(e)),
+    onError: (e) => setError(extractApiError(e)),
   });
 
   const deleteMut = useMutation({
@@ -72,7 +74,16 @@ export default function AdminUsers() {
       invalidate();
       setDeleteCandidate(null);
     },
-    onError: (e) => setError(extractError(e)),
+    onError: (e) => setError(extractApiError(e)),
+  });
+
+  const banMut = useMutation({
+    mutationFn: (id: number) => adminBanUser(id),
+    onSuccess: () => {
+      invalidate();
+      setBanCandidate(null);
+    },
+    onError: (e) => setError(extractApiError(e)),
   });
 
   return (
@@ -83,12 +94,28 @@ export default function AdminUsers() {
 
       {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
 
-      <TextField
-        size="small"
-        placeholder={t('admin.users.searchPlaceholder')}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        <TextField
+          size="small"
+          placeholder={t('admin.users.searchPlaceholder')}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          sx={{ flex: 1, minWidth: 200 }}
+        />
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>{t('admin.users.sectionFilter')}</InputLabel>
+          <Select<number | ''>
+            value={sectionFilter}
+            label={t('admin.users.sectionFilter')}
+            onChange={(e) => setSectionFilter(e.target.value === '' ? '' : Number(e.target.value))}
+          >
+            <MenuItem value="">{t('admin.users.sectionAll')}</MenuItem>
+            {sections.map((sec) => (
+              <MenuItem key={sec.id} value={sec.id}>{sec.name}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
 
       {isLoading && <Typography color="text.secondary">{t('common.loading')}</Typography>}
       {!isLoading && !users?.length && (
@@ -108,6 +135,7 @@ export default function AdminUsers() {
             )}
             <Typography variant="caption" color="text.secondary">
               {t('admin.users.xp', { xp: u.xp })}
+              {u.sectionName ? ` · ${u.sectionName}` : ''}
             </Typography>
           </Box>
 
@@ -152,36 +180,34 @@ export default function AdminUsers() {
               <DeleteForever fontSize="small" />
             </IconButton>
           </Tooltip>
+          <Tooltip title={t('admin.users.ban')}>
+            <IconButton size="small" color="error" onClick={() => setBanCandidate(u)}>
+              <Block fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </GlassCard>
       ))}
 
-      <Dialog open={Boolean(deleteCandidate)} onClose={() => setDeleteCandidate(null)}>
-        <DialogTitle color="error">{t('admin.users.deleteTitle')}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {t('admin.users.deleteConfirm', { username: deleteCandidate?.username })}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteCandidate(null)}>{t('common.cancel')}</Button>
-          <Button
-            color="error"
-            variant="contained"
-            disabled={deleteMut.isPending}
-            onClick={() => deleteCandidate && deleteMut.mutate(deleteCandidate.id)}
-          >
-            {t('common.confirm')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmDialog
+        open={Boolean(deleteCandidate)}
+        title={t('admin.users.deleteTitle')}
+        message={t('admin.users.deleteConfirm', { username: deleteCandidate?.username })}
+        confirmLabel={t('common.confirm')}
+        loading={deleteMut.isPending}
+        onConfirm={() => deleteCandidate && deleteMut.mutate(deleteCandidate.id)}
+        onClose={() => setDeleteCandidate(null)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(banCandidate)}
+        title={t('admin.users.banTitle')}
+        message={t('admin.users.banConfirm', { username: banCandidate?.username })}
+        confirmLabel={t('admin.users.ban')}
+        confirmColor="error"
+        loading={banMut.isPending}
+        onConfirm={() => banCandidate && banMut.mutate(banCandidate.id)}
+        onClose={() => setBanCandidate(null)}
+      />
     </Box>
   );
-}
-
-function extractError(e: unknown): string {
-  if (typeof e === 'object' && e !== null) {
-    const err = e as { response?: { data?: { message?: string } } };
-    return err.response?.data?.message ?? 'Error';
-  }
-  return 'Error';
 }

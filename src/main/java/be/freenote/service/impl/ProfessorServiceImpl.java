@@ -38,6 +38,16 @@ public class ProfessorServiceImpl implements ProfessorService {
 
     @Override
     @Transactional
+    public ProfessorResponse adminCreate(String name) {
+        Professor professor = Professor.builder()
+                .name(name)
+                .approved(true)
+                .build();
+        return professorMapper.toResponse(professorRepository.save(professor));
+    }
+
+    @Override
+    @Transactional
     public ProfessorResponse approve(Long id) {
         Professor professor = Repositories.findByIdOrThrow(professorRepository, id, "Professor");
         professor.setApproved(true);

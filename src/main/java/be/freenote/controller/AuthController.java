@@ -9,8 +9,6 @@ import be.freenote.security.JwtTokenProvider;
 import be.freenote.security.OAuth2LoginSuccessHandler;
 import be.freenote.security.ratelimit.RateLimit;
 import be.freenote.service.AuthService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +24,6 @@ import java.util.List;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Validated
-@Tag(name = "Authentication", description = "OAuth2 login and email verification")
 public class AuthController {
 
     private final AuthService authService;
@@ -41,8 +38,6 @@ public class AuthController {
 
     @PostMapping("/request-verification")
     @RateLimit(max = 3, window = 3600)
-    @Operation(summary = "Request email verification",
-               description = "Sends a 6-digit verification code to the provided ISFCE email.")
     public ResponseEntity<Void> requestVerification(Authentication authentication,
                                                      @Valid @RequestBody VerifyEmailRequest request) {
         Long userId = SecurityUtils.currentUserId(authentication);
@@ -52,8 +47,6 @@ public class AuthController {
 
     @PostMapping("/confirm-verification")
     @RateLimit(max = 5, window = 900)
-    @Operation(summary = "Confirm email verification",
-               description = "Validates the 6-digit code and refreshes the HttpOnly JWT cookie with verified=true.")
     public ResponseEntity<Void> confirmVerification(Authentication authentication,
                                                      @Valid @RequestBody ConfirmCodeRequest request,
                                                      HttpServletResponse response) {
@@ -64,16 +57,12 @@ public class AuthController {
     }
 
     @GetMapping("/linked-providers")
-    @Operation(summary = "List linked OAuth providers",
-               description = "Returns every (provider, linkedAt) pair attached to the current user.")
     public ResponseEntity<List<LinkedProviderResponse>> listLinkedProviders(Authentication authentication) {
         Long userId = SecurityUtils.currentUserId(authentication);
         return ResponseEntity.ok(authService.getLinkedProviders(userId));
     }
 
     @DeleteMapping("/linked-providers/{provider}")
-    @Operation(summary = "Unlink an OAuth provider",
-               description = "Detaches the given provider from the current user. Fails if it would leave the user with no way to sign in.")
     public ResponseEntity<Void> unlinkProvider(Authentication authentication,
                                                 @PathVariable
                                                 @jakarta.validation.constraints.Pattern(
@@ -86,8 +75,6 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "Logout",
-               description = "Revokes the current JWT server-side and clears the HttpOnly cookie.")
     public ResponseEntity<Void> logout(jakarta.servlet.http.HttpServletRequest request,
                                         HttpServletResponse response) {
         String jwt = extractJwtCookie(request);

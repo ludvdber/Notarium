@@ -3,6 +3,43 @@
 # reverse-proxy LXC), symlink into sites-enabled, `nginx -t && systemctl reload nginx`.
 #
 # TLS: obtain via `certbot --nginx -d notarium.be -d www.notarium.be`.
+#
+# ── Topology: Cloudflare → nginx → Freenote LXC ──────────────────────────────
+# Cloudflare terminates TLS at the edge and connects to this nginx from *its own* IPs,
+# so without the real_ip block below, every request looks like it comes from ~20 Cloudflare
+# IPs — breaking the backend's per-IP rate limiting and poisoning access logs.
+#   real_ip_header CF-Connecting-IP  → nginx rewrites $remote_addr to the true client IP,
+#   which then flows to the backend via X-Forwarded-For (server.forward-headers-strategy=NATIVE).
+# Keep the set_real_ip_from list current: https://www.cloudflare.com/ips/ (v4 + v6).
+# In Cloudflare set SSL/TLS mode to "Full (strict)" so the edge→origin hop is also HTTPS.
+#
+# real_ip_header CF-Connecting-IP;
+# set_real_ip_from 173.245.48.0/20;
+# set_real_ip_from 103.21.244.0/22;
+# set_real_ip_from 103.22.200.0/22;
+# set_real_ip_from 103.31.4.0/22;
+# set_real_ip_from 141.101.64.0/18;
+# set_real_ip_from 108.162.192.0/18;
+# set_real_ip_from 190.93.240.0/20;
+# set_real_ip_from 188.114.96.0/20;
+# set_real_ip_from 197.234.240.0/22;
+# set_real_ip_from 198.41.128.0/17;
+# set_real_ip_from 162.158.0.0/15;
+# set_real_ip_from 104.16.0.0/13;
+# set_real_ip_from 104.24.0.0/14;
+# set_real_ip_from 172.64.0.0/13;
+# set_real_ip_from 131.0.72.0/22;
+# set_real_ip_from 2400:cb00::/32;
+# set_real_ip_from 2606:4700::/32;
+# set_real_ip_from 2803:f800::/32;
+# set_real_ip_from 2405:b500::/32;
+# set_real_ip_from 2405:8100::/32;
+# set_real_ip_from 2a06:98c0::/29;
+# set_real_ip_from 2c0f:f248::/32;
+# Tip: instead of hand-maintaining this list, `cloudflare-cert` / a cron can regenerate it.
+# Then on the backend side, TRUSTED_PROXIES must include THIS nginx's LXC IP (not Cloudflare's),
+# because the backend only ever sees nginx as its immediate proxy.
+# ─────────────────────────────────────────────────────────────────────────────
 
 upstream freenote_backend {
     # Adjust the IP to match the Freenote LXC on your Proxmox bridge.
@@ -41,6 +78,25 @@ server {
     gzip_types text/plain text/css application/javascript application/json image/svg+xml;
     gzip_min_length 1024;
 
+    # Server-Sent Events stream for live notifications. Buffering MUST be off or nginx
+    # holds each event back and the feed only flushes when the connection closes.
+    location /api/notifications/stream {
+        proxy_pass http://freenote_backend;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_set_header Connection "";   # keep-alive upstream, no "upgrade" for SSE
+        proxy_buffering off;              # flush events immediately
+        proxy_cache off;
+        chunked_transfer_encoding off;
+        # The server closes the stream after 30 min; allow a little more before nginx gives up.
+        proxy_read_timeout 35m;
+    }
+
     location / {
         proxy_pass http://freenote_backend;
         proxy_http_version 1.1;
@@ -51,11 +107,7 @@ server {
         proxy_set_header X-Real-IP         $remote_addr;
         proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-
-        # WebSocket / SSE support for /api/notifications (future endpoint, see improvement #18).
-        proxy_set_header Upgrade    $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_read_timeout 1h;
+        proxy_read_timeout 60s;
     }
 
     # Static Vite assets are cached aggressively — they're hashed.

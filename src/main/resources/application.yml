@@ -28,17 +28,6 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-    # V12 runs CREATE INDEX CONCURRENTLY which cannot be in a transaction.
-    # Its companion .conf sets executeInTransaction=false, but Flyway still
-    # refuses the mixed classification unless mixed=true globally.
-    mixed: true
-    # Flyway's default migration lock is a Postgres advisory lock held INSIDE a transaction.
-    # CREATE INDEX CONCURRENTLY waits for all open transactions to finish — including the one
-    # holding the lock — resulting in an indefinite self-deadlock. Setting the lock to
-    # session-level (not transaction-level) prevents this while still serialising concurrent
-    # Flyway instances.
-    postgresql:
-      transactional-lock: false
 
   data:
     redis:

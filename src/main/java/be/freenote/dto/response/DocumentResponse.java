@@ -11,6 +11,7 @@ public record DocumentResponse(
         String sectionName,
         String category,
         String authorName,
+        Long authorId,
         boolean verified,
         boolean aiGenerated,
         String language,

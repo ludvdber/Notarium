@@ -1,5 +1,6 @@
 package be.freenote.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -33,12 +34,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String token = extractToken(request);
+        Claims claims = StringUtils.hasText(token) ? jwtTokenProvider.parseClaimsOrNull(token) : null;
 
-        if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)
-                && !revocationService.isRevoked(jwtTokenProvider.getJti(token))) {
-            Long userId = jwtTokenProvider.getUserIdFromToken(token);
-            boolean verified = jwtTokenProvider.isVerified(token);
-            String role = jwtTokenProvider.getRole(token);
+        if (claims != null && !revocationService.isRevoked(claims.getId())) {
+            Long userId = jwtTokenProvider.getUserId(claims);
+            boolean verified = jwtTokenProvider.isVerified(claims);
+            String role = jwtTokenProvider.getRole(claims);
 
             List<SimpleGrantedAuthority> authorities = new ArrayList<>();
             authorities.add(new SimpleGrantedAuthority("ROLE_USER"));

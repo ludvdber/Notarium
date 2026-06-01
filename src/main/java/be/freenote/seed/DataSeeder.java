@@ -83,6 +83,7 @@ public class DataSeeder implements CommandLineRunner {
         userList.forEach(u -> users.put(u.getUsername(), u));
 
         var sections = seedSections();
+        assignUserSections(users.values(), sections);
         var courses = seedCourses(sections, users);
         var professors = seedProfessors();
         var documents = seedDocuments(courses, users, professors);
@@ -150,11 +151,15 @@ public class DataSeeder implements CommandLineRunner {
         return userRepository.saveAll(users);
     }
 
-    private User createUser(String username, String displayName, String provider, String oauthId,
+    private User createUser(String username, String fullName, String provider, String oauthId,
                             boolean verified, String role, int xp,
                             String bio, boolean profilePublic, boolean showInCarousel,
                             String github, String linkedin, String discord, String website) {
         String emailHash = verified ? sha256Hex(username.toLowerCase() + "@isfce.be") : null;
+
+        String[] nameParts = fullName != null ? fullName.trim().split("\\s+", 2) : new String[0];
+        String firstName = nameParts.length > 0 ? nameParts[0] : null;
+        String lastName = nameParts.length > 1 ? nameParts[1] : null;
 
         User user = User.builder()
                 .username(username)
@@ -166,7 +171,9 @@ public class DataSeeder implements CommandLineRunner {
 
         UserProfile profile = UserProfile.builder()
                 .user(user)
-                .displayName(displayName)
+                .firstName(firstName)
+                .lastName(lastName)
+                .displayRealName(true)
                 .bio(bio)
                 .website(website)
                 .github(github)
@@ -174,7 +181,6 @@ public class DataSeeder implements CommandLineRunner {
                 .discord(discord)
                 .profilePublic(profilePublic)
                 .showInCarousel(showInCarousel)
-                .adFree(false)
                 .termsAcceptedAt(verified ? LocalDateTime.now() : null)
                 .build();
 
@@ -191,6 +197,20 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     // ==================== SECTIONS ====================
+
+    /** Spread seeded users across sections (round-robin) so the section features have realistic data. */
+    private void assignUserSections(Collection<User> users, List<Section> sections) {
+        if (sections.isEmpty()) return;
+        int i = 0;
+        for (User u : users) {
+            if (u.getProfile() != null) {
+                u.getProfile().setSection(sections.get(i % sections.size()));
+            }
+            i++;
+        }
+        userRepository.saveAll(users);
+        log.info("Assigned sections to {} users across {} sections", users.size(), sections.size());
+    }
 
     private List<Section> seedSections() {
         List<Section> sections = List.of(
@@ -506,10 +526,8 @@ public class DataSeeder implements CommandLineRunner {
         User sophie = users.get("Sophie_M");
         User karim = users.get("Karim_B");
 
-        // Set ad-free on profiles
-        sophie.getProfile().setAdFree(true);
+        // Set ad-free on profiles (entitlement derived from this expiry, no boolean flag)
         sophie.getProfile().setAdFreeUntil(LocalDateTime.now().plusMonths(3));
-        karim.getProfile().setAdFree(true);
         karim.getProfile().setAdFreeUntil(LocalDateTime.now().plusMonths(3));
         userRepository.saveAll(List.of(sophie, karim));
 

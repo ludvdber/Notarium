@@ -47,7 +47,9 @@
     "viewAll": "Voir tout",
     "empty": "Le podium est libre. À toi de jouer.",
     "you": "Toi",
-    "yourRank": "Ta position"
+    "yourRank": "Ta position",
+    "scopeAll": "Toutes",
+    "scopeMine": "Ma section"
   },
   "delegates": {
     "title": "Délégués",
@@ -114,7 +116,9 @@
     "reportPlaceholder": "Raison...",
     "courseDocuments": "Documents du cours",
     "aiShort": "IA",
-    "supporter": "Supporter"
+    "supporter": "Supporter",
+    "uploaderTitle": "Document partagé par",
+    "viewProfile": "Voir le profil"
   },
   "admin": {
     "tabs": {
@@ -175,7 +179,9 @@
     "profs": {
       "pending": "Professeurs en attente",
       "noPending": "Aucun professeur en attente d'approbation.",
-      "approve": "Approuver"
+      "approve": "Approuver",
+      "createLabel": "Nom du professeur",
+      "create": "Ajouter"
     },
     "reports": {
       "pending": "Signalements en attente",
@@ -219,7 +225,12 @@
       "xp": "{{xp}} XP",
       "delete": "Supprimer ce compte",
       "deleteTitle": "Supprimer le compte",
-      "deleteConfirm": "Supprimer définitivement le compte de « {{username}} » ? Ses documents resteront en ligne mais seront affichés comme « Anonyme ». Action irréversible."
+      "deleteConfirm": "Supprimer définitivement le compte de « {{username}} » ? Ses documents resteront en ligne mais seront affichés comme « Anonyme ». Action irréversible.",
+      "sectionFilter": "Filtrer par section",
+      "sectionAll": "Toutes les sections",
+      "ban": "Bannir",
+      "banTitle": "Bannir l'utilisateur",
+      "banConfirm": "Bannir définitivement « {{username}} » ? Son email ISFCE et son compte Discord seront blacklistés : il ne pourra plus revenir, sauf avec une nouvelle adresse @isfce.be ET un nouveau Discord. Le compte est supprimé."
     },
     "donations": {
       "title": "Dons & sans-pub",
@@ -289,11 +300,12 @@
     "noFavorites": "Tu n'as pas encore de favoris.",
     "avatar": {
       "title": "Avatar",
-      "help": "Choisis comment ton avatar est affiché. Pas d'upload — soit la lettre de ton pseudo, soit un avatar généré.",
+      "help": "Choisis comment ton avatar est affiché. Pas d'upload — la lettre de ton pseudo, un avatar généré, ou ta photo Discord.",
       "source": {
         "AUTO": "Automatique",
         "LETTER": "Lettre",
-        "DICEBEAR": "Généré"
+        "DICEBEAR": "Généré",
+        "DISCORD": "Photo Discord"
       }
     },
     "identitySection": "Identité",
@@ -317,7 +329,10 @@
     "verificationRequired": "Vérification requise",
     "verifyEmailMessage": "Vérifie ton email @isfce.be pour débloquer cette fonctionnalité.",
     "loginRequired": "Connecte-toi pour accéder à ce contenu",
-    "adminRequired": "Accès réservé aux administrateurs"
+    "adminRequired": "Accès réservé aux administrateurs",
+    "oauthBanned": "Ce compte a été banni. Tu ne peux plus te connecter.",
+    "oauthUnverifiedEmail": "Ton compte Discord doit avoir une adresse e-mail vérifiée.",
+    "oauthFailed": "La connexion a échoué. Réessaie dans un instant."
   },
   "home": {
     "recent": {
@@ -356,7 +371,26 @@
     "copyLink": "Copier le lien",
     "linkCopied": "Lien copié !",
     "share": "Partager",
-    "shared": "Partagé !"
+    "shared": "Partagé !",
+    "continue": "Continuer"
+  },
+  "onboarding": {
+    "title": "Bienvenue sur Freenote",
+    "subtitle": "Encore deux étapes pour finaliser ton compte et accéder aux documents.",
+    "stepProfile": "Profil",
+    "stepVerify": "Vérification",
+    "usernameLabel": "Choisis ton pseudo",
+    "usernameHelp": "3 à 20 caractères : lettres, chiffres, - ou _. Visible par les autres étudiants.",
+    "sectionLabel": "Ta section (optionnel)",
+    "sectionHelp": "Pour cibler les documents de ta section. Modifiable plus tard dans ton profil.",
+    "sectionNone": "Je choisirai plus tard",
+    "verifyIntro": "Vérifie ton adresse @isfce.be pour devenir membre et accéder aux documents.",
+    "emailLabel": "Adresse e-mail ISFCE",
+    "sendCode": "Envoyer le code",
+    "codeSent": "Un code à 6 chiffres a été envoyé. Vérifie ta boîte mail (et les spams).",
+    "codeLabel": "Code à 6 chiffres",
+    "confirm": "Vérifier",
+    "changeEmail": "Changer d'adresse"
   },
   "footer": {
     "tagline": "Hub des documents de l'ISFCE",

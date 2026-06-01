@@ -141,7 +141,7 @@ class UserServiceImplTest {
         when(userMapper.toLeaderboardEntry(u1, 1, 10L)).thenReturn(e1);
         when(userMapper.toLeaderboardEntry(u2, 2, 5L)).thenReturn(e2);
 
-        List<LeaderboardEntry> result = userService.getLeaderboard(10);
+        List<LeaderboardEntry> result = userService.getLeaderboard(10, null);
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).rank()).isEqualTo(1);
@@ -158,7 +158,7 @@ class UserServiceImplTest {
 
         when(documentRepository.countByUserId(1L)).thenReturn(0L);
         UserResponse resp = new UserResponse(1L, "test", "USER", false, 50, "new bio", null, null, null, null,
-                0L, true, false, false, false, null, "AUTO", "test", null, null, false);
+                0L, true, false, false, false, null, "AUTO", "test", null, null, false, null, null, false);
         when(userMapper.toResponse(user, 0L)).thenReturn(resp);
 
         UpdateProfileRequest req = new UpdateProfileRequest();
@@ -180,7 +180,7 @@ class UserServiceImplTest {
 
         when(documentRepository.countByUserId(1L)).thenReturn(0L);
         UserResponse resp = new UserResponse(1L, "test", "USER", false, 0, null, null, null, null, null,
-                0L, false, false, false, false, null, "AUTO", "test", null, null, false);
+                0L, false, false, false, false, null, "AUTO", "test", null, null, false, null, null, false);
         when(userMapper.toResponse(user, 0L)).thenReturn(resp);
 
         UpdateProfileRequest req = new UpdateProfileRequest();
@@ -278,6 +278,6 @@ class UserServiceImplTest {
     private static UserResponse stubResponse() {
         return new UserResponse(1L, "test", "USER", false, 0,
                 null, null, null, null, null, 0L, false, false, false, false,
-                null, "AUTO", "test", null, null, false);
+                null, "AUTO", "test", null, null, false, null, null, false);
     }
 }

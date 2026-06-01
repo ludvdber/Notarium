@@ -30,7 +30,7 @@ public class UpdateProfileRequest {
 
     private boolean showInCarousel;
 
-    @Pattern(regexp = "^(AUTO|LETTER|DICEBEAR)$", message = "Invalid avatar source")
+    @Pattern(regexp = "^(AUTO|LETTER|DICEBEAR|DISCORD)$", message = "Invalid avatar source")
     private String avatarSource;
 
     @Size(max = 50)

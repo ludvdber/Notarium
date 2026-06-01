@@ -26,7 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { getAllMandates, assignDelegate, endDelegate, deleteMandate, updateMandate, getSections, adminSearchUsers } from '@/api/endpoints';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { User } from '@/types';
-import { formatDate } from '@/lib/utils';
+import { formatDate, extractApiError } from '@/lib/utils';
 import { STALE_15M } from '@/lib/constants';
 import GlassCard from '@/components/ui/GlassCard';
 import type { DelegateMember } from '@/types';
@@ -103,12 +103,7 @@ export default function AdminDelegates() {
       setEditing(null);
       setEditError('');
     },
-    onError: (e: unknown) => {
-      const msg = typeof e === 'object' && e !== null
-        ? ((e as { response?: { data?: { message?: string } } }).response?.data?.message ?? '')
-        : '';
-      setEditError(msg || t('common.error'));
-    },
+    onError: (e: unknown) => setEditError(extractApiError(e, t('common.error'))),
   });
 
   const openEdit = (m: DelegateMember) => {

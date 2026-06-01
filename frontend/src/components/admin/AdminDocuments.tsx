@@ -12,11 +12,6 @@ import {
   IconButton,
   Tooltip,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   Autocomplete,
   Pagination,
 } from '@mui/material';
@@ -33,6 +28,7 @@ import {
   adminListCourses,
 } from '@/api/endpoints';
 import { formatDate } from '@/lib/utils';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { CATEGORIES, STALE_15M } from '@/lib/constants';
 import { useDebounce } from '@/hooks/useDebounce';
 import GlassCard from '@/components/ui/GlassCard';
@@ -234,26 +230,18 @@ export default function AdminDocuments() {
         </Box>
       )}
 
-      <Dialog open={deleteCandidate !== null} onClose={() => setDeleteCandidate(null)}>
-        <DialogTitle color="error">{t('document.delete')}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>{t('admin.docs.deleteConfirm')}</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteCandidate(null)}>{t('common.cancel')}</Button>
-          <Button
-            color="error"
-            variant="contained"
-            disabled={deleteMut.isPending}
-            onClick={() => {
-              if (deleteCandidate !== null) deleteMut.mutate(deleteCandidate);
-              setDeleteCandidate(null);
-            }}
-          >
-            {t('common.confirm')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmDialog
+        open={deleteCandidate !== null}
+        title={t('document.delete')}
+        message={t('admin.docs.deleteConfirm')}
+        confirmLabel={t('common.confirm')}
+        loading={deleteMut.isPending}
+        onConfirm={() => {
+          if (deleteCandidate !== null) deleteMut.mutate(deleteCandidate);
+          setDeleteCandidate(null);
+        }}
+        onClose={() => setDeleteCandidate(null)}
+      />
     </Box>
   );
 }

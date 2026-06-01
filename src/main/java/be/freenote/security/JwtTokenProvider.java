@@ -78,6 +78,29 @@ public class JwtTokenProvider {
         }
     }
 
+    /** Parse + verify the signature once; returns null when the token is invalid or expired.
+     *  Hot path (every authenticated request) — callers read claims via the overloads below
+     *  instead of re-parsing per field. */
+    public Claims parseClaimsOrNull(String token) {
+        try {
+            return parseToken(token);
+        } catch (JwtException | IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    public Long getUserId(Claims claims) {
+        return Long.parseLong(claims.getSubject());
+    }
+
+    public boolean isVerified(Claims claims) {
+        return Boolean.TRUE.equals(claims.get("verified", Boolean.class));
+    }
+
+    public String getRole(Claims claims) {
+        return claims.get("role", String.class);
+    }
+
     private Claims parseToken(String token) {
         return Jwts.parser()
                 .verifyWith(key)

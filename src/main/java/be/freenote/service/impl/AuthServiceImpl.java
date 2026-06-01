@@ -4,11 +4,14 @@ import be.freenote.dto.response.LinkedProviderResponse;
 import be.freenote.entity.User;
 import be.freenote.entity.UserOauthLink;
 import be.freenote.entity.UserProfile;
+import be.freenote.enums.AvatarSource;
 import be.freenote.exception.DuplicateResourceException;
+import be.freenote.exception.ForbiddenException;
 import be.freenote.exception.RateLimitExceededException;
 import be.freenote.exception.ResourceNotFoundException;
 import be.freenote.exception.ServiceUnavailableException;
 import be.freenote.exception.UnauthorizedException;
+import be.freenote.repository.BanRepository;
 import be.freenote.repository.Repositories;
 import be.freenote.repository.UserOauthLinkRepository;
 import be.freenote.repository.UserRepository;
@@ -32,6 +35,7 @@ import jakarta.mail.internet.MimeMessage;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -44,6 +48,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final UserOauthLinkRepository oauthLinkRepository;
+    private final BanRepository banRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final StringRedisTemplate redisTemplate;
     private final JavaMailSender mailSender;
@@ -55,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public String processOAuth2Login(OAuth2User oAuth2User, String registrationId) {
+    public void processOAuth2Login(OAuth2User oAuth2User, String registrationId) {
         String provider = registrationId.toUpperCase();
         String oauthId = oAuth2User.getName();
 
@@ -65,11 +70,17 @@ public class AuthServiceImpl implements AuthService {
                     new OAuth2Error("unverified_email", "OAuth provider email is not verified", null));
         }
 
-        User user = oauthLinkRepository.findByProviderAndOauthId(provider, oauthId)
+        // Banned Discord identity: refuse login outright (cannot re-create an account).
+        if (banRepository.existsByOauthProviderAndOauthId(provider, oauthId)) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("account_banned", "This account has been banned", null));
+        }
+
+        // Find the linked account, or provision a new one. The JWT cookie is minted later by
+        // OAuth2LoginSuccessHandler — this method only ensures the account exists.
+        oauthLinkRepository.findByProviderAndOauthId(provider, oauthId)
                 .map(UserOauthLink::getUser)
                 .orElseGet(() -> createUserFromOAuth(oAuth2User, provider, oauthId));
-
-        return jwtTokenProvider.generateToken(user);
     }
 
     /** Adds a (provider, oauthId) link to an already-authenticated user. */
@@ -129,19 +140,20 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private User createUserFromOAuth(OAuth2User oAuth2User, String provider, String oauthId) {
-        String displayName = oAuth2User.getAttribute("name");
-        if (displayName == null) {
-            displayName = oAuth2User.getAttribute("username");
-        }
-        if (displayName == null) {
-            displayName = oauthId;
-        }
-
+        // Provisional account: the username is NOT derived from Discord — the user picks it during
+        // onboarding (usernameChosen=false gates the app until then). Discord only provides auth +
+        // the profile picture. A throwaway placeholder keeps the NOT NULL/unique constraint happy.
         User newUser = User.builder()
-                .username(displayName)
+                .username(uniqueUsername("membre-" + UUID.randomUUID().toString().substring(0, 8)))
+                .usernameChosen(false)
                 .build();
         User saved = userRepository.save(newUser);
-        UserProfile profile = UserProfile.builder().user(saved).build();
+
+        UserProfile profile = UserProfile.builder()
+                .user(saved)
+                .avatarSource(AvatarSource.DISCORD)
+                .discordAvatarUrl(discordAvatarUrl(oAuth2User, oauthId))
+                .build();
         saved.setProfile(profile);
 
         UserOauthLink link = UserOauthLink.builder()
@@ -154,14 +166,36 @@ public class AuthServiceImpl implements AuthService {
         return userRepository.save(saved);
     }
 
+    /** Appends a numeric suffix until the username is free (placeholder collisions are astronomically rare). */
+    private String uniqueUsername(String base) {
+        String candidate = base;
+        int suffix = 1;
+        while (userRepository.existsByUsername(candidate)) {
+            candidate = base + suffix++;
+        }
+        return candidate;
+    }
+
+    /** Builds the Discord CDN avatar URL from the OAuth attributes, or null if the user has no custom avatar. */
+    private static String discordAvatarUrl(OAuth2User oAuth2User, String oauthId) {
+        Object avatar = oAuth2User.getAttribute("avatar");
+        if (avatar == null) return null;
+        return "https://cdn.discordapp.com/avatars/" + oauthId + "/" + avatar + ".png";
+    }
+
     @Override
-    @Transactional(readOnly = true)
     public void requestVerification(Long userId, String email) {
         if (!ISFCE_EMAIL_PATTERN.matcher(email).matches()) {
             throw new IllegalArgumentException("Email must be an ISFCE email address (@isfce.be)");
         }
 
         String emailHash = HashUtil.hashEmail(email, emailHashSalt);
+
+        // Banned ISFCE email: refuse verification. The user is told (it's their own address, so no
+        // enumeration of other accounts) — the only way back is a brand-new @isfce.be address.
+        if (banRepository.existsByEmailHash(emailHash)) {
+            throw new ForbiddenException("Cette adresse @isfce.be a été bannie");
+        }
 
         // Silently no-op if this email is already claimed by another account.
         // Returning a distinct error would let an attacker enumerate registered @isfce.be emails.
@@ -206,6 +240,12 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Invalid verification code");
         }
 
+        // Defence in depth: a ban could have been issued between request and confirm.
+        if (banRepository.existsByEmailHash(emailHash)) {
+            redisTemplate.delete(redisKey);
+            throw new ForbiddenException("Cette adresse @isfce.be a été bannie");
+        }
+
         User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
 
         user.setEmailHash(emailHash);
@@ -245,7 +285,11 @@ public class AuthServiceImpl implements AuthService {
                     true
             );
             mailSender.send(message);
-        } catch (MessagingException e) {
+        } catch (MessagingException | org.springframework.mail.MailException e) {
+            // MessagingException (checked, from MimeMessageHelper) and MailException (unchecked,
+            // from JavaMailSender.send — e.g. SMTP unreachable) both mean "couldn't send". Surface
+            // a clean 503 instead of letting MailException bubble up as a 500 + stack trace.
+            log.warn("Verification email could not be sent to a user: {}", e.getMessage());
             throw new ServiceUnavailableException("Échec de l'envoi de l'email de vérification", e);
         }
     }

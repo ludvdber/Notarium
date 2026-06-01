@@ -7,8 +7,6 @@ import be.freenote.dto.response.PageResponse;
 import be.freenote.security.ratelimit.RateLimit;
 import be.freenote.service.DocumentService;
 import be.freenote.service.TagService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -28,7 +26,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/documents")
 @RequiredArgsConstructor
-@Tag(name = "Documents", description = "Document upload, search and management")
 public class DocumentController {
 
     private final DocumentService documentService;
@@ -36,8 +33,6 @@ public class DocumentController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @RateLimit(max = 5, window = 86400)
-    @Operation(summary = "Upload a document",
-               description = "Uploads a PDF document with metadata. Requires verified role. Max 10 MB.")
     public ResponseEntity<DocumentResponse> create(Authentication authentication,
                                                     @Valid @RequestPart("data") CreateDocumentRequest request,
                                                     @RequestPart("file") MultipartFile file) {
@@ -47,14 +42,11 @@ public class DocumentController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get document by ID")
     public ResponseEntity<DocumentResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(documentService.getById(id));
     }
 
     @GetMapping("/{id}/file")
-    @Operation(summary = "Download document PDF",
-               description = "Streams the PDF file. Buffers the download count via Redis and flushes to DB every 5 minutes.")
     public ResponseEntity<byte[]> downloadFile(@PathVariable Long id, Authentication authentication) {
         Long userId = authentication != null ? SecurityUtils.currentUserId(authentication) : null;
         byte[] data = documentService.download(id, userId);
@@ -65,7 +57,6 @@ public class DocumentController {
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Search documents")
     public ResponseEntity<PageResponse<DocumentResponse>> search(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long sectionId,
@@ -79,15 +70,14 @@ public class DocumentController {
     }
 
     @GetMapping("/popular")
-    @Operation(summary = "Get popular documents")
-    public ResponseEntity<List<DocumentResponse>> getPopular() {
+    public ResponseEntity<List<DocumentResponse>> getPopular(
+            @RequestParam(required = false) Long sectionId) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofMinutes(2)).cachePublic())
-                .body(documentService.getPopular());
+                .body(documentService.getPopular(sectionId));
     }
 
     @GetMapping("/user/{userId}")
-    @Operation(summary = "Get documents by user ID")
     public ResponseEntity<PageResponse<DocumentResponse>> getByUser(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
@@ -96,7 +86,6 @@ public class DocumentController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a document")
     public ResponseEntity<Void> delete(@PathVariable Long id, Authentication authentication) {
         Long userId = SecurityUtils.currentUserId(authentication);
         documentService.delete(id, userId);
@@ -104,7 +93,6 @@ public class DocumentController {
     }
 
     @GetMapping("/tags")
-    @Operation(summary = "Get all distinct tag labels for autocomplete")
     public ResponseEntity<List<String>> getTags() {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic())

@@ -1,5 +1,6 @@
 package be.freenote.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +23,7 @@ class JwtAuthFilterTest {
 
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private JwtRevocationService jwtRevocationService;
+    @Mock private Claims claims;
     @Mock private HttpServletRequest request;
     @Mock private HttpServletResponse response;
     @Mock private FilterChain filterChain;
@@ -31,7 +33,6 @@ class JwtAuthFilterTest {
     @BeforeEach
     void setUp() {
         lenient().when(jwtRevocationService.isRevoked(any())).thenReturn(false);
-        lenient().when(jwtTokenProvider.getJti(any())).thenReturn("jti");
     }
 
     @AfterEach
@@ -42,10 +43,10 @@ class JwtAuthFilterTest {
     @Test
     void shouldAuthenticateWithBearerToken() throws Exception {
         when(request.getHeader("Authorization")).thenReturn("Bearer valid-token");
-        when(jwtTokenProvider.validateToken("valid-token")).thenReturn(true);
-        when(jwtTokenProvider.getUserIdFromToken("valid-token")).thenReturn(42L);
-        when(jwtTokenProvider.isVerified("valid-token")).thenReturn(false);
-        when(jwtTokenProvider.getRole("valid-token")).thenReturn("USER");
+        when(jwtTokenProvider.parseClaimsOrNull("valid-token")).thenReturn(claims);
+        when(jwtTokenProvider.getUserId(claims)).thenReturn(42L);
+        when(jwtTokenProvider.isVerified(claims)).thenReturn(false);
+        when(jwtTokenProvider.getRole(claims)).thenReturn("USER");
 
         jwtAuthFilter.doFilterInternal(request, response, filterChain);
 
@@ -61,10 +62,10 @@ class JwtAuthFilterTest {
     void shouldAuthenticateWithCookieWhenNoHeader() throws Exception {
         when(request.getHeader("Authorization")).thenReturn(null);
         when(request.getCookies()).thenReturn(new Cookie[]{new Cookie("jwt", "cookie-token")});
-        when(jwtTokenProvider.validateToken("cookie-token")).thenReturn(true);
-        when(jwtTokenProvider.getUserIdFromToken("cookie-token")).thenReturn(10L);
-        when(jwtTokenProvider.isVerified("cookie-token")).thenReturn(true);
-        when(jwtTokenProvider.getRole("cookie-token")).thenReturn("USER");
+        when(jwtTokenProvider.parseClaimsOrNull("cookie-token")).thenReturn(claims);
+        when(jwtTokenProvider.getUserId(claims)).thenReturn(10L);
+        when(jwtTokenProvider.isVerified(claims)).thenReturn(true);
+        when(jwtTokenProvider.getRole(claims)).thenReturn("USER");
 
         jwtAuthFilter.doFilterInternal(request, response, filterChain);
 
@@ -78,10 +79,10 @@ class JwtAuthFilterTest {
     @Test
     void shouldSetAdminAuthority() throws Exception {
         when(request.getHeader("Authorization")).thenReturn("Bearer admin-token");
-        when(jwtTokenProvider.validateToken("admin-token")).thenReturn(true);
-        when(jwtTokenProvider.getUserIdFromToken("admin-token")).thenReturn(1L);
-        when(jwtTokenProvider.isVerified("admin-token")).thenReturn(true);
-        when(jwtTokenProvider.getRole("admin-token")).thenReturn("ADMIN");
+        when(jwtTokenProvider.parseClaimsOrNull("admin-token")).thenReturn(claims);
+        when(jwtTokenProvider.getUserId(claims)).thenReturn(1L);
+        when(jwtTokenProvider.isVerified(claims)).thenReturn(true);
+        when(jwtTokenProvider.getRole(claims)).thenReturn("ADMIN");
 
         jwtAuthFilter.doFilterInternal(request, response, filterChain);
 
@@ -104,7 +105,7 @@ class JwtAuthFilterTest {
     @Test
     void shouldNotAuthenticateWithInvalidToken() throws Exception {
         when(request.getHeader("Authorization")).thenReturn("Bearer bad-token");
-        when(jwtTokenProvider.validateToken("bad-token")).thenReturn(false);
+        when(jwtTokenProvider.parseClaimsOrNull("bad-token")).thenReturn(null);
 
         jwtAuthFilter.doFilterInternal(request, response, filterChain);
 
@@ -116,10 +117,10 @@ class JwtAuthFilterTest {
     void shouldPreferHeaderOverCookie() throws Exception {
         when(request.getHeader("Authorization")).thenReturn("Bearer header-token");
         // Cookie also present but should not be checked
-        when(jwtTokenProvider.validateToken("header-token")).thenReturn(true);
-        when(jwtTokenProvider.getUserIdFromToken("header-token")).thenReturn(1L);
-        when(jwtTokenProvider.isVerified("header-token")).thenReturn(false);
-        when(jwtTokenProvider.getRole("header-token")).thenReturn("USER");
+        when(jwtTokenProvider.parseClaimsOrNull("header-token")).thenReturn(claims);
+        when(jwtTokenProvider.getUserId(claims)).thenReturn(1L);
+        when(jwtTokenProvider.isVerified(claims)).thenReturn(false);
+        when(jwtTokenProvider.getRole(claims)).thenReturn("USER");
 
         jwtAuthFilter.doFilterInternal(request, response, filterChain);
 

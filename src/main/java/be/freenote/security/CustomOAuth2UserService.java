@@ -1,5 +1,6 @@
 package be.freenote.security;
 
+import be.freenote.exception.DuplicateResourceException;
 import be.freenote.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -7,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -29,7 +31,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         // (provider, oauthId) to the current account instead of creating a second account.
         Long currentUserId = readCurrentUserIdFromCookie();
         if (currentUserId != null) {
-            authService.linkProvider(currentUserId, oAuth2User, registrationId);
+            try {
+                authService.linkProvider(currentUserId, oAuth2User, registrationId);
+            } catch (DuplicateResourceException e) {
+                // Surface as an OAuth error so Spring Security routes to its failure handler
+                // (clean redirect) instead of letting it bubble up as a raw 500.
+                throw new OAuth2AuthenticationException(
+                        new OAuth2Error("link_conflict", e.getMessage(), null), e);
+            }
         } else {
             authService.processOAuth2Login(oAuth2User, registrationId);
         }

@@ -1,4 +1,4 @@
-export type AvatarSource = 'AUTO' | 'LETTER' | 'DICEBEAR';
+export type AvatarSource = 'AUTO' | 'LETTER' | 'DICEBEAR' | 'DISCORD';
 
 export interface User {
   id: number;
@@ -22,6 +22,9 @@ export interface User {
   firstName: string | null;
   lastName: string | null;
   displayRealName: boolean;
+  sectionId: number | null;
+  sectionName: string | null;
+  usernameChosen: boolean;
 }
 
 export interface LinkedProvider {
@@ -37,6 +40,7 @@ export interface DocumentResponse {
   sectionName: string;
   category: string;
   authorName: string;
+  authorId: number | null;
   verified: boolean;
   aiGenerated: boolean;
   language: string;

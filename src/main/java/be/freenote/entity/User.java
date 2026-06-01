@@ -26,6 +26,11 @@ public class User {
     @Column(nullable = false, unique = true)
     private String username;
 
+    /** False for a freshly-provisioned OAuth account that hasn't picked its own username yet. */
+    @Column(name = "username_chosen", nullable = false)
+    @Builder.Default
+    private boolean usernameChosen = true;
+
     @Column(unique = true)
     private String emailHash;
 

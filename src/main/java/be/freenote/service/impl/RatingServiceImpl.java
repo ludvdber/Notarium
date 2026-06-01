@@ -14,8 +14,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Optional;
 
 @Service
@@ -32,31 +30,30 @@ public class RatingServiceImpl implements RatingService {
     public void rate(Long userId, Long documentId, int score) {
         User user = Repositories.findByIdOrThrow(userRepository, userId, "User");
         Document document = Repositories.findByIdOrThrow(documentRepository, documentId, "Document");
+        // Capture the author before recalcRatingStats clears the persistence context (lazy guard).
+        Long authorId = document.getUser() != null ? document.getUser().getId() : null;
 
         Optional<Rating> existing = ratingRepository.findByDocumentIdAndUserId(documentId, userId);
+        boolean isNew = existing.isEmpty();
 
-        if (existing.isPresent()) {
-            int oldScore = existing.get().getScore();
-            existing.get().setScore(score);
-            ratingRepository.save(existing.get());
-
-            // Update denormalized average: recalculate with replaced score
-            updateAverageOnChange(document, oldScore, score);
-        } else {
-            Rating rating = Rating.builder()
+        if (isNew) {
+            ratingRepository.save(Rating.builder()
                     .document(document)
                     .user(user)
                     .score(score)
-                    .build();
-            ratingRepository.save(rating);
+                    .build());
+        } else {
+            existing.get().setScore(score);
+            ratingRepository.save(existing.get());
+        }
 
-            // Update denormalized counters
-            updateAverageOnNew(document, score);
+        // Recompute denormalized counters from the ratings table: exact (no rounding drift) and
+        // atomic under concurrent votes, unlike the previous read-modify-write on a rounded value.
+        documentRepository.recalcRatingStats(documentId);
 
-            // Award XP to document author: proportional to rating score
-            if (document.getUser() != null) {
-                eventPublisher.publishEvent(new XpEvent.DocumentRated(document.getUser().getId(), documentId, score));
-            }
+        // XP only on a first-time rating — re-rating must not farm XP for the author.
+        if (isNew && authorId != null) {
+            eventPublisher.publishEvent(new XpEvent.DocumentRated(authorId, documentId, score));
         }
     }
 
@@ -66,28 +63,4 @@ public class RatingServiceImpl implements RatingService {
         return document.getAverageRating().doubleValue();
     }
 
-    private void updateAverageOnNew(Document doc, int newScore) {
-        int count = doc.getRatingCount();
-        BigDecimal currentAvg = doc.getAverageRating();
-        BigDecimal newAvg = currentAvg
-                .multiply(BigDecimal.valueOf(count))
-                .add(BigDecimal.valueOf(newScore))
-                .divide(BigDecimal.valueOf(count + 1), 2, RoundingMode.HALF_UP);
-        doc.setRatingCount(count + 1);
-        doc.setAverageRating(newAvg);
-        documentRepository.save(doc);
-    }
-
-    private void updateAverageOnChange(Document doc, int oldScore, int newScore) {
-        int count = doc.getRatingCount();
-        if (count == 0) return;
-        BigDecimal currentAvg = doc.getAverageRating();
-        BigDecimal newAvg = currentAvg
-                .multiply(BigDecimal.valueOf(count))
-                .subtract(BigDecimal.valueOf(oldScore))
-                .add(BigDecimal.valueOf(newScore))
-                .divide(BigDecimal.valueOf(count), 2, RoundingMode.HALF_UP);
-        doc.setAverageRating(newAvg);
-        documentRepository.save(doc);
-    }
 }

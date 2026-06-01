@@ -21,5 +21,8 @@ public record UserResponse(
         String displayName,
         String firstName,
         String lastName,
-        boolean displayRealName
+        boolean displayRealName,
+        Long sectionId,
+        String sectionName,
+        boolean usernameChosen
 ) {}

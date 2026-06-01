@@ -97,14 +97,13 @@ class KofiServiceImplTest {
         p.setEmail("test@example.com");
 
         User user = User.builder().id(1L).username("test").build();
-        UserProfile profile = UserProfile.builder().user(user).adFree(false).build();
+        UserProfile profile = UserProfile.builder().user(user).build();
         user.setProfile(profile);
 
         when(userRepository.findByEmailHash(anyString())).thenReturn(Optional.of(user));
 
         kofiService.processWebhook(p);
 
-        assertThat(profile.isAdFree()).isTrue();
         assertThat(profile.getAdFreeUntil()).isAfter(LocalDateTime.now().plusDays(29));
         verify(donationRepository).save(any(Donation.class));
     }
@@ -116,7 +115,7 @@ class KofiServiceImplTest {
         p.setFromName("JohnDoe");
 
         User user = User.builder().id(2L).username("JohnDoe").build();
-        UserProfile profile = UserProfile.builder().user(user).adFree(false).build();
+        UserProfile profile = UserProfile.builder().user(user).build();
         user.setProfile(profile);
 
         when(userRepository.findByEmailHash(anyString())).thenReturn(Optional.empty());
@@ -124,7 +123,7 @@ class KofiServiceImplTest {
 
         kofiService.processWebhook(p);
 
-        assertThat(profile.isAdFree()).isTrue();
+        assertThat(profile.getAdFreeUntil()).isAfter(LocalDateTime.now().plusDays(29));
     }
 
     @Test
@@ -153,7 +152,7 @@ class KofiServiceImplTest {
         LocalDateTime existingExpiry = LocalDateTime.now().plusDays(10);
 
         User user = User.builder().id(1L).username("test").build();
-        UserProfile profile = UserProfile.builder().user(user).adFree(true)
+        UserProfile profile = UserProfile.builder().user(user)
                 .adFreeUntil(existingExpiry).build();
         user.setProfile(profile);
 
@@ -173,7 +172,7 @@ class KofiServiceImplTest {
         LocalDateTime pastExpiry = LocalDateTime.now().minusDays(5);
 
         User user = User.builder().id(1L).username("test").build();
-        UserProfile profile = UserProfile.builder().user(user).adFree(false)
+        UserProfile profile = UserProfile.builder().user(user)
                 .adFreeUntil(pastExpiry).build();
         user.setProfile(profile);
 

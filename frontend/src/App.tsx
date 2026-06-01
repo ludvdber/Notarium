@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/common/ProtectedRoute';
 import AuthPromptSnackbar from '@/components/common/AuthPromptSnackbar';
 import ScrollToTop from '@/components/common/ScrollToTop';
 import TermsGate from '@/components/common/TermsGate';
+import OnboardingGate from '@/components/common/OnboardingGate';
 import OrbitalLoader from '@/components/ui/OrbitalLoader';
 
 const Home = lazy(() => import('@/pages/Home'));
@@ -37,11 +38,13 @@ function MainLayout() {
   return (
     <>
       <Navbar />
-      <TermsGate>
-        <Suspense fallback={<Loading />}>
-          <Outlet />
-        </Suspense>
-      </TermsGate>
+      <OnboardingGate>
+        <TermsGate>
+          <Suspense fallback={<Loading />}>
+            <Outlet />
+          </Suspense>
+        </TermsGate>
+      </OnboardingGate>
       <Footer />
     </>
   );

@@ -1,13 +1,15 @@
-import { Box, Typography, Button } from '@mui/material';
-import { CheckCircle } from '@mui/icons-material';
+import { useState } from 'react';
+import { Box, Typography, Button, TextField } from '@mui/material';
+import { CheckCircle, Add } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { getPendingProfessors, approveProfessor } from '@/api/endpoints';
+import { getPendingProfessors, approveProfessor, adminCreateProfessor } from '@/api/endpoints';
 import GlassCard from '@/components/ui/GlassCard';
 
 export default function AdminProfessors() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [newName, setNewName] = useState('');
   const { data: profs, isLoading } = useQuery({ queryKey: ['admin-pending-profs'], queryFn: getPendingProfessors });
 
   const approveMut = useMutation({
@@ -15,8 +17,34 @@ export default function AdminProfessors() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-pending-profs'] }),
   });
 
+  const createMut = useMutation({
+    mutationFn: (name: string) => adminCreateProfessor(name),
+    onSuccess: () => {
+      setNewName('');
+      queryClient.invalidateQueries({ queryKey: ['admin-pending-profs'] });
+    },
+  });
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <GlassCard sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+        <TextField
+          size="small"
+          label={t('admin.profs.createLabel')}
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          sx={{ flex: 1, minWidth: 220 }}
+        />
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          disabled={!newName.trim() || createMut.isPending}
+          onClick={() => createMut.mutate(newName.trim())}
+        >
+          {t('admin.profs.create')}
+        </Button>
+      </GlassCard>
+
       <Typography variant="h6" sx={{ fontWeight: 700 }}>
         {t('admin.profs.pending')} ({profs?.length ?? 0})
       </Typography>
