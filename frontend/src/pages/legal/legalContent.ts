@@ -16,7 +16,7 @@ export interface LegalPage {
 }
 
 // Updated when the content materially changes. Shown to users.
-export const LEGAL_UPDATED_AT = '2026-05-28';
+export const LEGAL_UPDATED_AT = '2026-06-01';
 
 // -------------------- LEGAL (mentions légales) --------------------
 
@@ -148,7 +148,7 @@ const privacyFr: LegalPage = {
     {
       heading: 'Durée de conservation',
       body: [
-        "Comptes utilisateurs : conservés tant que le compte est actif. Suppression automatique après 3 ans d'inactivité continue, ou sur demande de l'utilisateur à tout moment.",
+        "Comptes utilisateurs : conservés tant que le compte existe. Vous pouvez supprimer votre compte à tout moment depuis votre page profil, ou en faire la demande à un administrateur via le serveur Discord communautaire.",
         "Documents partagés : conservés tant que le compte de l'auteur existe. En cas de suppression du compte, les documents sont anonymisés (l'auteur devient « Anonyme ») mais restent accessibles à la communauté.",
         "Journaux serveur (adresses IP) : 30 jours maximum, rotation automatique.",
         "Signalements : conservés 1 an maximum pour traçabilité.",
@@ -215,7 +215,7 @@ const privacyEn: LegalPage = {
     {
       heading: 'Retention period',
       body: [
-        'User accounts: retained as long as the account is active. Automatic deletion after 3 years of continuous inactivity, or on user request at any time.',
+        'User accounts: retained as long as the account exists. You can delete your account at any time from your profile page, or request deletion from an administrator via the community Discord server.',
         "Shared documents: retained as long as the author's account exists. If the account is deleted, documents are anonymized (author becomes \"Anonymous\") but remain accessible to the community.",
         'Server logs (IP addresses): 30 days maximum, automatic rotation.',
         'Reports: retained for up to 1 year for traceability.',

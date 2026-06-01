@@ -56,6 +56,11 @@ public class AuthServiceImpl implements AuthService {
     @Value("${app.email.hash-salt}")
     private String emailHashSalt;
 
+    // Expéditeur des mails transactionnels. DOIT correspondre au domaine authentifié chez le
+    // fournisseur SMTP (Brevo) — sinon SPF/DKIM échouent et le mail tombe en spam.
+    @Value("${app.email.from:noreply@freenote.be}")
+    private String mailFrom;
+
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Override
@@ -267,6 +272,7 @@ public class AuthServiceImpl implements AuthService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(mailFrom);
             helper.setTo(to);
             helper.setSubject("Freenote - Code de vérification");
             helper.setText(

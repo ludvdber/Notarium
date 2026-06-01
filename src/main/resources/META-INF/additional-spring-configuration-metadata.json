@@ -10,6 +10,7 @@
     { "name": "app.meilisearch.host", "type": "java.lang.String", "description": "Meilisearch server URL" },
     { "name": "app.meilisearch.api-key", "type": "java.lang.String", "description": "Meilisearch API key" },
     { "name": "app.email.hash-salt", "type": "java.lang.String", "description": "Salt for SHA-256 email hashing" },
+    { "name": "app.email.from", "type": "java.lang.String", "description": "From address for transactional emails (must match the domain authenticated at the SMTP provider for deliverability)", "defaultValue": "noreply@freenote.be" },
     { "name": "app.kofi.verification-token", "type": "java.lang.String", "description": "Ko-fi webhook verification token" },
     { "name": "app.frontend.url", "type": "java.lang.String", "description": "Frontend base URL for OAuth redirects", "defaultValue": "http://localhost:3000" },
     { "name": "freenote.cors.allowed-origins", "type": "java.lang.String", "description": "Comma-separated CORS allowed origins", "defaultValue": "http://localhost:3000" }

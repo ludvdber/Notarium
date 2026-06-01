@@ -91,6 +91,7 @@ app:
     api-key: ${MEILISEARCH_API_KEY}
   email:
     hash-salt: ${EMAIL_HASH_SALT}
+    from: ${MAIL_FROM:noreply@freenote.be}
   kofi:
     verification-token: ${KOFI_VERIFICATION_TOKEN:}
   frontend:

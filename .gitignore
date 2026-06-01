@@ -43,6 +43,7 @@ desktop.ini
 # --- Environment ---
 .env
 *.env.local
+local-real.env
 
 # --- Application ---
 logs/

@@ -1,6 +1,7 @@
 @echo off
 title Freenote - Dev Environment
-cd /d "%~dp0"
+REM Les scripts sont dans scripts/ ; on se replace a la racine du projet.
+cd /d "%~dp0.."
 
 echo.
 echo  ========================================
@@ -8,7 +9,6 @@ echo   Freenote - Environnement de dev
 echo  ========================================
 echo.
 echo  Backend     http://localhost:8080
-echo  Swagger     http://localhost:8080/swagger-ui.html
 echo  Frontend    http://localhost:3000
 echo.
 echo  Login dev   POST http://localhost:8080/api/dev/login/admin

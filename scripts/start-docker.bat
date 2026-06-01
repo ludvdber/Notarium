@@ -1,6 +1,7 @@
 @echo off
 title Freenote - Docker Infrastructure
-cd /d "%~dp0"
+REM Les scripts sont dans scripts/ ; on se replace a la racine du projet.
+cd /d "%~dp0.."
 
 echo.
 echo  ========================================

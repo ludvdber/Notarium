@@ -1,6 +1,7 @@
 @echo off
 title Freenote - Backend Spring Boot
-cd /d "%~dp0"
+REM Les scripts sont dans scripts/ ; on se replace a la racine du projet.
+cd /d "%~dp0.."
 
 echo.
 echo  ========================================
@@ -8,7 +9,6 @@ echo   Freenote - Backend Spring Boot
 echo  ========================================
 echo.
 echo  Demarrage sur http://localhost:8080
-echo  Swagger UI   http://localhost:8080/swagger-ui.html
 echo.
 echo  Prerequis: Docker doit etre lance (start-docker.bat)
 echo.

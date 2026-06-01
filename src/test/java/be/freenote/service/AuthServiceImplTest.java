@@ -48,6 +48,7 @@ class AuthServiceImplTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(authService, "emailHashSalt", "test-salt");
+        ReflectionTestUtils.setField(authService, "mailFrom", "noreply@test.be");
     }
 
     // ---- processOAuth2Login ----

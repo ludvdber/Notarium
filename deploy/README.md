@@ -1,7 +1,13 @@
 # Deploy — Proxmox LXC
 
-Target: one "app" LXC running the Freenote fat jar + systemd, with sibling LXCs for Postgres,
-Redis, MinIO and Meilisearch.
+> **La référence de déploiement à jour est [`docs/INFRA-SETUP.md`](../docs/INFRA-SETUP.md)**
+> (topologie retenue : **1 seul LXC** = app jar+systemd + Docker compose pour les 4 services
+> data, derrière nginx + Cloudflare). Ce fichier-ci documente surtout les artefacts livrés
+> (`freenote.service`, `nginx.conf.example`, `backup.sh`, timers) ; la variante « plusieurs
+> LXC » ci-dessous reste possible mais n'est plus l'approche conseillée pour un projet solo.
+
+Variante multi-LXC (historique) : one "app" LXC running the Freenote fat jar + systemd, with
+sibling LXCs for Postgres, Redis, MinIO and Meilisearch.
 
 ## Build the deployable
 

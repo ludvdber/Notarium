@@ -1,6 +1,6 @@
 @echo off
 title Freenote Frontend
-cd /d "%~dp0frontend"
+cd /d "%~dp0..\frontend"
 echo Installing dependencies...
 call npm install
 echo.

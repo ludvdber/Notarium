@@ -1,0 +1,84 @@
+# ============================================================
+# Profil "local" — test RÉEL sur ta machine, sans fake data.
+# ============================================================
+# Différence avec "dev" : PAS de DataSeeder, PAS de /api/dev/login, PAS de bouton
+# DevLogin (ceux-ci sont @Profile("dev")). On se connecte avec un VRAI Discord et on
+# vérifie un VRAI email @isfce.be — exactement comme en prod, mais l'infra (Postgres,
+# Redis, MinIO, Meili) tourne sur ton docker compose local et les cookies passent en HTTP.
+#
+# Usage : lancer le fat jar avec  --spring.profiles.active=local  (voir start-local-real.bat).
+# Les 4 services data viennent de `docker compose up -d`. Discord + SMTP sont des comptes
+# réels, fournis par variables d'environnement (le .bat les positionne).
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/freenote
+    username: freenote
+    password: freenote
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # SMTP RÉEL (Brevo conseillé). Le .bat exporte SMTP_USERNAME / SMTP_PASSWORD.
+  mail:
+    host: ${SMTP_HOST:smtp-relay.brevo.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          discord:
+            client-id: ${DISCORD_CLIENT_ID}
+            client-secret: ${DISCORD_CLIENT_SECRET}
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    # Secret local jetable — différent de la prod, sans importance hors de ta machine.
+    secret: local-real-test-secret-must-be-at-least-256-bits-long-aaaaaaaaaaaa
+    expiration-ms: 86400000
+  cookie:
+    # HTTP en local → Secure=false sinon le navigateur refuse le cookie JWT.
+    secure: false
+  minio:
+    endpoint: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket: freenote-docs
+  meilisearch:
+    host: http://localhost:7700
+    api-key: dev-master-key
+  email:
+    hash-salt: local-real-test-salt
+    # Doit correspondre à un expéditeur autorisé chez Brevo. En test local, l'adresse de ton
+    # compte Brevo suffit ; en prod ce sera noreply@freenote.be (domaine authentifié).
+    from: ${MAIL_FROM:noreply@freenote.be}
+  kofi:
+    verification-token: ""
+  frontend:
+    # Le jar sert le SPA lui-même → même origine que l'API.
+    url: http://localhost:8080
+
+freenote:
+  cors:
+    allowed-origins: http://localhost:8080
+
+logging:
+  level:
+    "[be.freenote]": INFO
+    "[org.springframework.security]": WARN
+  pattern:
+    console: "%clr(%d{HH:mm:ss}){faint} %clr(%-5level) %clr(%-30.30logger{0}){cyan} %clr(:){faint} %msg%n"
