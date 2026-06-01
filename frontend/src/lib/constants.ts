@@ -11,7 +11,7 @@ export const KOFI_URL =
   import.meta.env.VITE_KOFI_URL ?? 'https://ko-fi.com/ludovic01';
 
 export const GITHUB_URL =
-  import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/AST_Ludo/Freenote';
+  import.meta.env.VITE_GITHUB_URL ?? 'https://github.com/ludvdber/Freenote';
 
 // TanStack Query staleTime for rarely-changing data (sections, professors, news, tag suggestions).
 // Backend caches these too (5 min Redis), so 15 min on the client avoids useless refetches between pages.

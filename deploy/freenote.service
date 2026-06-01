@@ -1,6 +1,6 @@
 [Unit]
 Description=Freenote backend (Spring Boot + embedded SPA)
-Documentation=https://github.com/AST_Ludo/Notarium
+Documentation=https://github.com/ludvdber/Freenote
 # Wait for network + the data LXCs (postgres, redis, minio, meilisearch) before starting.
 After=network-online.target
 Wants=network-online.target
